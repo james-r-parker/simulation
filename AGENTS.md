@@ -124,7 +124,8 @@ Full text: [docs/agent-reference.md](docs/agent-reference.md). The rules:
 - Never commit to `main`. Branch `<type>/<short-desc>` (`docs/<doc-name>` for design docs); conventional commit
   subjects; the "why" goes in commit and PR bodies.
 - Push and open PRs only when the user asks. A manual deploy needs the user's ask; merging the release PR deploys
-  production. A change to `rulesHash` is a breaking commit (`!`) that targets `season/next`. `CHANGELOG.md` and the
+  production. A change to `rulesHash` is a breaking commit (`!`) on `main` that carries the next `library/seasons.json` entry in the
+  same PR; there is no `season/next` branch (user, 2026-11-21). `CHANGELOG.md` and the
   `package.json` version are written by the release PR only. Secrets live in GitHub and Cloudflare, never in the repo
   (details: [docs/agent-reference.md](docs/agent-reference.md)).
 - A doc's `**Status:**` line moves in the same PR as the code it describes. Never hand-edit

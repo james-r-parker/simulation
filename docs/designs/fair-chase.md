@@ -13,17 +13,30 @@ Scene: **A real chase** ("Bite arc, vision, and sprint are limited"). Selection 
 
 This doc is a lead: it holds a rank in the Build queue, and the docs below are built as its steps, in order, after its own next work. A step doc keeps its own phases, tasks and status line.
 
-Own work first: Phase 1 (the store and the envelope, built). Step 1 (role-budget.md) is scheduled here, and only its Phase 1 (the chase budget, task T7, E-RB-1) blocks anything: it blocks T8 of Phase 2 (the E256 ladder screen), which runs on an arm the budget shows leaves a catchable window, or on the arm its search finds. Role-budget Phases 2 to 4 block nothing and do not hold back steps 2 to 7. Phase 2 (the rung, after training-loop.md T24 and T25) and Phase 3 (the world) are own work; steps 2 to 7 follow them.
+Own work first: Phase 1 (the store and the envelope, built). The three gates of "Before any training" come next: step 1 (role-budget.md, all five phases) with T7a of this doc and body-genes.md Phase 1, then metric-noise.md Phase 6 and brain-reflex-tests.md Phase 5. T7b and T8 of Phase 2 (the rung) run after the gates, on the arm the budget shows is catchable and learnable; Phase 3 (the world) follows. Steps 2 to 8 are built beside and after this, in order.
 
-| Step | Doc                                        | Built when                                                                                                           |
-| ---- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
-| 1    | [role-budget.md](role-budget.md)           | Phase 1 (T7, E-RB-1) names the arm before T8 of this doc screens it; its Phases 2 to 4 block nothing here            |
-| 2    | [senses-and-motor.md](senses-and-motor.md) | The chase envelope runs (T10 to T12) and Phase 4 are read on the bodies the sprint store leaves                      |
-| 3    | [chase-physics.md](chase-physics.md)       | Heading inertia and terrain, screened on those bodies; `speedTurnDrag` widens the predator's sprint circle           |
-| 4    | [stillness.md](stillness.md)               | The ambusher and the freezing prey; it changes the ray march every scene reads, so it follows the store and the turn |
-| 5    | [hunter-practice.md](hunter-practice.md)   | The bite detectors and the within-lifetime gain, read once a hunter can reach its prey                               |
-| 6    | [hunter-learning.md](hunter-learning.md)   | The refusal wires and the too-big body, after hunter-practice.md names what a hunter still gets wrong                |
-| 7    | [scent-trails.md](scent-trails.md)         | Trail and carrion scent; it builds on stillness.md and on body-priced carcasses                                      |
+| Step | Doc                                        | Built when                                                                                                                     |
+| ---- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| 1    | [role-budget.md](role-budget.md)           | Gate 1 before any training: all five phases; Phase 1 (T7, E-RB-1) names the arm T7b and T8 of this doc run on                  |
+| 2    | [body-genes.md](body-genes.md)             | Built beside the chase work: Phase 1 (the spec table) first, since role-budget.md reads it; Phases 2 to 4 each behind a switch |
+| 3    | [senses-and-motor.md](senses-and-motor.md) | The chase envelope runs (T10 to T12) and Phase 4 are read on the bodies the sprint store leaves                                |
+| 4    | [chase-physics.md](chase-physics.md)       | Heading inertia and terrain, screened on those bodies; `speedTurnDrag` widens the predator's sprint circle                     |
+| 5    | [stillness.md](stillness.md)               | The ambusher and the freezing prey; it changes the ray march every scene reads, so it follows the store and the turn           |
+| 6    | [hunter-practice.md](hunter-practice.md)   | The bite detectors and the within-lifetime gain, read once a hunter can reach its prey                                         |
+| 7    | [hunter-learning.md](hunter-learning.md)   | The refusal wires and the too-big body, after hunter-practice.md names what a hunter still gets wrong                          |
+| 8    | [scent-trails.md](scent-trails.md)         | Trail and carrion scent; it builds on stillness.md and on body-priced carcasses                                                |
+
+## Before any training
+
+No training run, ladder screen or champion export starts until the three readings below are in (user, 2026-11-21). They are built in large chunks, one phase to a pull request, and land on `main`.
+
+| Gate                                   | What it settles                                                                                                                                                                                                                                                                                                                                       | Where                                                         |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| 1. Each role can work                  | `npm run role:budget` prints every row, each cell checked against its scripted scene: the hunter against each prey in three performer tiers, the hunter's living, the defender, the scout, the forager and reproducer, and every spec against a herd. A red cell is fixed by a config change the search names, or recorded as a role that cannot work | [role-budget.md](role-budget.md) Phases 1 to 5                |
+| 2. Each role's metrics are right       | Every metric that says a spec does its job reads the planted truth of the role's scripted scene, and the reading a decision rests on is powered                                                                                                                                                                                                       | [metric-noise.md](metric-noise.md) Phase 6                    |
+| 3. Level one measures the right things | The reflex cases (the brain-only tier, 522 genomes a second) hold a case for each role's first skill, with bars taken from the role budget, and the tier's validation study has a verdict                                                                                                                                                             | [brain-reflex-tests.md](brain-reflex-tests.md) Phases 5 and 2 |
+
+The graded sprint (T7a) and the spec table ([body-genes.md](body-genes.md) Phase 1) are built with gate 1, since the budget reads both. T7b and T8 of this doc are the first training runs after the gates.
 
 ## Measured on 2026-11-20
 
@@ -61,7 +74,7 @@ The store is the one [sprint-burst.md](sprint-burst.md) Phase 2 specifies, built
 - `sprintCost` stays, charged on the sprint actually delivered (`sprintCost x storeFactor`), in `tickCost` in `js/sim/energy.js`.
 - No brain input is added. A spent body feels its forward speed fall through the velocity body inputs.
 - With `sprintStoreEnabled` off the JS store is not allocated, the kernel's factor lane holds 1 for every slot, and every `worldHash` is unchanged.
-- The six keys change `rulesHash` (it hashes every config key), so T1 is a breaking commit (`!`) and Phases 1 to 3 are built on `season/next`.
+- The six keys change `rulesHash` (it hashes every config key), so T1 was a breaking commit (`!`); a rules change lands on `main` with the next `library/seasons.json` entry in the same PR (user, 2026-11-21).
 
 | Key                     | Type    | Default | Where                                                                          |
 | ----------------------- | ------- | ------- | ------------------------------------------------------------------------------ |
@@ -75,6 +88,17 @@ The store is the one [sprint-burst.md](sprint-burst.md) Phase 2 specifies, built
 `js/sim/sprint-store.js` exports `createSprintStore(config, slots)`, `stepSprintStore(store, outputs, alive)` (drain and refill for every live slot, no allocation), `storeFactor(store, slot)` and `resetSprintSlot(store, slot)`. The store joins the snapshot state (`js/sim/snapshot-state.js`) and `hashWorld` in `js/sim/world-hash.js` only when enabled.
 
 > Note: the speed cap is applied in the Rust kernel, and `move_agent` reads the boost per specialisation (`sprint_by_spec`). The kernel gains a per-agent `f64` factor lane that `stepSprintStore` writes; `scripts/build-wasm.sh` rebuilds the binary, and the Rust is written by Opus. With the switch off the lane holds 1 for every slot.
+
+### Graded sprint
+
+With the store on, the sprint is graded. Measured (E255): with an all-or-nothing sprint 1 of 8 populations of random brains learned `prey-ahead` under the `courser` arm; a brain that holds `SPRINT` above 0 pays the full drain, reaches the floor at about tick 140 and then cruises below its prey.
+
+- The effort is `e = max(0, SPRINT)` (the output is a `tanh`, so `e` is 0 to 1); an effort under `SPRINT_REST_EFFORT` (0.05, in `js/sim/sprint-store.js`) counts as 0, so a brain cannot block the refill with a trace of effort.
+- The sprint's factor on thrust and its rise of the speed cap are both multiplied by `storeFactor x e`.
+- The store drains by `sprintDrain x sprintDrainMultiplier[spec] x e` a tick, and `sprintCost` is charged at `storeFactor x e`.
+- The store refills while `e` is 0 and thrust is under `sprintRestThrust`, as before.
+- The kernel's per-agent factor lane carries `storeFactor x e`; `move_agent` still raises the cap only while `SPRINT` is above 0, so the Rust does not change.
+- No key is added. With `sprintStoreEnabled` off the sprint is all or nothing, as today, and every `worldHash` is unchanged. A scripted oracle sprints at effort 1, so E253's envelope is unchanged; the store-on golden case is re-pinned in its own commit.
 
 ## Detector
 
@@ -152,15 +176,16 @@ The keep rule gains a second metric guard before this read: `eval.hunter_kills_p
 
 ## Decisions
 
-| Decision                                                             | Holds because                                                                                                                                                                                               |
-| -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| The gate of [sprint-burst.md](sprint-burst.md) Phase 2 does not bind | That gate read whether the sprint is held or free in the live world (E210). This doc reads whether a chase can be won, on the envelope and the `hunt` rung                                                  |
-| No brain input for the store                                         | A new input is a cost that needs a scene metric to move (`AGENTS.md`, Boundaries); the velocity inputs carry the effect                                                                                     |
-| The envelope comes before any training or eval                       | It runs in minutes on scripted bodies, and twelve trainer levers were spent on a chase the envelope already showed has one fair distance                                                                    |
-| The prey sprint is not lowered and the hunter is not sped up alone   | Either is a number tuned around a free sprint; a store is what nature does, and it gives the courser and the stalker different bodies (Same spec, different custom)                                         |
-| [chase-physics.md](chase-physics.md) Phase 2 waits for this doc      | `speedTurnDrag` widens the predator's 75-unit sprint circle; it is screened on the bodies this doc leaves                                                                                                   |
-| Stage drills carry the stage's body rules                            | A drill under the default config cannot tell a hunter that outlasts tiring prey from one that does not; food, density and world size stay the drill's own (`DRILL_BODY_KEYS`, `js/evo/drill-body-rules.js`) |
-| `rulesHash` moves in Phase 1                                         | A new config key changes `rulesHash` even with the switch off, so every phase is built on `season/next`; the season opens on `main` after the Phase 3 keep-rule read                                        |
+| Decision                                                             | Holds because                                                                                                                                                                                                         |
+| -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The gate of [sprint-burst.md](sprint-burst.md) Phase 2 does not bind | That gate read whether the sprint is held or free in the live world (E210). This doc reads whether a chase can be won, on the envelope and the `hunt` rung                                                            |
+| No brain input for the store                                         | A new input is a cost that needs a scene metric to move (`AGENTS.md`, Boundaries); the velocity inputs carry the effect                                                                                               |
+| The envelope comes before any training or eval                       | It runs in minutes on scripted bodies, and twelve trainer levers were spent on a chase the envelope already showed has one fair distance                                                                              |
+| The prey sprint is not lowered and the hunter is not sped up alone   | Either is a number tuned around a free sprint; a store is what nature does, and it gives the courser and the stalker different bodies (Same spec, different custom)                                                   |
+| [chase-physics.md](chase-physics.md) Phase 2 waits for this doc      | `speedTurnDrag` widens the predator's 75-unit sprint circle; it is screened on the bodies this doc leaves                                                                                                             |
+| Stage drills carry the stage's body rules                            | A drill under the default config cannot tell a hunter that outlasts tiring prey from one that does not; food, density and world size stay the drill's own (`DRILL_BODY_KEYS`, `js/evo/drill-body-rules.js`)           |
+| `rulesHash` moves in Phase 1                                         | A new config key changes `rulesHash` even with the switch off, so each rules change is a breaking commit on `main` with its `library/seasons.json` entry; the season opens on `main` after the Phase 3 keep-rule read |
+| The sprint is graded with the store on                               | An all-or-nothing sprint made the store a trap for a learning brain (E255); effort that scales boost, drain and cost gives a beginner a partial result to improve on, and it is how a body spends a burst             |
 
 ## Delivery requirements
 
@@ -193,24 +218,26 @@ The keep rule gains a second metric guard before this read: `eval.hunter_kills_p
 
 ### Phase 2 - The rung
 
-| #   | Task                                                                                                                                                                                                                                                                                                                   | Nature       | Depends on |
-| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T7  | Write `evals/train-screens/fair-chase.grid.json` (the arm over every stage world, 32 offsets, `until` `hunt`) and run `train:feasible` on its ladder; record `E-FC-2`                                                                                                                                                  | [mechanical] | T6         |
-| T8  | After role-budget.md T7 names an arm with a catchable window (and, when the arm changed, E255 is re-run and the stage files and the prediction regenerated): run the ladder screen detached (`E-FC-3`); record the `hunt` pass counts, the exact paired test and the yield table; name the arm for Phase 3 or the stop | [judgement]  | T7         |
-| T8a | Only when T8 names no arm: delete `sprintStoreEnabled`, `js/sim/sprint-store.js`, its reads, keys, golden case, kernel lane and ledger entry; move this doc to `Reference` with the `E-FC-3` record id                                                                                                                 | [mechanical] | T8         |
-| T9  | Conformance review of Phase 2 (after T8a when T8 names no arm)                                                                                                                                                                                                                                                         | [judgement]  | T8         |
+| #   | Task                                                                                                                                                                                                                                                                                                                                                                                              | Nature       | Depends on |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T7  | Write `evals/train-screens/fair-chase.grid.json` (the arm over every stage world, 32 offsets, `until` `hunt`) and run `train:feasible` on its ladder; record `E-FC-2`                                                                                                                                                                                                                             | [mechanical] | T6         |
+| T7a | Grade the sprint with the store on (`stepSprintStore`, `thrustOf`, `tickCost`, the factor lane) and weight the sprint detectors by the effort (`noteSprintEnergy` in `js/evo/scene-sprint.js`, `eval.sprint_share.*`), with tests at effort 0, 0.5 and 1, the store-off goldens unchanged and the store-on golden re-pinned in its own commit; `audit:chase` on the `courser` arm reproduces E253 | [judgement]  | T6         |
+| T7b | After the three gates of "Before any training" (role-budget.md T23, metric-noise.md T24, brain-reflex-tests.md T24): re-run `train:feasible` on the `courser` ladder with the graded sprint, prediction first (`E-FC-2b`): `prey-ahead` learnable on at least 2 of 8 populations                                                                                                                  | [mechanical] | T7a        |
+| T8  | After role-budget.md T7 names an arm with a catchable window (and, when the arm changed, E255 is re-run and the stage files and the prediction regenerated): run the ladder screen detached (`E-FC-3`); record the `hunt` pass counts, the exact paired test and the yield table; name the arm for Phase 3 or the stop                                                                            | [judgement]  | T7, T7b    |
+| T8a | Only when T8 names no arm: delete `sprintStoreEnabled`, `js/sim/sprint-store.js`, its reads, keys, golden case, kernel lane and ledger entry; move this doc to `Reference` with the `E-FC-3` record id                                                                                                                                                                                            | [mechanical] | T8         |
+| T9  | Conformance review of Phase 2 (after T8a when T8 names no arm)                                                                                                                                                                                                                                                                                                                                    | [judgement]  | T8         |
 
 ### Phase 3 - The world, then adopt or delete
 
-| #   | Task                                                                                                                                                                                                                   | Nature       | Depends on   |
-| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------ |
-| T10 | Add `eval.chase_spent_share` with its arithmetic and source tests and its registry entry                                                                                                                               | [judgement]  | T6           |
-| T11 | Add `eval.hunter_kills_per_life_mean` to `GUARD_METRICS` in `js/evo/keep-rule.js` with its direction in the registry and a planted-loss test                                                                           | [judgement]  | -            |
-| T13 | Run the 64-seed keep-rule pair (`E-FC-4`) detached and record every guard with its smallest detectable loss, the two verdict metrics and the two watch metrics                                                         | [mechanical] | T9, T10, T11 |
-| T14 | Time the store on a quiet machine under the CPU lock (`bench:parts --area physics --compare origin/main`) and record the margin                                                                                        | [mechanical] | T9           |
-| T15 | Adopt on `season/next` as a breaking commit: the arm's values become the defaults, `sprintStoreEnabled` and the off path are deleted, the goldens re-pinned and `bench/baseline.json` re-recorded in their own commits | [judgement]  | T13, T14     |
-| T16 | Retrain the ladder on the adopted bodies, export the champions, and hand [training-stages.md](training-stages.md) the new `hunt` pass share                                                                            | [mechanical] | T15          |
-| T17 | Conformance review of Phase 3                                                                                                                                                                                          | [judgement]  | T15, T16     |
+| #   | Task                                                                                                                                                                                                                                                       | Nature       | Depends on   |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------ |
+| T10 | Add `eval.chase_spent_share` with its arithmetic and source tests and its registry entry                                                                                                                                                                   | [judgement]  | T6           |
+| T11 | Add `eval.hunter_kills_per_life_mean` to `GUARD_METRICS` in `js/evo/keep-rule.js` with its direction in the registry and a planted-loss test                                                                                                               | [judgement]  | -            |
+| T13 | Run the 64-seed keep-rule pair (`E-FC-4`) detached and record every guard with its smallest detectable loss, the two verdict metrics and the two watch metrics                                                                                             | [mechanical] | T9, T10, T11 |
+| T14 | Time the store on a quiet machine under the CPU lock (`bench:parts --area physics --compare origin/main`) and record the margin                                                                                                                            | [mechanical] | T9           |
+| T15 | Adopt on `main` as a breaking commit with the next `library/seasons.json` entry: the arm's values become the defaults, `sprintStoreEnabled` and the off path are deleted, the goldens re-pinned and `bench/baseline.json` re-recorded in their own commits | [judgement]  | T13, T14     |
+| T16 | Retrain the ladder on the adopted bodies, export the champions, and hand [training-stages.md](training-stages.md) the new `hunt` pass share                                                                                                                | [mechanical] | T15          |
+| T17 | Conformance review of Phase 3                                                                                                                                                                                                                              | [judgement]  | T15, T16     |
 
 ## Verification
 

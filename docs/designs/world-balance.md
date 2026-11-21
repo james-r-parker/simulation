@@ -28,7 +28,6 @@ Own work first: its own Phase 6 onward, after metric-noise.md Phase 4 and fair-c
 | 7    | [realistic-keepers.md](realistic-keepers.md) | The Phase 3 perf check and the Phase 4 freeze with its reward-gating screen                                                                                         |
 | 8    | [alarm-calls.md](alarm-calls.md)             | The Call, or don't scene is absent; a call needs prey near kin and a hunter that can bite                                                                           |
 | 9    | [prey-guilds.md](prey-guilds.md)             | Needs a standing prey population and working kill budgets                                                                                                           |
-| 10   | [body-genes.md](body-genes.md)               | Builds on prey-guilds.md, which shows which trade-offs hold niches, and on role-budget.md Phase 1, which reads the gene ranges                                      |
 
 ## Open balance issues
 

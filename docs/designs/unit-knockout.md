@@ -2,7 +2,7 @@
 
 **Status:** In progress - Phase 1 (T1 to T8) is built and on main in season 11, off by default (`unitKnockoutRate` 0); T9 (the screen and ladder grids) is built. The rate screen E-UK-1 (T10), the 64-seed eval, the ladder and drills, and the adopt-or-delete call are open.
 **Validated:** 3c6f1225 (2026-11-21)
-**Scheduled by:** [training-loop.md](training-loop.md) step 2 - silencing one hidden unit lifts a champion from 6 to 24 of 128 on `prey-ahead`, a gain no small weight step reaches; cheap and needs no sim rule
+**Scheduled by:** [training-loop.md](training-loop.md) step 3 - silencing one hidden unit lifts a champion from 6 to 24 of 128 on `prey-ahead`, a gain no small weight step reaches; cheap and needs no sim rule
 **Depends on:** [brain-inspection.md](brain-inspection.md)
 
 A birth can carry a **knockout**: one hidden unit of the child's brain is switched off for life. The unit's state stays at 0, so none of its outgoing weights reach another unit or an output. The knockout is heritable, travels with the unit's gene block through crossover, and reverts when a later mutation hits the same gene. Evolution then reaches, in one step, the kind of edit that brain inspection made by hand.

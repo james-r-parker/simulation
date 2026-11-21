@@ -1,6 +1,6 @@
 # Metric noise
 
-**Status:** In progress - Phase 1 is built. Phase 2 has a terminal hunter count candidate with an E210 diagnostic; the longer verification runs are open. Phase 4 (the statistics layer) is built; T12 read the settled hunter metrics on the 128-seed E254 baseline and moved the keep-rule guard to the settled catch metric. Phase 5 (headline metrics) is next.
+**Status:** In progress - Phases 1 and 4 are built (the keep-rule guard reads the settled catch metric on the E254 baseline). Phase 2 has a terminal hunter count candidate; its longer runs are open. Phase 6 (role metrics against planted scenes) is next: it is gate 2 before any training. Phase 5 (headline metrics) follows.
 **Validated:** bc55972e (2026-11-20)
 **Priority:** 1 - Measurement lead. Phase 4 is built before any other read: the power readings, the keep rule and the 16-seed interval have defects (review of 2026-11-20), so no verdict is trusted until they are fixed; Phase 5 (the headline metrics) follows
 **Depends on:** [metric-trust.md](metric-trust.md)
@@ -12,7 +12,7 @@ in [principles.md](../principles.md) through its detector, without paying for a 
 
 This doc is a lead: it holds a rank in the Build queue, and the docs below are built as its steps, in order, after its own next work. A step doc keeps its own phases, tasks and status line.
 
-Own work first: Phase 4 (the statistics layer), then Phase 5 (headline metrics), then Phases 2 and 3.
+Own work first: Phase 6 (role metrics, gate 2 before any training), then Phase 5 (headline metrics), then Phases 2 and 3. Phase 4 (the statistics layer) is built.
 
 | Step | Doc                                          | Built when                                                                                                                                 |
 | ---- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -361,6 +361,29 @@ A report holds 370 metrics; 54 of the 110 that carry a verdict can see a 20% cha
 | ----- | ---------- | ------- |
 | Q     | T16 to T19 | Sonnet  |
 
+### Phase 6 - Role metrics
+
+**Targets:** none - it checks and tags existing metrics; its reading is, for each role, the metrics that say the role is done, each equal to the planted truth of the role's scripted scene
+
+Training selects on what the metrics report, so a role whose metric is wrong cannot be trained (gate 2 of [fair-chase.md](fair-chase.md), "Before any training"). The review of 2026-11-20 recounted 17 core and hunter metrics from raw events; this phase does the same for every role, against a known answer.
+
+- **The planted truth.** Each scripted scene of [role-budget.md](role-budget.md) has an outcome fixed by its oracles: the hunter catches at tick `t`, the defender arrives and shoves at tick `u`, the scout calls and the forager flees at gap `g`, the body clears the herd or is trampled `n` times. `test/evo/role-metrics.slow.test.js` runs each scene under the eval observer and asserts every role metric below reads that outcome.
+- **The role tag.** A registry entry gains an optional `roles` field (a list from `SPECIALISATION_KEYS` plus `herd`), beside `scenes`. `npm run eval:compare -- --role <spec>` prints that role's metrics.
+- **A role with no working metric** is a finding: the metric is fixed here, or added beside the old one under this doc's Phase 2 rule, before the role is trained.
+
+| Role       | The job is done when                              | Metrics read today (each checked against its scene)                                                                                                                                |
+| ---------- | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| predator   | it closes, bites and lives on its kills           | `eval.chase_catch_share`, `eval.pursuit_kill_share`, `eval.hunter_catches_per_1k_settled`, `eval.hunter_kills_per_life_mean`, `eval.bite_idle`, `eval.hunter_juvenile_death_share` |
+| forager    | it finds food on purpose and breeds               | `eval.deliberate_food_share`, `eval.food_energy_per_1k`, `eval.births_per_1k`, `eval.chase_escape_share`                                                                           |
+| reproducer | its children are funded and live                  | `eval.child_survival`, `eval.offspring_per_life`, `eval.childshare_by_condition`                                                                                                   |
+| scout      | it sees first and its call moves the herd in time | `eval.alarm_lift`, `eval.alarm_response`, `eval.scout_alarm_lead_share` (null on 99% of baseline seeds)                                                                            |
+| defender   | it reaches the hunter and breaks the bite         | none today: a count of shoves, the share of bite episodes a defender ends, and `eval.hunter_defender_bite_ratio` ([body-genes.md](body-genes.md)) are added here                   |
+| herd       | bodies see a stampede and clear it                | `eval.herd_dodge_share`, `eval.trampled_share`, `eval.herd_stampede_rate`                                                                                                          |
+
+| Chunk | Tasks      | Builder |
+| ----- | ---------- | ------- |
+| R     | T20 to T24 | Sonnet  |
+
 ## Decisions
 
 | Decision                     | Contract                                                                                                                                      |
@@ -435,6 +458,16 @@ A report holds 370 metrics; 54 of the 110 that carry a verdict can see a 20% cha
 | T17 | Print the headline table first in `eval:compare` and add `--all`, with tests; print the headline column in `docs/scene-scorecard.md`                                                                 | [judgement] | T16        |
 | T18 | Point the `run-evolution-loop`, `create-plan` and `create-pr` skills at the headlines (Targets, the record's `verdicts`, the PR body), and write each `no headline` scene as a task in its plan      | [judgement] | T17        |
 | T19 | Conformance review of Phase 5                                                                                                                                                                        | [judgement] | T18        |
+
+### Phase 6 - Role metrics
+
+| #   | Task                                                                                                                                                                                                                  | Nature       | Depends on |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T20 | Add the `roles` field to the registry with its tests, tag the metrics of the table above, and add `--role` to `eval:compare`                                                                                          | [mechanical] | -          |
+| T21 | Add `test/evo/role-metrics.slow.test.js`: run each [role-budget.md](role-budget.md) scene under the eval observer and assert each tagged metric reads the scene's planted outcome; list every metric that does not    | [judgement]  | T20        |
+| T22 | Fix each defect T21 finds, a failing test first; add the defender's metrics (`eval.defender_shoves_per_1k`, `eval.defender_bite_break_share`) with arithmetic and source tests                                        | [judgement]  | T21        |
+| T23 | Read liveness and power of every role metric on the shared baseline and with the defender's shove on; record, per role, the metric a training decision rests on and the seeds it needs, or that the role has none yet | [judgement]  | T22        |
+| T24 | Conformance review of Phase 6                                                                                                                                                                                         | [judgement]  | T23        |
 
 ## Verification
 

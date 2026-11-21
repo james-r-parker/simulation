@@ -36,6 +36,24 @@ recorded falsification.
 - **Headlines.** A decision reads one headline metric per scene (metric-noise.md Phase 5), not 370 metrics.
 - **After the chase is fair,** the hunt rung co-evolves prey with hunters (training-stages.md Phase 9).
 
+## Direction (user, 2026-11-21) - read this before the Focus rules above it
+
+- **No training until three gates are read** ([fair-chase.md](../designs/fair-chase.md), "Before any training"): every
+  role's calculation ([role-budget.md](../designs/role-budget.md) Phases 1 to 5), every role's metrics against planted
+  scenes ([metric-noise.md](../designs/metric-noise.md) Phase 6), and the reflex tier with a case for each role
+  ([brain-reflex-tests.md](../designs/brain-reflex-tests.md) Phase 5, then its study). This replaces the narrower freeze.
+- **Big chunks:** one phase to a pull request, not 4 to 8 tasks.
+- **Straight to `main`:** the user is the only user. A rules change is a breaking commit on `main` with the next
+  `library/seasons.json` entry in the same PR. There is no `season/next`.
+- **Decisions:** the sprint is graded with the store on (fair-chase.md T7a); agents read the size and speed of what they
+  see, never a spec label ([body-genes.md](../designs/body-genes.md) Phase 4); a defender that arrives shoves the
+  hunter off (the repel of prey-guilds.md Phase 2, on in the defender rows and screens); body genes is built now, as
+  fair-chase step 2; herds are a row for every spec in the calculator.
+- **Order for lane B:** role-budget.md Phase 1 with fair-chase.md T7a and body-genes.md Phase 1; role-budget.md Phases 2
+  to 5; metric-noise.md Phase 6; brain-reflex-tests.md Phase 5 and `E-RT-1`; then fair-chase.md T7b and T8.
+- **Left for a code PR:** `.github/workflows/check.yml`, `preview.yml` and `scripts/lib/release-check.mjs` still name
+  `season/next`.
+
 ## Build order
 
 Lanes A, B and C own disjoint paths and run side by side. Inside a lane, build in order, one chunk per branch and PR.
