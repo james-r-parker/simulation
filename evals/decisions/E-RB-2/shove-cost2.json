@@ -8,7 +8,7 @@ defender:predator
   alarm tick 2  heard tick 3  defender moves tick 5  touches the hunter never  caller dies tick 27 (no defender) / tick 27
   shove on (energy 40, impulse 4, cost 2): breaks the bite no, prevents 0 bite energy, takes 40 from the hunter
   a hunter's bite on the defender takes 50 and costs the hunter 10.3 of kick
-  smoke: release at tick 41 (walk 22, turn 14), latest 7; hidden 0 ticks, caller needs 0 to leave the view; slack defender -34, caller -2
+  smoke: release at tick 53 (walk 48, turn 0), latest 8; hidden 0 ticks, caller needs 0 to leave the view; slack defender -45, caller -2
 
 defender:predator defence: smallest single changes that give it
 factor  setting    value   hear turn run intercept smoke  status      file
@@ -49,16 +49,23 @@ defender    sprint speed                 12.000   12.000   0.000%      0.010%   
 defender    turn radius                  21.537   21.509   0.131%      0.500%     ok
 defender    sprint turn radius           32.305   32.263   0.131%      0.500%     ok
 
-row                reading                                                            formula  scene   tolerance
-defender:predator  alarm tick                                                         2        2       0 ticks         ok
-defender:predator  heard tick                                                         3        3       0 ticks         ok
-defender:predator  defender moves                                                     5        5       0 ticks         ok
-defender:predator  kill tick, no defender                                             27       27      2 ticks         ok
-defender:predator  defender touches the hunter                                        none     none    10% or 2 ticks  ok
-defender:predator  defender lands its power before the kill                           false    false   agree           ok
-smoke:prey         hidden ticks                                                       15       15      10% or 2 ticks  ok
-smoke:prey         cloud centre, px ahead of the hunter                               131      131.08  1 px            ok
-smoke:prey         cloud life                                                         179      179     0 ticks         ok
-smoke:prey         out of view when the cover ends                                    false    false   agree           ok
-smoke:defender     release tick                                                       16       16      10% or 2 ticks  ok
-smoke:defender     a defender facing the hunter is refused: the cloud is not between  true     true    agree           ok
+row                  reading                                                            formula  scene   tolerance
+defender:predator    alarm tick                                                         2        2       0 ticks          ok
+defender:predator    heard tick                                                         3        3       0 ticks          ok
+defender:predator    defender moves                                                     5        5       0 ticks          ok
+defender:predator    kill tick, no defender                                             27       27      2 ticks          ok
+defender:predator    defender touches the hunter                                        none     none    10% or 2 ticks   ok
+defender:predator    defender lands its power before the kill                           false    false   agree            ok
+defender:predator    kill tick                                                          27       27      2 ticks          ok
+defender:predator    first shove tick                                                   none     none    2 ticks          ok
+defender:predator    shove breaks the bite                                              false    false   agree            ok
+defender:predator    bite energy prevented                                              0        0       0.000001 energy  ok
+smoke:prey           hidden ticks                                                       15       15      10% or 2 ticks   ok
+smoke:prey           cloud centre, px ahead of the hunter                               131      131.08  1 px             ok
+smoke:prey           cloud life                                                         179      179     0 ticks          ok
+smoke:prey           out of view when the cover ends                                    false    false   agree            ok
+smoke:defender       release tick                                                       16       16      10% or 2 ticks   ok
+smoke:defender       a defender facing the hunter is refused: the cloud is not between  true     true    agree            ok
+smoke:defender walk  release tick                                                       53       52      2 ticks          ok
+smoke:defender walk  cloud centre x, px ahead of the hunter                             188.93   187.32  3 px             ok
+smoke:defender walk  cloud centre y, px off the line                                    28.09    30.79   3 px             ok

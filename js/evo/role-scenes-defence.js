@@ -75,8 +75,9 @@ export function stageTrio(config, place) {
  * @typedef {object} DefenceScene
  * @property {{alarmTick: number, heardTick: number, startTick: number, contactTick: number | null,
  *   interceptTick: number | null, repelTick: number | null, killTick: number | null}} ticks the ticks the formula names
- * @property {{killed: boolean, defenderArrivedFirst: boolean}} outcome whether the caller died, and whether the defender
- *   touched the hunter before it did
+ * @property {{killed: boolean, defenderArrivedFirst: boolean, bites: number}} outcome whether the caller died, whether the
+ *   defender landed its power before it did, and the bites the hunter landed on the caller (a tick in which its energy fell by
+ *   more than half a bite, and the tick it died)
  */
 
 /**
@@ -138,9 +139,15 @@ export function playDefence(config, options) {
         killTick: /** @type {number | null} */ (null),
     };
     const shove = config.defenderRepelEnergy > 0 || config.defenderRepelImpulse > 0;
+    const [hunter, caller] = ['predator', 'forager'].map((spec) => roleParams(config, spec));
+    const half = (hunter.bite.damage * caller.bite.taken) / 2;
+    const bitten = { count: 0, energy: staged.world.energy[1] };
     runScene(staged, {
         brains,
         observe(world, n) {
+            const fell = bitten.energy - world.energy[1];
+            bitten.count += world.alive[1] === 0 || fell > half ? 1 : 0;
+            bitten.energy = world.energy[1];
             ticks.alarmTick = ticks.alarmTick < 0 && world.alarmTimer[1] > 0 ? n - 1 : ticks.alarmTick;
             noteMeeting(ticks, world, { n, shove });
             ticks.contactTick ??= touching(world, 0, 1) ? n : null;
@@ -156,6 +163,7 @@ export function playDefence(config, options) {
         outcome: {
             killed: ticks.killTick !== null,
             defenderArrivedFirst: arrival !== null && (ticks.killTick === null || arrival < ticks.killTick),
+            bites: bitten.count,
         },
     };
 }
