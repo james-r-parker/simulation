@@ -28,8 +28,7 @@ export function laneIdOf(effect, lane) {
 
 /**
  * @param {readonly Effect[]} list the effects
- * @param {{reads: Array<(world: any, slot: number) => number | void>, shares: boolean[], configKeys: string[]}} ctx the level readers, which of them
- *   leave a share, and the config keys compiled so far
+ * @param {{configKeys: string[]}} ctx the config keys compiled so far
  * @returns {Rule[][]} each lane's rules in registry order, by lane index
  * @throws {Error} for a lane that is not in the catalogue, or a scale that has neither form or both, or a table whose
  *   level 0 is not 1
@@ -50,8 +49,6 @@ export function compileRules(list, ctx) {
             const levels = scale.levels === undefined ? null : scale.levels.map((r) => compileRef(r, ctx.configKeys));
             const by = scale.by === undefined ? -1 : laneIdOf(effect.name, scale.by);
             (rules[id] ??= []).push({
-                read: ctx.reads[index],
-                share: ctx.shares[index],
                 effect: index,
                 per,
                 levels,

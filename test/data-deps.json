@@ -179,6 +179,9 @@
     "test/director-dry-main.test.js": [
         "scripts/director-dry.mjs"
     ],
+    "test/effect-dispatch.test.js": [
+        "js/sim/effect-dispatch.js"
+    ],
     "test/eslint-scope.test.js": [
         "js/sim/step.js"
     ],

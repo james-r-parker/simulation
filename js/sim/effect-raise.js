@@ -1,10 +1,13 @@
 // Raising and lowering the stacks of a stored effect (docs/designs/status-effects.md, "Appliers"): the core that
 // `applyEffect` (effect-appliers.js) and the fade pass (effects.js, for an effect that hands over to another when it ends)
-// share. It takes the effect readers as an argument, so it imports nothing of the registry. Allocates nothing, no RNG.
+// share. Each keeps `world.effectLive[row]`, the slots holding a stack of the row, so the fade pass skips an empty row. It takes the effect readers as an argument, so it imports nothing of the registry. Allocates nothing, no RNG.
 
 import { EVENT, EVENT_TYPE, pushEvent } from './events.js';
 
 /** @typedef {import('./effects.js').EffectSystem} EffectSystem */
+
+/** The record `pushApplied` reads, reused so a raise allocates nothing. */
+const GAINED = { effect: 0, stacks: 0, source: 0 };
 
 /**
  * @param {EffectSystem} system the effect readers
@@ -62,8 +65,14 @@ export function raiseEffect(system, world, slot, cause) {
         const length = world.config[fades.key];
         world.effectTicks[row][slot] = fades.by === undefined ? length : length * world.lanes[fades.by][slot];
     }
+    if (stacks[slot] === 0) {
+        world.effectLive[row] += 1;
+    }
     stacks[slot] += 1;
-    pushApplied(world, slot, { effect, stacks: stacks[slot], source });
+    GAINED.effect = effect;
+    GAINED.stacks = stacks[slot];
+    GAINED.source = source;
+    pushApplied(world, slot, GAINED);
     return true;
 }
 
@@ -82,8 +91,12 @@ export function setStacks(system, world, slot, to) {
     const stacks = world.effectStacks[row];
     const count = Math.min(to.count, system.list[to.effect].maxStacks);
     for (let n = stacks[slot] + 1; n <= count; n++) {
-        pushApplied(world, slot, { effect: to.effect, stacks: n, source: to.source });
+        GAINED.effect = to.effect;
+        GAINED.stacks = n;
+        GAINED.source = to.source;
+        pushApplied(world, slot, GAINED);
     }
+    world.effectLive[row] += (count > 0 ? 1 : 0) - (stacks[slot] > 0 ? 1 : 0);
     stacks[slot] = count;
 }
 
@@ -104,6 +117,23 @@ export function dropStack(system, world, slot, effect) {
     stacks[slot] -= 1;
     if (stacks[slot] === 0) {
         world.effectTicks[row][slot] = 0;
+        world.effectLive[row] -= 1;
     }
     return true;
+}
+
+/**
+ * Takes a slot that is being freed out of each stored row's count of slots holding a stack (`world.effectLive`), before
+ * `freeAgent` zeroes its rows.
+ * @param {any} world the world
+ * @param {number} slot the slot being freed
+ * @returns {void}
+ */
+export function releaseStacks(world, slot) {
+    const rows = world.effectStacks;
+    for (let row = 0; row < rows.length; row++) {
+        if (rows[row][slot] > 0) {
+            world.effectLive[row] -= 1;
+        }
+    }
 }

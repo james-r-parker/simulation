@@ -27,6 +27,7 @@ import { attachWasm } from './wasm-arena.js';
 import { laneMaxOverSpecs, laneOnForAnySpec } from './body-lanes.js';
 import { allocLanes } from './lane-state.js';
 import { allocEffects } from './effects.js';
+import { releaseStacks } from './effect-raise.js';
 import { allocSprintState, resetSprintSlot } from './sprint-store.js';
 import { specTable } from './spec-params.js';
 
@@ -406,6 +407,7 @@ export function freeAgent(world, slot) {
     if (world.alive[slot] !== 1) {
         throw new Error(`freeAgent: slot ${slot} is not alive`);
     }
+    releaseStacks(world, slot);
     zeroSlot(world.agentRows, slot);
     world.population -= 1;
 }

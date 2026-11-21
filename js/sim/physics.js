@@ -5,7 +5,7 @@
 import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
 import { detCos, detSin } from './det-math.js';
 import { LOSS_CAUSE, removeEnergy } from './energy.js';
-import { LANE_ID, liveOf, pinSlot, unpinSlot } from './effects.js';
+import { GROUP, LANE_ID, liveIn, motionFactors } from './effects.js';
 import { trampleHerds } from './trample.js';
 import { assertArenaHash } from './wasm-hash.js';
 import { bounceRocksKernel, moveAgentsKernel, resolveContactsKernel, rockImpactSpeed } from './wasm-physics.js';
@@ -14,6 +14,7 @@ import { bounceRocksKernel, moveAgentsKernel, resolveContactsKernel, rockImpactS
 // when the compiler does not inline it.
 const MAX_THRUST_LANE = LANE_ID.maxThrust;
 const MAX_TURN_LANE = LANE_ID.maxTurn;
+const MOTION = GROUP.MOTION;
 
 const PI = 3.141592653589793;
 
@@ -26,9 +27,20 @@ const PI = 3.141592653589793;
  * @returns {number} the thrust
  */
 export function thrustOf(world, i) {
+    motionFactors(world, i);
+    return thrustFrom(world, i);
+}
+
+/**
+ * `thrustOf` from the levels `motionFactors` read last for the slot.
+ * @param {import('./world.js').World} world the world
+ * @param {number} i the agent slot
+ * @returns {number} the thrust
+ */
+function thrustFrom(world, i) {
     const { outputs, config } = world;
     const o = i * OUTPUT_COUNT;
-    let thrust = outputs[o + OUTPUT_INDEX.THRUST] * liveOf(world, i, MAX_THRUST_LANE);
+    let thrust = outputs[o + OUTPUT_INDEX.THRUST] * liveIn(world, i, MOTION, MAX_THRUST_LANE);
     if (outputs[o + OUTPUT_INDEX.SPRINT] > 0) {
         thrust *= 1 + config.sprintMultiplier * world.sprintBySpec[world.spec[i]] * world.sprintFactor[i];
     }
@@ -48,8 +60,8 @@ export function actAll(world) {
     const { alive, angle, turnRate, vx, vy, outputs } = world;
     for (let i = 0; i < alive.length; i++) {
         if (alive[i] === 1) {
-            pinSlot(i); // `fat` is read once for the turn and the thrust
-            turnRate[i] = outputs[i * OUTPUT_COUNT + OUTPUT_INDEX.TURN] * liveOf(world, i, MAX_TURN_LANE);
+            motionFactors(world, i); // each effect level is read once for the turn and the thrust
+            turnRate[i] = outputs[i * OUTPUT_COUNT + OUTPUT_INDEX.TURN] * liveIn(world, i, MOTION, MAX_TURN_LANE);
             let a = angle[i] + turnRate[i];
             if (a >= PI) {
                 a -= 2 * PI;
@@ -57,8 +69,7 @@ export function actAll(world) {
                 a += 2 * PI;
             }
             angle[i] = a;
-            const thrust = thrustOf(world, i);
-            unpinSlot();
+            const thrust = thrustFrom(world, i);
             vx[i] += thrust * detCos(a);
             vy[i] += thrust * detSin(a);
         }

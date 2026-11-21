@@ -21,6 +21,16 @@ export const SOCIAL_KEYS = Object.freeze([
 
 /**
  * @param {Readonly<Record<string, any>>} config the world's config
+ * @returns {boolean} whether a call's own effects have a strength: `rallied` or `answered` above 0, or `hoarse` above a
+ *   factor of 1. While none has, the hunt half of the hearing bookkeeping (`heardFrom`, the rally) and `settleCalls` are
+ *   skipped: the stacks they keep reach no lane, no gate and no hash.
+ */
+export function callEffectsOn(config) {
+    return config.rallyThrust > 0 || config.rallyBurn > 0 || config.answeredBite > 0 || config.hoarseFactor > 1;
+}
+
+/**
+ * @param {Readonly<Record<string, any>>} config the world's config
  * @returns {boolean} whether any social effect has a strength above 0 (`hoarseFactor`: above 1), so its stored stacks can
  *   move the world
  */

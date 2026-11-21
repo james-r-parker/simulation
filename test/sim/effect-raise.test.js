@@ -2,9 +2,11 @@
 // social effect needs beyond today's two: a timer scaled by a lane of the body (`by`), a hand-over to another effect when the
 // timer ends (`then`) and a clock the applier keeps itself (`held`).
 
+import v8 from 'node:v8';
+import vm from 'node:vm';
 import { describe, expect, it } from 'vitest';
-import { EVENT, EVENT_STRIDE, EVENT_TYPE } from '../../js/sim/events.js';
-import { createEffects } from '../../js/sim/effects.js';
+import { EVENT, EVENT_STRIDE, EVENT_TYPE, clearEvents } from '../../js/sim/events.js';
+import { EFFECT, createEffects, fadeEffects, raiseOn } from '../../js/sim/effects.js';
 import { dropStack, raiseEffect, setStacks } from '../../js/sim/effect-raise.js';
 import { smallWorld } from './helpers/small-world.js';
 
@@ -127,5 +129,33 @@ describe('dropStack', () => {
     it('refuses an effect that stores nothing', () => {
         const none = createEffects([{ ...AFTER, name: 'none', level: 'step', read: () => 0 }]);
         expect(() => dropStack(none, world(), 0, 0)).toThrow(/stores no stacks/);
+    });
+});
+
+describe('a raise, a set and the fade pass', () => {
+    it('allocate nothing: the cause, the event record and the fade row are reused', () => {
+        v8.setFlagsFromString('--expose-gc');
+        const gc = vm.runInNewContext('gc');
+        const w = smallWorld({ maxAgents: 8 });
+        const passes = 300;
+        const run = () => {
+            for (let i = 0; i < passes; i++) {
+                clearEvents(w.events);
+                for (let slot = 0; slot < 8; slot++) {
+                    raiseOn(w, slot, EFFECT.PANICKED, 1);
+                    raiseOn(w, slot, EFFECT.HOARSE, slot);
+                }
+                fadeEffects(w);
+            }
+        };
+        run();
+        let best = Infinity;
+        for (let window = 0; window < 10; window++) {
+            gc();
+            const before = process.memoryUsage().heapUsed;
+            run();
+            best = Math.min(best, process.memoryUsage().heapUsed - before);
+        }
+        expect(best).toBeLessThan(passes * 4);
     });
 });
