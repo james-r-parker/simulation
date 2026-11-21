@@ -6,7 +6,6 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { buildRelease, cliDeps as buildDeps } from '../scripts/build-release.mjs';
 import { cliDeps as planDeps, runDeployPlan, seasonNextOf, spawnStatus } from '../scripts/deploy-plan.mjs';
-import { currentBranch } from '../scripts/lib/release-check.mjs';
 import { commentFromEnv } from '../scripts/preview-comment.mjs';
 import {
     cliDeps as releaseCheckDeps,
@@ -51,16 +50,24 @@ describe('runReleaseCheck', () => {
         expect(calls[0]).toEqual(['merge-base', 'HEAD', 'origin/main']);
     });
 
-    it('fails a rules change without a breaking commit, and passes it with a breaking PR title', () => {
-        const deps = { git: fakeGit().git, rulesHashAt: () => 'h1', headHash: 'h2', headSeasons: '[]' };
-        const bad = runReleaseCheck({ ...deps, env: { GITHUB_BASE_REF: 'season/next' } });
+    it('fails a rules change on main without a breaking PR title, though its commits are breaking', () => {
+        const git = fakeGit({ log: 'feat(sim)!: new rules\0', seasons: '[]' }).git;
+        const deps = { git, rulesHashAt: () => 'h1', headHash: 'h2', headSeasons: '[{"season":1}]' };
+        const bad = runReleaseCheck({ ...deps, env: { GITHUB_BASE_REF: 'main', PR_TITLE: 'feat(sim): new rules' } });
         expect(bad.ok).toBe(false);
         expect(JSON.parse(bad.line)).toMatchObject({
             event: 'ReleaseCheckFailed',
             reason: 'rules-change-not-breaking',
         });
-        const good = runReleaseCheck({ ...deps, env: { BASE_REF: 'season/next', PR_TITLE: 'feat(sim)!: new rules' } });
-        expect(good).toEqual({ ok: true, line: 'release-check ok (base season/next, rulesHash changed)' });
+    });
+
+    it('fails a breaking rules change on main with no new season, and passes it with one', () => {
+        const deps = { git: fakeGit().git, rulesHashAt: () => 'h1', headHash: 'h2' };
+        const env = { BASE_REF: 'main', PR_TITLE: 'feat(sim)!: new rules' };
+        const bad = runReleaseCheck({ ...deps, env, headSeasons: '[]' });
+        expect(JSON.parse(bad.line)).toMatchObject({ reason: 'rules-change-without-season' });
+        const good = runReleaseCheck({ ...deps, env, headSeasons: '[{"season":1}]' });
+        expect(good).toEqual({ ok: true, line: 'release-check ok (base main, rulesHash changed)' });
     });
 });
 
@@ -305,11 +312,6 @@ describe('the small real helpers', () => {
     it('spawnStatus returns a command exit status', () => {
         expect(spawnStatus('node', ['-e', 'process.exit(0)'])).toBe(0);
         expect(spawnStatus('node', ['-e', 'process.exit(4)'])).toBe(4);
-    });
-
-    it('currentBranch asks git outside CI and returns a string', () => {
-        expect(typeof currentBranch({ env: {} })).toBe('string');
-        expect(currentBranch({ env: { GITHUB_BASE_REF: 'season/next' } })).toBe('season/next');
     });
 });
 
