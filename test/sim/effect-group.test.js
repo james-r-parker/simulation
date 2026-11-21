@@ -6,7 +6,16 @@ import { cloneWithNoisePolicy } from '../../js/sim/birth-policy.js';
 import { createConfig } from '../../js/sim/config.js';
 import { GROUP_LANES, compileGroups, foldGroup } from '../../js/sim/effect-group.js';
 import { LEVEL, LANE_ID } from '../../js/sim/effect-refs.js';
-import { EFFECT, GROUP, SYSTEM, costFactors, liveIn, liveOf, motionFactors } from '../../js/sim/effects.js';
+import {
+    EFFECT,
+    GROUP,
+    SYSTEM,
+    costFactors,
+    heatFactors,
+    liveIn,
+    liveOf,
+    motionFactors,
+} from '../../js/sim/effects.js';
 import { createWorld } from '../../js/sim/spawn.js';
 import { step } from '../../js/sim/step.js';
 
@@ -28,7 +37,7 @@ const ON = {
  * @returns {number} the lanes compared
  */
 function compareSlot(world, slot, differ) {
-    const read = [motionFactors, costFactors];
+    const read = [motionFactors, costFactors, heatFactors];
     let compared = 0;
     for (let group = 0; group < GROUP_LANES.length; group++) {
         read[group](world, slot);
@@ -95,6 +104,19 @@ describe('the group reads', () => {
         const cost = world.effectGroups[GROUP.COST];
         expect(Array.from(cost.effects)).toEqual([EFFECT.JUVENILE]);
         expect(Array.from(cost.band)).toEqual([-1, -1, EFFECT.COLD_RAMP, EFFECT.HOT_RAMP, -1]);
+        const heat = world.effectGroups[GROUP.HEAT];
+        expect([Array.from(heat.effects), heat.banded]).toEqual([[], false]);
+        expect(Array.from(heat.lanes)).toEqual([LANE_ID.temperatureGainMove, LANE_ID.temperatureLossPassive]);
+    });
+
+    it('reads the heat lanes through the adrenaline, rally and huddle effects once their numbers are on', () => {
+        const world = createWorld(
+            createConfig({ seed: 9, initialAgents: 4, minAgents: 4, maxAgents: 8, ...ON, huddleWarmth: 0.1 }),
+            cloneWithNoisePolicy(),
+        );
+        expect(Array.from(world.effectGroups[GROUP.HEAT].effects)).toEqual(
+            [EFFECT.PANICKED, EFFECT.RALLIED, EFFECT.HUDDLED].sort((a, b) => a - b),
+        );
     });
 
     it('folds every lane of the group in the one call, so liveIn reads the folded row and folds nothing', () => {

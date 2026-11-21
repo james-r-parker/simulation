@@ -1,8 +1,8 @@
 // Reading a slot's effect levels once for a group of lanes (docs/designs/status-effects.md, Phase 5): `foldGroup` reads
 // every effect that a rule of the group's lanes names at the current config (`world.laneRules`) once, into the group's level
-// row, and folds every lane of the group from it in the same pass, its base read inside it; `liveIn` reads a folded lane. The turn and thrust of a slot (`MOTION`, in `actAll`) and the
-// six cost lanes of `tickCost` (`COST`) each read their levels once, where each lane read them again. The temperature
-// effects are read by one band read of `temperature[slot]` and its lanes. The levels are the same numbers read from the
+// row, and folds every lane of the group from it in the same pass, its base read inside it; `liveIn` reads a folded lane.
+// The turn and thrust of a slot (`MOTION`, in `actAll`), the six cost lanes of `tickCost` (`COST`) and the two heat lanes
+// of `stepTemperature` (`HEAT`) each read their levels once, where each lane read them again. The temperature effects are read by one band read of `temperature[slot]` and its lanes. The levels are the same numbers read from the
 // same state at the same point of the tick, multiplied in the same order, so a lane folds to the bits `liveOf` gives.
 // Allocates nothing per call; no RNG.
 
@@ -11,7 +11,7 @@ import { ruleFactor } from './effect-factor.js';
 import { BAND, BAND_EFFECTS, bandLevels } from './effect-levels.js';
 
 /** The groups of lanes read together. */
-export const GROUP = Object.freeze({ MOTION: 0, COST: 1 });
+export const GROUP = Object.freeze({ MOTION: 0, COST: 1, HEAT: 2 });
 
 /** Each group's lanes, by `GROUP` code. */
 export const GROUP_LANES = Object.freeze([
@@ -21,6 +21,7 @@ export const GROUP_LANES = Object.freeze([
             (name) => /** @type {Record<string, number>} */ (LANE_ID)[name],
         ),
     ),
+    Object.freeze([LANE_ID.temperatureGainMove, LANE_ID.temperatureLossPassive]),
 ]);
 
 /** Each grouped lane's position in its group's `live` row, by lane index; -1 for a lane in no group. */

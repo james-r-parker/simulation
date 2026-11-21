@@ -510,3 +510,13 @@ export function motionFactors(world, slot) {
 export function costFactors(world, slot) {
     foldGroup(SYSTEM.dispatch, world, slot, GROUP.COST);
 }
+
+/**
+ * Folds the two heat lanes of `stepTemperature` for the slot (`GROUP.HEAT`), each effect level read once, for `liveIn`.
+ * @param {any} world the world
+ * @param {number} slot the agent slot
+ * @returns {void}
+ */
+export function heatFactors(world, slot) {
+    foldGroup(SYSTEM.dispatch, world, slot, GROUP.HEAT);
+}
