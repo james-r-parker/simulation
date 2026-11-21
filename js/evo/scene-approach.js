@@ -22,7 +22,15 @@ import { CHASE_OUTCOME, chasesEnded, createChaseTally, tallyChase } from './chas
 import { notePreySight, scentChaseFlags } from './scene-scent.js';
 import { BITTEN_THIS_TICK } from './observer-intent-episode.js';
 import { findAlive } from './observer-intent.js';
-import { createLapseScene, lapseFlags, noteChaseLength, noteClosingProximity } from './scene-chase-lapse.js';
+import {
+    createLapseScene,
+    lapseFlags,
+    lapseMetrics,
+    noteChaseLength,
+    noteClosingProximity,
+} from './scene-chase-lapse.js';
+import { DEATH_CAUSE, EVENT } from '../sim/events.js';
+import { linkChaseScenes } from './scene-chase-link.js';
 
 const IDLE = 0;
 const OPEN = 1;
@@ -312,3 +320,26 @@ export function approachMetrics(scene) {
         'eval.chase_giveup_share': chases > 0 ? ok(aborted / chases) : noChase,
     };
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const approachDetector = {
+    name: 'approach',
+    modules: ['js/evo/scene-approach.js', 'js/evo/scene-chase-lapse.js'],
+    sourceTest: 'test/evo/metric-source-hunter-chases.test.js',
+    create: (config) => createApproachScene(config),
+    link: linkChaseScenes,
+    on: {
+        AGENT_DIED: (scene, world, o, observer) => {
+            const d = world.events.data;
+            if (d[o + EVENT.AGENT_DIED.CAUSE] === DEATH_CAUSE.EATEN) {
+                noteApproachKill(scene, observer, world, {
+                    killerId: d[o + EVENT.AGENT_DIED.BY],
+                    victimId: d[o + EVENT.AGENT_DIED.GENOME_ID],
+                });
+            }
+        },
+    },
+    onSlotFree: resetApproachSlot,
+    onTick: (scene, world, observer) => trackApproaches(scene, observer, world),
+    metrics: (scene) => ({ ...approachMetrics(scene), ...lapseMetrics(scene.lapse, scene.tally) }),
+};

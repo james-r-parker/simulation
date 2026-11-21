@@ -1,15 +1,28 @@
 import { describe, expect, it } from 'vitest';
-import { DEATH_CAUSE, EVENT_TYPE, pushEvent } from '../../js/sim/events.js';
+import { DEATH_CAUSE, EVENT_BY_CODE, EVENT_STRIDE, EVENT_TYPE, pushEvent } from '../../js/sim/events.js';
 import { BURN_IN_TICKS } from '../../js/evo/burn-in.js';
 import {
     createDiseaseScene,
     diseaseMetrics,
+    diseaseDetector,
     MIN_SLOPE_POINTS,
-    noteDiseaseEvents,
     sampleDiseaseFamilies,
 } from '../../js/evo/scene-disease.js';
 import { addBlob, lifeWorld } from '../sim/helpers/life-world.js';
 import { resultOf } from './helpers/metric-registry.js';
+
+/**
+ * Feeds the detector one tick: its tick hook, then each record to the handler that names its event.
+ * @param {any} scene the disease scene
+ * @param {any} w the world
+ * @returns {void}
+ */
+function noteDiseaseEvents(scene, w) {
+    diseaseDetector.onTick?.(scene, w, {});
+    for (let o = 0; o < w.events.count * EVENT_STRIDE; o += EVENT_STRIDE) {
+        diseaseDetector.on?.[EVENT_BY_CODE[w.events.data[o]].name]?.(scene, w, o, {});
+    }
+}
 
 /**
  * @param {Record<string, any>} [over] config overrides
@@ -94,10 +107,13 @@ describe('the scene while the contagion is off', () => {
         const w = world({ diseaseSeedRate: 0 });
         addBlob(w);
         const scene = createDiseaseScene(w.config);
+        w.tick = BURN_IN_TICKS + 1;
         push(w, EVENT_TYPE.STRAIN_EMERGED, [0, 0, 1, 1]);
+        push(w, EVENT_TYPE.AGENT_INFECTED, [1, 11, 0, 0]);
+        push(w, EVENT_TYPE.AGENT_DIED, [5, 15, DEATH_CAUSE.DISEASE]);
         noteDiseaseEvents(scene, w);
         sampleDiseaseFamilies(scene, w);
-        expect(scene.strains).toBe(0);
+        expect([scene.strains, scene.infections, scene.deaths, scene.ticks]).toEqual([0, 0, 0, 0]);
         expect(scene.alive).toBe(0);
     });
 });

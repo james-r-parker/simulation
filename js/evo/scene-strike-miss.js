@@ -73,3 +73,12 @@ export function strikeMissMetrics(scene, world) {
             income > 0 ? ok((scene.misses * world.config.strikeMissCost) / income) : none(NO_INCOME),
     };
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const strikeMissDetector = {
+    name: 'strikeMiss',
+    modules: ['js/evo/scene-strike-miss.js'],
+    create: () => createStrikeMissScene(),
+    onTick: (scene, world) => tickStrikeMiss(scene, world),
+    metrics: (scene, world) => strikeMissMetrics(scene, world),
+};

@@ -3,7 +3,14 @@
 
 import { describe, expect, it } from 'vitest';
 import { computeMetrics } from '../../js/evo/metrics.js';
-import { DASH_PX, MIN_REACH_SAMPLES, sampleReach } from '../../js/evo/scene-reach.js';
+import {
+    createReachScene,
+    DASH_PX,
+    DISTANCE_BIN_PX,
+    MIN_REACH_SAMPLES,
+    reachMetrics,
+    sampleReach,
+} from '../../js/evo/scene-reach.js';
 import { refugeCentres } from '../../js/evo/scene-terrain.js';
 import { ringRadius } from '../../js/sim/terrain.js';
 import { addBlob } from '../sim/helpers/life-world.js';
@@ -119,5 +126,14 @@ describe('eval.prey_in_patch_share', () => {
             sample(r, T0 + 10 * i);
         }
         expect(read(r, 'prey_in_patch_share').value).toBeCloseTo(0.25);
+    });
+});
+
+describe('prey_cover_distance past the last bin', () => {
+    it('reads the last bin when the samples beyond every bin outweigh the counted ones', () => {
+        const scene = createReachScene();
+        scene.hasRings = true;
+        scene.samples = MIN_REACH_SAMPLES;
+        expect(reachMetrics(scene)['eval.prey_cover_distance']).toEqual({ value: 655 * DISTANCE_BIN_PX });
     });
 });

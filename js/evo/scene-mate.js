@@ -131,3 +131,13 @@ export function mateMetrics(scene) {
         'eval.mate_hunter_lean': lean,
     };
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const mateDetector = {
+    name: 'mate',
+    modules: [],
+    create: (config) => createMateScene(config),
+    onSlotFree: resetMateSlot,
+    onTick: (scene, world, observer) => trackMatings(scene, observer, world),
+    metrics: () => ({}),
+};

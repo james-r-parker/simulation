@@ -25,7 +25,7 @@ describe('a lean observer', () => {
 
     it('builds no scene but style and terrain, and overrides no step phase', () => {
         const { observer } = lean();
-        expect(Object.keys(observer.scenes).sort()).toEqual(['lean', 'style', 'terrain']);
+        expect(Object.keys(observer.scenes).sort()).toEqual(['style', 'terrain']);
         expect(Object.keys(observerPhases(observer))).toEqual([]);
     });
 

@@ -21,7 +21,8 @@ import { noteChase } from './observer-watch-counters.js';
 import { noteIntentEvents } from './observer-intent-events.js';
 import { createIntentState, updateIntent } from './observer-intent.js';
 import { createLog } from './growable-log.js';
-import { createScenes, observeScenes } from './observer-scenes.js';
+import { createSceneLayer } from './detectors.js';
+import { dispatchEvents, tickDetectors } from './observer-detectors.js';
 import { createWindows, noteWindows } from './observer-windows.js';
 import { CELL_SIZE, countCollisions, countTick, MOTION_SAMPLE_TICKS } from './observer-tick.js';
 import { STEP_PHASES } from '../sim/step.js';
@@ -157,7 +158,7 @@ export function createObserver(config, rng, options = {}) {
         watchability: createWatchabilityPools(config),
         combat: createCombatCounters(config),
         intent: createIntentState(config),
-        scenes: createScenes(config, options.runTicks ?? 0, options.lean === true),
+        ...createSceneLayer(config, options),
         windows: createWindows(options.runTicks ?? 0),
         ...createBrainPools(config, options),
         instinct: createInstinctPools(config),
@@ -180,7 +181,8 @@ export function observe(observer, world, fitness) {
     updateIntent(observer.intent, world, observer.slotOf);
     noteChase(observer, world);
     noteIntentEvents(observer, world);
-    observeScenes(observer, world);
+    dispatchEvents(observer.plan, observer, world);
+    tickDetectors(observer.plan, observer, world);
     applyEvents(observer, world, fitness);
     const full = !observer.lean;
     if (full) {

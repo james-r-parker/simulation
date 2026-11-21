@@ -139,3 +139,13 @@ export function kinProximityMetrics(scene) {
         'eval.juvenile_parent_pull': parent > 0 ? ok(sibling / parent) : none('the juveniles stand on their parents'),
     };
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const kinDetector = {
+    name: 'kin',
+    modules: ['js/evo/scene-kin-proximity.js'],
+    every: 1000,
+    create: (config) => createKinProximityScene(config),
+    onTick: (scene, world) => sampleKinProximity(scene, world),
+    metrics: (scene) => kinProximityMetrics(scene),
+};

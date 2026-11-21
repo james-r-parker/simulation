@@ -80,3 +80,13 @@ export function budgetMetrics(scene) {
         'eval.hunter_territory_blocked_share': scene.eligible > 0 ? ok(scene.blocked / scene.eligible) : none(noHunter),
     };
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const budgetDetector = {
+    name: 'budget',
+    modules: ['js/evo/scene-recruit-budget.js'],
+    every: 1000,
+    create: () => createBudgetScene(),
+    onTick: (scene, world) => sampleBudget(scene, world),
+    metrics: (scene) => budgetMetrics(scene),
+};

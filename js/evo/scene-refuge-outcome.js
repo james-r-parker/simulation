@@ -174,3 +174,17 @@ export function refugeOutcomeMetrics(scene) {
                 : none('no threatened and calm prey sample after burn-in'),
     };
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const refugeOutcomeDetector = {
+    name: 'refugeOutcome',
+    modules: ['js/evo/scene-refuge-outcome.js'],
+    create: (config) => createRefugeOutcomeScene(config),
+    onTick: (scene, world, observer) => {
+        tickRefugeBites(scene, observer, world);
+        if (world.tick % GROUP_SAMPLE_TICKS === 0) {
+            sampleRefugeOutcome(scene, observer, world);
+        }
+    },
+    metrics: (scene) => refugeOutcomeMetrics(scene),
+};

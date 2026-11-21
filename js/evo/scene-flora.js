@@ -308,3 +308,13 @@ export function floraMetrics(scene) {
         }),
     };
 }
+
+/** @type {import('./observer-detectors.js').Detector} */
+export const floraDetector = {
+    name: 'flora',
+    modules: ['js/evo/scene-flora.js'],
+    atStart: true,
+    create: () => createFloraScene(),
+    onTick: (scene, world) => trackFlora(scene, world),
+    metrics: (scene) => floraMetrics(scene),
+};
