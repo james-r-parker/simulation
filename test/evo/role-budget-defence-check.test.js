@@ -32,9 +32,34 @@ describe('defenceCheck at the defaults', () => {
     });
 });
 
-describe('defenceCheck on a formula that has drifted', () => {
-    it('marks a reading drift when the formula and the scene part: a model that is not the sim names the difference', () => {
-        // the brains of the scenes react at `reactionTicks`; the formula reads the model's: a model of the same value agrees
+describe('defenceCheck with other models', () => {
+    const SLOW = {
+        maxVelocity: 4.5,
+        defenderRepelEnergy: 40,
+        defenderRepelImpulse: 4,
+        defenderRepelCost: 2,
+        specialisations: { predator: { sprintBoost: 0.5 } },
+    };
+
+    it('with the shove on, the defender lands its power before the kill in the formula and in the scene, and no kill tick is read', () => {
+        const run = defenceCheck(arenaConfig(SLOW), MODEL_DEFAULTS);
+        expect(run.drift).toBe(0);
+        const lands = run.readings.find((r) => r.what.startsWith('defender lands its power'));
+        expect([lands?.formula, lands?.scene]).toEqual([true, true]);
+        expect(run.readings.some((r) => r.what === 'kill tick')).toBe(false);
+    });
+
+    it('for a release before the hunter reaches the cloud it also reads the cloud, the blind ticks and the caller escape', () => {
+        const quick = { maxVelocity: 5, specialisations: { predator: { visionRange: 100 } } };
+        const run = defenceCheck(arenaConfig(quick), { ...MODEL_DEFAULTS, reactionTicks: 0 });
+        expect(run.drift).toBe(0);
+        const names = run.readings.filter((r) => r.row === 'smoke:defender').map((r) => r.what);
+        expect(names).toContain('hidden ticks');
+        expect(names).toContain('caller out of view when the cover ends');
+        expect(names).toContain('cloud centre, px ahead of the hunter');
+    });
+
+    it('the brains of the scenes react at the reactionTicks of the model, which the formula reads too', () => {
         const same = defenceCheck(arenaConfig(), { ...MODEL_DEFAULTS, reactionTicks: 4 });
         expect(same.drift).toBe(0);
         expect(same.readings[2].formula).toBe(9);

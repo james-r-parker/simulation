@@ -8,12 +8,12 @@ import { HEARD_STRIDE } from '../sim/agent-arrays.js';
 import { detCos, detSin } from '../sim/det-math.js';
 import { ARENA_CENTRE, stageArena } from './chase-arena.js';
 import { callerBrain, pursuerBrain, smokerBrain, steer, wrap } from './chase-oracles.js';
-import { gapAtAwareness } from './role-budget-frame.js';
+
 import { norm } from './role-budget-kinematics.js';
 import { roleParams } from './role-budget-params.js';
 import { viewReachCos } from './role-budget-senses.js';
 import { segmentHitsCloud } from './role-budget-smoke.js';
-import { runScene } from './role-scenes-defence.js';
+import { runScene, stageTrio } from './role-scenes-defence.js';
 
 /**
  * @param {Record<string, any>} world the world
@@ -66,7 +66,7 @@ function outOfView(world, { hunter, target, view }) {
     const dy = world.y[target] - world.y[hunter];
     const dist = norm(dx, dy);
     const angle = world.angle[hunter];
-    const cos = dist === 0 ? 1 : (dx * detCos(angle) + dy * detSin(angle)) / dist;
+    const cos = (dx * detCos(angle) + dy * detSin(angle)) / Math.max(dist, 1e-9);
     return dist >= viewReachCos(view, cos) + world.size[target];
 }
 
@@ -211,19 +211,13 @@ function fleeingCaller(slots) {
  * @returns {SmokeScene & {ticks: {heardTick: number, startTick: number}}} the readings from the real sim
  */
 export function playDefenderSmoke(config, { reaction, threshold, standing, facing = 'caller', trace }) {
-    const specs = /** @type {Record<string, any>} */ (config.specialisations);
-    const [hunter, caller, defender] = ['predator', 'forager', 'defender'].map((s) => roleParams(config, s));
-    const gap = gapAtAwareness(hunter, caller);
-    const spot = gap - (caller.size + defender.size);
-    const { x, y } = ARENA_CENTRE;
-    const staged = stageArena(config, [
-        { spec: specs.predator.index, x, y, angle: 0 },
-        { spec: specs.forager.index, x: x + gap, y, angle: 0 },
-        { spec: specs.defender.index, x: x + spot, y, angle: standing },
-    ]);
-    staged.world.vx[0] = hunter.cap.cruise;
+    let spot = 0;
+    const { staged, hunter, gap, origin } = stageTrio(config, (at) => {
+        spot = at.gap - (at.caller.size + at.defender.size);
+        return { x: spot, y: 0, angle: standing };
+    });
     const release = releaserBrain({ defender: 2, aim: facing === 'caller' ? 1 : -1, reaction, threshold });
-    const follow = followCloud({ hunter: 0, body: 1, origin: { x, y }, view: hunter });
+    const follow = followCloud({ hunter: 0, body: 1, origin, view: hunter });
     const brains = [
         blindHunter({ hunter: 0, target: 1 }),
         fleeingCaller({ caller: 1, hunter: 0, seeGap: gap, reaction }),

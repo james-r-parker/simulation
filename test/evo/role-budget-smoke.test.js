@@ -164,6 +164,32 @@ describe('defenderSmokeGeometry', () => {
     });
 });
 
+describe('a defender that cannot get there, and a caller that cannot get away', () => {
+    it('a defender that never reaches the line has no release: the tick is infinite and the cell impossible', () => {
+        const lame = { ...defender, thrust: { ...defender.thrust, base: 0 } };
+        const g = defenderSmokeGeometry([hunter, prey, lame], MODEL_DEFAULTS);
+        expect(g.releaseTick).toBe(Infinity);
+        expect(g.slackDefender).toBeNull();
+        expect(g.cell.status).toBe('impossible');
+    });
+
+    it('a caller that cannot run never leaves the hunter view: its slack is missing and the cell impossible', () => {
+        const stuck = { ...prey, thrust: { ...prey.thrust, base: 0 } };
+        const still = { ...hunter, cap: { cruise: 0, sprint: 0 }, thrust: { ...hunter.thrust, sprint: 0 } };
+        const g = defenderSmokeGeometry([still, stuck, defender], MODEL_DEFAULTS);
+        expect(g.escapeNeed).toBe(Infinity);
+        expect(g.slackCaller).toBeNull();
+        expect(g.cell.status).toBe('impossible');
+        expect(defenderSmokeGeometry([hunter, prey, defender], MODEL_DEFAULTS).slackCaller).not.toBeNull();
+    });
+
+    it('a body that cannot pay for the cloud reads impossible whatever the geometry', () => {
+        const broke = defenderSmokeGeometry([hunter, prey, { ...defender, energy: 10 }], MODEL_DEFAULTS);
+        expect(broke.cell.status).toBe('impossible');
+        expect(smokeCell(hunter, { ...prey, energy: 10 }, MODEL_DEFAULTS).cell.margin).toBeNull();
+    });
+});
+
 describe('a ray that meets a cloud returns a smoke hit', () => {
     it('the hunter behind a defender-released cloud senses smoke on its ray ahead, in the real sim', () => {
         const { x, y } = ARENA_CENTRE;

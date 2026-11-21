@@ -45,6 +45,33 @@ export function touching(world, a, b) {
 }
 
 /**
+ * Stages the hunter, the standing caller and the defender of the defence scenes: the hunter at the arena's centre heading +x at
+ * its cruise speed (it was creeping), the forager `gapAtAwareness` ahead of it facing away, and the defender where `place`
+ * says, relative to the hunter.
+ * @param {Readonly<Record<string, any>>} config an `arenaConfig`
+ * @param {(at: {gap: number, caller: import('./role-budget-params.js').RoleParams,
+ *   defender: import('./role-budget-params.js').RoleParams}) => {x: number, y: number, angle: number}} place where the
+ *   defender stands: its offset from the hunter and its heading
+ * @returns {{staged: ReturnType<typeof stageArena>, hunter: import('./role-budget-params.js').RoleParams,
+ *   caller: import('./role-budget-params.js').RoleParams, defender: import('./role-budget-params.js').RoleParams, gap: number,
+ *   origin: {x: number, y: number}}} the arena and what it was built from
+ */
+export function stageTrio(config, place) {
+    const specs = /** @type {Record<string, any>} */ (config.specialisations);
+    const [hunter, caller, defender] = ['predator', 'forager', 'defender'].map((s) => roleParams(config, s));
+    const gap = gapAtAwareness(hunter, caller);
+    const { x, y } = ARENA_CENTRE;
+    const at = place({ gap, caller, defender });
+    const staged = stageArena(config, [
+        { spec: specs.predator.index, x, y, angle: 0 },
+        { spec: specs.forager.index, x: x + gap, y, angle: 0 },
+        { spec: specs.defender.index, x: x + at.x, y: y + at.y, angle: at.angle },
+    ]);
+    staged.world.vx[0] = hunter.cap.cruise;
+    return { staged, hunter, caller, defender, gap, origin: { x, y } };
+}
+
+/**
  * @typedef {object} DefenceScene
  * @property {{alarmTick: number, heardTick: number, startTick: number, contactTick: number | null,
  *   interceptTick: number | null, repelTick: number | null, killTick: number | null}} ticks the ticks the formula names
@@ -60,17 +87,11 @@ export function touching(world, a, b) {
  *   defender: ReturnType<typeof defenderBrain>}} the arena (hunter, caller, defender) and its brains
  */
 function stage(config, { reaction, threshold, side, absent = false }) {
-    const specs = /** @type {Record<string, any>} */ (config.specialisations);
-    const hunter = roleParams(config, 'predator');
-    const caller = roleParams(config, 'forager');
-    const gap = gapAtAwareness(hunter, caller);
-    const { x, y } = ARENA_CENTRE;
-    const staged = stageArena(config, [
-        { spec: specs.predator.index, x, y, angle: 0 },
-        { spec: specs.forager.index, x: x + gap, y, angle: 0 },
-        { spec: specs.defender.index, x: x + gap, y: y + (absent ? ABSENT_SIDE : side), angle: -Math.PI / 2 },
-    ]);
-    staged.world.vx[0] = hunter.cap.cruise;
+    const { staged, gap } = stageTrio(config, ({ gap: g }) => ({
+        x: g,
+        y: absent ? ABSENT_SIDE : side,
+        angle: -Math.PI / 2,
+    }));
     const defender = defenderBrain({ defender: 2, hunter: 0, reaction, threshold });
     const brains = [
         pursuerBrain({ pursuer: 0, evader: 1, sprint: true }),

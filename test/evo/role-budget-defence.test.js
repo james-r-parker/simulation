@@ -85,4 +85,10 @@ describe('defenceTimeline', () => {
         expect(trace[0]).toEqual([0, expect.any(Number), 0, expect.any(Number), 150]);
         expect(trace.length).toBe(27);
     });
+
+    it('a hunter that starts from rest reaches the caller later than one that was creeping', () => {
+        const creeping = play({}, { absent: true });
+        const rest = play({}, { absent: true, hunterStart: 'rest' });
+        expect(/** @type {number} */ (rest.contactTick)).toBeGreaterThan(/** @type {number} */ (creeping.contactTick));
+    });
 });

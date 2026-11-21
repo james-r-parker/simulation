@@ -179,7 +179,7 @@ function formatDefenceCheck(readings) {
 }
 
 /**
- * @param {{kinematics: import('../../js/evo/role-budget-check.js').KinematicRow[], pairs: {pair: string, straight: any[], broken: any[]}[]}} check the cross-check
+ * @param {{kinematics: import('../../js/evo/role-budget-check.js').KinematicRow[], pairs: {pair: string, straight: any[], broken: any[]}[], defence: import('../../js/evo/role-budget-defence-check.js').DefenceReading[]}} check the cross-check
  * @returns {string} the kinematic readings and, per pair and bound, the cells that disagree or drift
  */
 export function formatCheck(check) {
@@ -211,7 +211,7 @@ export function formatCheck(check) {
             );
         }
     }
-    if (check.defence?.length > 0) {
+    if (check.defence.length > 0) {
         lines.push(formatDefenceCheck(check.defence));
     }
     return lines.join('\n\n');

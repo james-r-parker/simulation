@@ -3,10 +3,9 @@
 // run and intercept all possible) and the smoke (the defender's release possible). Each finding is a full overrides object in
 // the format `audit:chase --config` reads. Pure; the script writes the files.
 
-import { arenaConfig } from './chase-arena.js';
 import { budgetDefend } from './role-budget-defend.js';
 import { roleParams } from './role-budget-params.js';
-import { FACTORS, getPath, withPath } from './role-budget-search.js';
+import { FACTORS, getPath, scaled } from './role-budget-search.js';
 
 /**
  * The default candidates. A setting that is 0 in the config (the shove at the defaults) is skipped: no factor moves it.
@@ -86,20 +85,24 @@ function reached(budget, goal) {
  * @returns {DefenderFinding | null} the finding when the change reaches the goal, null when it does not or the config refuses it
  */
 function tryChange(from, path, factor) {
-    const value = getPath(from.config, path) * factor;
-    const changed = withPath(from.overrides, path, value);
-    let next;
-    try {
-        next = arenaConfig(changed);
-    } catch {
+    const next = scaled(from.config, { overrides: from.overrides, path, factor });
+    if (next === null) {
         return null;
     }
-    const budget = budgetOf(next, from.model);
+    const budget = budgetOf(next.config, from.model);
     if (!reached(budget, from.goal)) {
         return null;
     }
     const margins = Object.fromEntries(Object.entries(budget.cells).map(([step, c]) => [step, c.margin]));
-    return { path, factor, value, goal: from.goal, margins, status: budget.row.status, overrides: changed };
+    return {
+        path,
+        factor,
+        value: next.value,
+        goal: from.goal,
+        margins,
+        status: budget.row.status,
+        overrides: next.overrides,
+    };
 }
 
 /**
@@ -117,11 +120,9 @@ export function searchDefender(
         return [];
     }
     const from = { config, overrides, model, goal };
-    const slack = (/** @type {DefenderFinding} */ f) =>
-        Object.values(f.margins).reduce((/** @type {number} */ sum, m) => sum + (m ?? 0), 0);
     return candidates
         .filter((path) => getPath(config, path) > 0)
         .flatMap((path) => factors.map((factor) => tryChange(from, path, factor)))
         .filter((f) => f !== null)
-        .sort((a, b) => Math.abs(a.factor - 1) - Math.abs(b.factor - 1) || slack(b) - slack(a));
+        .sort((a, b) => Math.abs(a.factor - 1) - Math.abs(b.factor - 1));
 }

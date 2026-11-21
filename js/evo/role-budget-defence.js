@@ -3,7 +3,6 @@
 // of the chase timeline (`stepBody`, `collide`, `bite`, `costOf`) and the oracle's rules (`hunterOut`), so the defence
 // cannot step differently from the chase. The defender's shove is `tryDefenderRepel` of js/sim/defender-repel.js.
 
-import { detCos, detSin } from '../sim/det-math.js';
 import { norm, turnCircle } from './role-budget-kinematics.js';
 import { bite, charge, collide, costOf, createBody, inJaws, speedOf, stepBody } from './role-budget-body.js';
 import { HUNTER_PERFECT, hunterOut } from './role-budget-play.js';
@@ -59,9 +58,9 @@ const touching = (a, b) => norm(b.x - a.x, b.y - a.y) < a.size + b.size;
  */
 function shove(d, h) {
     const { repel } = d.p;
-    const dist = norm(h.x - d.x, h.y - d.y);
-    const nx = dist > 0 ? (h.x - d.x) / dist : detCos(d.angle);
-    const ny = dist > 0 ? (h.y - d.y) / dist : detSin(d.angle);
+    const dist = Math.max(norm(h.x - d.x, h.y - d.y), 1e-9);
+    const nx = (h.x - d.x) / dist;
+    const ny = (h.y - d.y) / dist;
     d.energy = Math.max(0, d.energy - repel.cost);
     h.energy = Math.max(0, h.energy - repel.energy);
     h.vx += nx * repel.impulse;

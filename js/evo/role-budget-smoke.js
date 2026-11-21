@@ -68,7 +68,7 @@ export function hunterXs(hunter, { speed, sprint = true, ticks = MAX_TICKS }) {
 function inView(hunter, body, hx) {
     const dx = body.x - hx;
     const dist = norm(dx, body.y);
-    return dist < viewReachCos(hunter, dist === 0 ? 1 : dx / dist) + body.size;
+    return dist < viewReachCos(hunter, dx / Math.max(dist, 1e-9)) + body.size;
 }
 
 /**
@@ -141,8 +141,7 @@ export function smokeCell(hunter, prey, model) {
     });
     const state = mayRelease(prey, model, model);
     const margin = hiddenTicks - escapeNeed - model.reactionTicks;
-    let slack = margin >= 0 ? margin : null;
-    slack = state === 'broke' ? null : state === 'cooling' ? undefined : slack;
+    const slack = smokeMargin({ refused: false, state, slacks: [margin >= 0 ? margin : null] });
     return {
         cell: cell(slack, model),
         hiddenTicks,
