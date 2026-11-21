@@ -94,6 +94,11 @@ export function shouldOpenInspector(drawer, id, hudShown) {
  * @property {(event: import('./idle.js').InputEvent) => void} [onInput] hears each input that counted, for TV mode
  * @property {(items: any[]) => void} [onTicker] hears each ticker message, for the director's feed
  * @property {() => number} getWidth the canvas width in CSS px, for the automatic HUD size
+ * @property {() => import('./interpolate.js').Interpolated} [getAgents] the frame's agents, for the scene counters
+ * @property {() => {count: number, hunter: Int32Array} | null} [getPursuits] the renderer's pursuit table, for the scene
+ *   counters
+ * @property {(target: import('./insights-follow.js').InsightTarget) => void} [followTarget] follows what an insights row
+ *   names
  * @property {() => {agents: import('./interpolate.js').Interpolated,
  *   player: import('./renderer/effects-player.js').EffectsPlayer | null} | null} [getFollowView] the frame's agents and
  *   effects player, for the subject plate
@@ -389,7 +394,10 @@ export function createInterface(deps) {
         syncRays: () => syncRays(ctx),
         startWorld: (seed) => startWorld(ctx, seed),
         toast: ctx.toast,
-        onEffect: (effect) => ctx.audio.onEffect(effect),
+        onEffect(effect) {
+            ctx.audio.onEffect(effect);
+            ctx.insights.noteEffect(effect);
+        },
         afterDraw: (frame) => ctx.capture.afterDraw(frame),
         openInspectorOnPick(id = deps.state.selectedId) {
             if (shouldOpenInspector(ctx.drawers.state(), id, !ctx.hidden)) {
@@ -414,6 +422,7 @@ export function createInterface(deps) {
         idleMs: () => ctx.idle.idleMs(),
         resize: () => applyScale(ctx),
         tick(nowMs) {
+            ctx.insights.noteFrame(nowMs);
             refreshParts(ctx, nowMs);
             ctx.tvUi.tick();
         },

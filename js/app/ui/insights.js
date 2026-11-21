@@ -2,6 +2,7 @@
 // panel on the board). It owns no data: the view comes from `insights-data.js`, `scene-counters.js` and the lists, and
 // a click on a row reports its target. Over an injected document.
 
+import { mountScenesTab } from './insights-scenes.js';
 import { mountWorldTab } from './insights-world.js';
 
 /**
@@ -15,7 +16,10 @@ import { mountWorldTab } from './insights-world.js';
  * own part of the view (`view[id]`), and may return more.
  * @type {readonly {id: string, label: string, mount: (doc: any, panel: any, hooks: InsightsHooks) => any}[]}
  */
-export const TABS = Object.freeze([{ id: 'world', label: 'World', mount: mountWorldTab }]);
+export const TABS = Object.freeze([
+    { id: 'world', label: 'World', mount: mountWorldTab },
+    { id: 'scenes', label: 'Scenes', mount: mountScenesTab },
+]);
 
 /** The tab shown when none is chosen. */
 export const DEFAULT_TAB = 'world';

@@ -23,6 +23,9 @@
     "test/app/hud-css.test.js": [
         "css/app.css"
     ],
+    "test/app/scene-counters.test.js": [
+        "docs/principles.md"
+    ],
     "test/archive-source.test.js": [
         "test/fixtures/stages/hunt-contact.json"
     ],
