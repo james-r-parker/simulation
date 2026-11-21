@@ -3,6 +3,7 @@
 // spec's `body` overrides say. Plain numbers only; no function, no world, no RNG.
 
 import { LANES, laneBases } from '../sim/body-lanes.js';
+import { checkTraits, lanesAt } from './role-budget-genes.js';
 import { EFFECT, effectFactor } from '../sim/effects.js';
 
 /** The share of its store a body holds at the start of a scene: the arena's `STORE_SHARE` of `chase-body.js`. */
@@ -71,15 +72,22 @@ function thrustEfficiency(config, lane) {
 }
 
 /**
- * @param {Readonly<Record<string, any>>} config the validated config
- * @param {Record<string, number>} lane the spec's lane bases
- * @returns {number} what `passiveMultiplier` was: the cold and hot ramps' factor on the standing cost at the start temperature
+ * @param {import('../sim/world.js').World} world a one-slot world at the temperature wanted
+ * @returns {number} what `passiveMultiplier` was: the cold and hot ramps' factor on the standing cost
  */
-function passiveMultiplier(config, lane) {
-    const world = startWorld(config, lane);
+export function passiveFactorAt(world) {
     return (
         effectFactor(world, 0, EFFECT.COLD_RAMP, 'passiveLoss') * effectFactor(world, 0, EFFECT.HOT_RAMP, 'passiveLoss')
     );
+}
+
+/**
+ * @param {Readonly<Record<string, any>>} config the validated config
+ * @param {Record<string, number>} lane the spec's lane bases
+ * @returns {number} the passive factor at the start temperature
+ */
+function passiveMultiplier(config, lane) {
+    return passiveFactorAt(startWorld(config, lane));
 }
 
 /**
@@ -126,36 +134,20 @@ function costOf(config, lane, { entry, burn }) {
 }
 
 /**
- * @param {Readonly<Record<string, any>>} config the validated config
- * @param {string} specName a specialisation name
- * @param {Record<string, number>} traits the trait ratios asked for
- * @returns {void}
- * @throws {Error} on an unknown specialisation or a non-empty `traits`
- */
-function refuse(config, specName, traits) {
-    if (!Object.hasOwn(config.specialisations, specName)) {
-        throw new Error(`roleParams: unknown specialisation "${specName}"`);
-    }
-    if (Object.keys(traits).length > 0) {
-        throw new Error('roleParams: trait ratios are not read until body-genes.md T10');
-    }
-}
-
-/**
  * Resolves one specialisation's numbers.
  * @param {Readonly<Record<string, any>>} config the validated config
  * @param {string} specName a specialisation name
- * @param {Record<string, number>} [traits] a ratio per trait (none are read until body-genes.md T10 builds the gene
- *   values; a non-empty map is refused rather than ignored)
+ * @param {Record<string, number>} [traits] a ratio per trait, composed as `applyTraits` composes it (a trait left out is at
+ *   1; `heatBand` is a shift in degrees); with every ratio 1 the lanes are `laneBases`
  * @param {{age?: 'adult' | 'juvenile', storeShare?: number}} [options] the age and the store share the body starts at
  * @returns {Readonly<RoleParams>} the record
- * @throws {Error} on an unknown specialisation or a non-empty `traits`
+ * @throws {Error} on an unknown specialisation or a name in `traits` that is not a trait
  */
 export function roleParams(config, specName, traits = {}, options = {}) {
-    refuse(config, specName, traits);
+    checkTraits(config, specName, traits);
     const { age = 'adult', storeShare = STORE_SHARE } = options;
     const entry = config.specialisations[specName];
-    const lane = laneBases(config, specName);
+    const lane = lanesAt(config, laneBases(config, specName), traits);
     const energy = storeShare * lane.maxEnergy;
     const size = Math.max(lane.minSize, lane.baseSize + energy / lane.energyToSize);
     const fat = 1 - (lane.fatSlowShare * energy) / lane.maxEnergy;

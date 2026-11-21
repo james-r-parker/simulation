@@ -12,6 +12,7 @@ function world({ sibling, bite, subjectAlive = 1, siblingAlive = 1 }) {
     outputs[OUTPUT_INDEX.BITE] = bite;
     return {
         config: { biteArc: Math.PI / 2 },
+        lanes: { biteArc: Float64Array.of(Math.PI / 2, Math.PI / 2, Math.PI / 2) },
         biteCos: Float32Array.of(Math.cos(Math.PI / 2)),
         alive: Uint8Array.of(subjectAlive, 1, siblingAlive),
         x: Float32Array.of(0, 500, sibling.x),

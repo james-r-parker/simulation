@@ -1,0 +1,19 @@
+{
+  "id": "E263",
+  "plan": "body-genes.md",
+  "task": "T14a",
+  "stream": "step5-candidates",
+  "date": "2026-11-21",
+  "branch": "analysis/step5-candidates",
+  "hypothesis": "Step 5 candidates (lane B, body-genes Phase 3 with status-effects Phase 3): the full role budget, read on the defaults and each arm of evals/fair-chase/ with every effect off, and searched, names a small set of spec, birth and world numbers that turns as many rows green together as the constraints allow (no movement-physics change, no rescue, the sitter's ratio not rising with birth energy).",
+  "prediction": "The hunter rows, the first-meal rows and the herd rows can be turned non-red with a few numbers; the idle rows and the defender row cannot by a single global setting; predator:living waited on the p4 cost fix.",
+  "targets": [],
+  "before": "defaults and control: 2 ok / 8 tight / 15 red / 1 n/a; courser and long 6 / 7 / 12; even 5 / 8 / 12; stalker 1 / 9 / 15 (26 rows)",
+  "after": "step5-b (courser store, entrantEnergy 400, herdRunSpeed 5.5): 10 ok / 9 tight / 6 red / 1 n/a, --check exit 0; step5-a (predator sprintBoost 2.4, store off, same birth and herd): 10 / 9 / 6; step5-c (step5-b colder): 7 / 9 / 9, rejected",
+  "verdicts": {},
+  "effect": "no-difference",
+  "note": "A tool reading, not a run: npm run role:budget with --check and --search, seconds each; no default changed. Still red on every candidate: the three prey run rows (green exactly where the hunter rows are red: the prey row counts a life's 138 encounters against a perfect hunter), predator:living and predator:first-meal (red post-fix too: 602's fix moved step5-b's net at catch share 0.3 from -477 to -362.9 and step5-a's from -41 to -40.7, neither positive), defender:predator (smoke red on every config, intercept needs a slower kill). Idle rows stay tight: the searcher's cost at bestRangeSpeed is twice the standing cost and the cold multiplies both, so the ratio tends to 1 + 1/heat; the chilled keys are not in the config yet (status-effects T9).",
+  "kind": "characterisation",
+  "outcome": "finding",
+  "reports": ["evals/decisions/step5-candidates/results.md"]
+}

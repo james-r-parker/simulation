@@ -9,12 +9,12 @@
 import { LOSS_CAUSE, removeEnergy, transferEnergy } from './energy.js';
 
 /**
- * @param {Readonly<Record<string, any>>} config the world's config
+ * @param {number} killShare the victim's `killShare` lane
  * @param {number} victimMax the victim's maximum energy
  * @returns {number} the energy at or under which a bite kills (0: only an empty store)
  */
-export function killLine(config, victimMax) {
-    return config.killShare * victimMax;
+export function killLine(killShare, victimMax) {
+    return killShare * victimMax;
 }
 
 /**
@@ -28,8 +28,8 @@ export function killLine(config, victimMax) {
 export function takeBody(world, biter, victim) {
     const headroom = world.lanes.maxEnergy[biter] - world.energy[biter];
     const victimEnergy = world.energy[victim];
-    const shareCap = world.config.killGorgeShare * victimEnergy;
-    transferEnergy(world, victim, biter, Math.min(victimEnergy, shareCap, world.config.killGorgeCap, headroom));
+    const shareCap = world.lanes.killGorgeShare[biter] * victimEnergy;
+    transferEnergy(world, victim, biter, Math.min(victimEnergy, shareCap, world.lanes.killGorgeCap[biter], headroom));
     const stored = world.transferGained;
     world.biteEnergy[biter] += stored;
     world.carcassHeld[victim] += removeEnergy(world, victim, world.energy[victim], LOSS_CAUSE.BITE);

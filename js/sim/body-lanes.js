@@ -72,6 +72,21 @@ const MOVED = new Set([
     'temperatureEfficiencyColdModerate',
     'temperatureEfficiencyHeatModerate',
     'temperatureEfficiencyHeatSevere',
+    // body-genes Phase 5 T40: the combat readers (feeding, bite rule, kill body, defender repel).
+    'biteEnergy',
+    'biteCost',
+    'recoilEnergy',
+    'huntSizeRatio',
+    'biteArc',
+    'strikeMissCost',
+    'killShare',
+    'killGorgeCap',
+    'killGorgeShare',
+    'defenderRepelEnergy',
+    'defenderRepelCost',
+    'defenderRepelImpulse',
+    'kickMultiplier',
+    'predatorRestTicks',
     ...THRESHOLDS,
 ]);
 
@@ -242,6 +257,17 @@ export function bodyProblem(body, lanes = LANES) {
         }
     }
     return null;
+}
+
+/**
+ * Whether a lane is above 0 for some spec's base. Traits only scale a lane by positive ratios, so a lane at 0 for every
+ * spec stays 0 in every body: a world-level gate (a feature that exists only when its lane can be on) reads this once.
+ * @param {Readonly<Record<string, any>>} config the validated config
+ * @param {string} name a lane's name
+ * @returns {boolean}
+ */
+export function laneOnForAnySpec(config, name) {
+    return SPEC_NAMES.some((specName) => laneBases(config, specName)[name] > 0);
 }
 
 /**

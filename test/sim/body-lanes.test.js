@@ -66,6 +66,7 @@ describe('LANES', () => {
             'grazeThrust',
             'fatSlowShare',
             'sickThrust',
+            'predatorRestTicks',
             'antennaReach',
             'refugeSenseRange',
             'visionRange',
@@ -92,8 +93,21 @@ describe('LANES', () => {
             'temperatureEfficiencyHeatSevere',
             'heatSpeedCap',
             'sprintHeat',
+            'biteEnergy',
+            'biteCost',
+            'recoilEnergy',
+            'huntSizeRatio',
+            'biteArc',
+            'strikeMissCost',
+            'killShare',
+            'killGorgeCap',
+            'killGorgeShare',
             'alarmBiteShare',
+            'defenderRepelEnergy',
+            'defenderRepelCost',
+            'defenderRepelImpulse',
             'biteTakenMultiplier',
+            'kickMultiplier',
             'childEnergyShare',
         ]);
         expect(LANES.filter((lane) => lane.kind === 'offset').every((lane) => lane.moved)).toBe(true);
@@ -172,7 +186,7 @@ describe('bodyProblem', () => {
 
     it('refuses an unknown name, an unmoved lane and a threshold named directly', () => {
         expect(bodyProblem({ speed: 1 })).toMatch(/speed is neither/);
-        expect(bodyProblem({ biteEnergy: 1.2 })).toMatch(/no override of biteEnergy yet/);
+        expect(bodyProblem({ sprintFloor: 1.2 })).toMatch(/no override of sprintFloor yet/);
         expect(bodyProblem({ temperatureColdStress: 1 }, moved)).toMatch(/shift the thresholds with heatBand/);
         expect(bodyProblem({ [HEAT_BAND]: 1 }, unmoved)).toMatch(/no heatBand override yet/);
     });
@@ -189,8 +203,8 @@ describe('bodyProblem', () => {
     });
 
     it('is the rule createConfig applies to a spec body', () => {
-        expect(() => createConfig({ specialisations: { scout: { body: { biteEnergy: 2 } } } })).toThrow(
-            /config\.specialisations\.scout\.body is .*no override of biteEnergy yet/,
+        expect(() => createConfig({ specialisations: { scout: { body: { sprintFloor: 2 } } } })).toThrow(
+            /config\.specialisations\.scout\.body is .*no override of sprintFloor yet/,
         );
         expect(
             createConfig({ specialisations: { scout: { body: { maxThrust: 2 } } } }).specialisations.scout.body,

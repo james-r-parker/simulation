@@ -38,11 +38,19 @@ describe('parseArgs', () => {
             search: false,
             check: false,
             reliable: false,
+            genes: 'none',
             outDir: 'evals/role-budget',
             json: false,
             out: null,
             set: [],
         });
+    });
+
+    it('reads --genes and refuses a mode it does not know', () => {
+        expect(parseArgs(['--genes', 'corners']).genes).toBe('corners');
+        expect(() => parseArgs(['--genes', 'sideways'])).toThrow(
+            /--genes: "sideways" is not one of none, best-vs-worst/,
+        );
     });
 
     it('reads every flag, --set repeated', () => {
@@ -78,6 +86,7 @@ describe('parseArgs', () => {
             search: true,
             check: true,
             reliable: true,
+            genes: 'none',
             outDir: 'x',
             json: true,
             out: 'o.txt',
