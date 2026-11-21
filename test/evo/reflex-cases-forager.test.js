@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { createConfig } from '../../js/sim/config.js';
 import { createRng, fork } from '../../js/sim/rng.js';
-import { FORAGER_CASES, FORAGER_BARS } from '../../js/evo/reflex-cases-forager.js';
+import { reflexBars } from '../../js/evo/reflex-bars.js';
+import { FORAGER_CASES } from '../../js/evo/reflex-cases-forager.js';
 import { DEG, SEQUENCE_TICKS } from '../../js/evo/reflex-stage.js';
 
 const VIEW = 300;
@@ -184,9 +186,10 @@ describe('avoid-obstacle', () => {
     });
 });
 
-describe('FORAGER_BARS', () => {
+describe('the forager bars', () => {
     it('hold the starting values of the doc, calibrated', () => {
-        expect(FORAGER_BARS.turn).toBe(0.15);
-        expect(FORAGER_BARS.fleeBehindThrust).toBeGreaterThan(FORAGER_BARS.fleeThrust);
+        const bars = reflexBars(createConfig()).forager;
+        expect(bars.turn).toBe(0.15);
+        expect(bars.fleeBehindThrust).toBeGreaterThan(bars.fleeThrust);
     });
 });

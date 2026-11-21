@@ -175,6 +175,29 @@ The numbers are chosen with the calculator and read on the default world with [b
 | ----- | --------------- | ------- |
 | C     | T13, T15 to T19 | Sonnet  |
 
+### Phase 4 - Later effects (user, 2026-11-21)
+
+**Targets:** none - each later effect is planned in full (T20: scene served, payoff, cheat check, keys at 0) before it is built, and built only after Phase 3 sets the core numbers
+
+Borrowed from the buffs and debuffs of action role-playing games and kept only where nature does the same thing. Every one is a within-life modifier of a body, stacking, capped and timed like the rest of the registry; the defaults carry every job with all of them off, and none pays a body for an act (Decisions).
+
+| Effect       | What raises it                                                          | What it does                                                          | Scene or pressure it serves                                 |
+| ------------ | ----------------------------------------------------------------------- | --------------------------------------------------------------------- | ----------------------------------------------------------- |
+| `bleeding`   | a bite that lands, a stack a bite                                       | drains energy for a while and leaves a blood trail in the scent field | an escaped prey still pays; hunters and scavengers track it |
+| `marked`     | `bleeding` or sickness                                                  | the body is easier to smell and to see                                | the hunter's choice of the weak                             |
+| `toxic`      | a body of a toxic lineage (with [body-genes.md](body-genes.md) `liver`) | a hunter that bites it gains poison stacks                            | warning colours; hunters that learn to avoid a kind         |
+| `guarded`    | a defender or a group within reach                                      | smaller bites taken (safety in numbers)                               | the herd and the defender pay for staying close             |
+| `habituated` | alarms heard with no attack after them                                  | the hearer answers an alarm less, a stack at a time                   | the hearer's side of `hoarse`: a crying wolf stops working  |
+| `cornered`   | energy near the kill line, or pinned against a wall or rock             | a short burst of thrust and a harder bite                             | chases that turn; hunters that do not corner carelessly     |
+| `dazed`      | a trample or a hard collision                                           | steering fails for a few ticks                                        | stampedes and fights matter beyond their energy cost        |
+| `still`      | a body that has not moved for a while                                   | harder to see                                                         | freezing as a defence, against the cold that kills sitters  |
+| `groomed`    | kin touching                                                            | strips a stack of poison or parasite                                  | kin groups stay together                                    |
+| `postpartum` | a birth                                                                 | a short weakness after it                                             | breeding has a real cost and its timing matters             |
+
+| Chunk | Tasks      | Builder |
+| ----- | ---------- | ------- |
+| D     | T20 to T22 | Sonnet  |
+
 ## Decisions
 
 | Decision                                                       | Holds because                                                                                                                                                                                                                                                                                                                                                              |
@@ -241,6 +264,14 @@ The numbers are chosen with the calculator and read on the default world with [b
 | T17 | Check the cheats on the finalist with scripted bodies: two hunters that only call at each other gain no `answered` stack and lose energy; a hunter that stands by while its pack-mate kills gains none; a body that calls alone reaches 5 `hoarse` stacks; an alarm with no threat in view alerts nobody; a rallied hunter that never closes ends below an unrallied one; a huddle of bodies that never move dies no later than a lone sitter by more than a tenth | [judgement]  | T15        |
 | T18 | Adopt with body-genes.md T18 as a breaking PR to `main` with its `library/seasons.json` change: the finalist's numbers become the defaults, goldens re-pinned in their own commit; an effect whose guard reads `WORSE` keeps its numbers at 0                                                                                                                                                                                                                      | [judgement]  | T16, T17   |
 | T19 | Conformance review of Phase 3 by a fresh agent, in parallel with `scripts/check.sh`; move the Status line to `Implemented`                                                                                                                                                                                                                                                                                                                                         | [judgement]  | T18        |
+
+### Phase 4 - Later effects (user, 2026-11-21)
+
+| #   | Task                                                                                                                                                                                                                | Nature      | Depends on |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------- |
+| T20 | Plan each later effect of the Phase 4 table in full in this doc (what raises it, its scales, its keys at 0, the scene it serves, its payoff and its cheat check), with the user's pick of which come first; no code | [judgement] | T19        |
+| T21 | Build the effects T20 picks, each with its keys at 0, its applier tests and an `eval.effect_share` entry; every golden unchanged                                                                                    | [judgement] | T20        |
+| T22 | Choose their numbers with `role:budget` and read them under the keep rule, as Phase 3 did; conformance review                                                                                                       | [judgement] | T21        |
 
 ## Verification
 
