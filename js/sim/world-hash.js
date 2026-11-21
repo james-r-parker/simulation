@@ -113,6 +113,14 @@ function bytesOf(world, name) {
 }
 
 /**
+ * @param {ArrayBufferView} arr a typed array
+ * @returns {Uint8Array} its raw bytes
+ */
+function bytesOfArray(arr) {
+    return new Uint8Array(arr.buffer, arr.byteOffset, arr.byteLength);
+}
+
+/**
  * @returns {string[]} the field arrays to hash, with `foodKind` after `foodAge`
  */
 function fieldNames() {
@@ -125,7 +133,7 @@ function fieldNames() {
 /**
  * Builds the byte views for the whole-array part of the hash, once per world.
  * @param {Record<string, any>} world the world
- * @returns {{ agents: Uint8Array[], merit: Uint8Array[], hidden: Uint8Array, fastOut: Uint8Array, inputActive: Uint8Array, sex: Uint8Array, birthRing: Uint8Array, disease: Uint8Array[], diseaseRngSource: Uint32Array | null, diseaseRng: Uint8Array | null, sprintStore: Uint8Array | null, restTimer: Uint8Array | null, fields: Uint8Array[], rngSources: Uint32Array[], rngViews: Uint8Array[] }}
+ * @returns {{ agents: Uint8Array[], merit: Uint8Array[], hidden: Uint8Array, fastOut: Uint8Array, inputActive: Uint8Array, sex: Uint8Array, birthRing: Uint8Array, disease: Uint8Array[], diseaseRngSource: Uint32Array | null, diseaseRng: Uint8Array | null, sprintStore: Uint8Array | null, restTimer: Uint8Array | null, effects: Uint8Array[], fields: Uint8Array[], rngSources: Uint32Array[], rngViews: Uint8Array[] }}
  */
 function buildViews(world) {
     const { maxAgents } = world.config;
@@ -144,6 +152,7 @@ function buildViews(world) {
         diseaseRng: null,
         sprintStore: world.sprintStore === undefined ? null : bytesOf(world.sprintStore, 'level'),
         restTimer: world.restTimer === undefined ? null : bytesOf(world, 'restTimer'),
+        effects: [...world.effectStacks, ...world.effectTicks].map(bytesOfArray),
         rngSources: [],
         rngViews: [],
     };
@@ -195,6 +204,9 @@ function hashStateRows(views) {
     }
     if (views.restTimer !== null) {
         fnv64Bytes(digest, views.restTimer);
+    }
+    for (const bytes of views.effects) {
+        fnv64Bytes(digest, bytes);
     }
 }
 

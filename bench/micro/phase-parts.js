@@ -6,6 +6,7 @@
 import { signalAll } from '../../js/sim/calls.js';
 import { cloneWithNoisePolicy } from '../../js/sim/birth-policy.js';
 import { applyCosts } from '../../js/sim/energy.js';
+import { fadeEffects } from '../../js/sim/effects.js';
 import { decayFertileZones, updateSeason } from '../../js/sim/environment.js';
 import { advanceEra } from '../../js/sim/eras.js';
 import { stepHerds } from '../../js/sim/herd-motion.js';
@@ -70,6 +71,7 @@ export const PHASE_PARTS = Object.freeze({
     },
     merit: { meritPhase },
     invariants: { assertInvariants },
+    effects: { fadeEffects },
 });
 
 /**
