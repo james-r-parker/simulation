@@ -60,7 +60,7 @@ The store is the one [sprint-burst.md](sprint-burst.md) Phase 2 specifies, built
 - `sprintCost` stays, charged on the sprint actually delivered (`sprintCost x storeFactor`), in `tickCost` in `js/sim/energy.js`.
 - No brain input is added. A spent body feels its forward speed fall through the velocity body inputs.
 - With `sprintStoreEnabled` off the JS store is not allocated, the kernel's factor lane holds 1 for every slot, and every `worldHash` is unchanged.
-- The six keys change `rulesHash` (it hashes every config key), so T1 is a breaking commit (`!`) and Phases 1 to 3 are built on `season/next`.
+- The six keys change `rulesHash` (it hashes every config key), so each phase that moves it is a PR to `main` with a breaking title that adds the next `library/seasons.json` entry (or moves the unreleased newest season's `rulesHash` in place).
 
 | Key                     | Type    | Default | Where                                                                          |
 | ----------------------- | ------- | ------- | ------------------------------------------------------------------------------ |
@@ -157,7 +157,7 @@ The keep rule gains a second metric guard before this read: `eval.hunter_kills_p
 | The prey sprint is not lowered and the hunter is not sped up alone   | Either is a number tuned around a free sprint; a store is what nature does, and it gives the courser and the stalker different bodies (Same spec, different custom)                                         |
 | [chase-physics.md](chase-physics.md) Phase 2 waits for this doc      | `speedTurnDrag` widens the predator's 75-unit sprint circle; it is screened on the bodies this doc leaves                                                                                                   |
 | Stage drills carry the stage's body rules                            | A drill under the default config cannot tell a hunter that outlasts tiring prey from one that does not; food, density and world size stay the drill's own (`DRILL_BODY_KEYS`, `js/evo/drill-body-rules.js`) |
-| `rulesHash` moves in Phase 1                                         | A new config key changes `rulesHash` even with the switch off, so every phase is built on `season/next`; the season opens on `main` after the Phase 3 keep-rule read                                        |
+| `rulesHash` moves in Phase 1                                         | A new config key changes `rulesHash` even with the switch off, so each phase that moves it lands on `main` with a breaking title and its `library/seasons.json` change                                      |
 
 ## Delivery requirements
 
@@ -199,15 +199,15 @@ The keep rule gains a second metric guard before this read: `eval.hunter_kills_p
 
 ### Phase 3 - The world, then adopt or delete
 
-| #   | Task                                                                                                                                                                                                                   | Nature       | Depends on   |
-| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------ |
-| T10 | Add `eval.chase_spent_share` with its arithmetic and source tests and its registry entry                                                                                                                               | [judgement]  | T6           |
-| T11 | Add `eval.hunter_kills_per_life_mean` to `GUARD_METRICS` in `js/evo/keep-rule.js` with its direction in the registry and a planted-loss test                                                                           | [judgement]  | -            |
-| T13 | Run the 64-seed keep-rule pair (`E-FC-4`) detached and record every guard with its smallest detectable loss, the two verdict metrics and the two watch metrics                                                         | [mechanical] | T9, T10, T11 |
-| T14 | Time the store on a quiet machine under the CPU lock (`bench:parts --area physics --compare origin/main`) and record the margin                                                                                        | [mechanical] | T9           |
-| T15 | Adopt on `season/next` as a breaking commit: the arm's values become the defaults, `sprintStoreEnabled` and the off path are deleted, the goldens re-pinned and `bench/baseline.json` re-recorded in their own commits | [judgement]  | T13, T14     |
-| T16 | Retrain the ladder on the adopted bodies, export the champions, and hand [training-stages.md](training-stages.md) the new `hunt` pass share                                                                            | [mechanical] | T15          |
-| T17 | Conformance review of Phase 3                                                                                                                                                                                          | [judgement]  | T15, T16     |
+| #   | Task                                                                                                                                                                                                                                               | Nature       | Depends on   |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------ |
+| T10 | Add `eval.chase_spent_share` with its arithmetic and source tests and its registry entry                                                                                                                                                           | [judgement]  | T6           |
+| T11 | Add `eval.hunter_kills_per_life_mean` to `GUARD_METRICS` in `js/evo/keep-rule.js` with its direction in the registry and a planted-loss test                                                                                                       | [judgement]  | -            |
+| T13 | Run the 64-seed keep-rule pair (`E-FC-4`) detached and record every guard with its smallest detectable loss, the two verdict metrics and the two watch metrics                                                                                     | [mechanical] | T9, T10, T11 |
+| T14 | Time the store on a quiet machine under the CPU lock (`bench:parts --area physics --compare origin/main`) and record the margin                                                                                                                    | [mechanical] | T9           |
+| T15 | Adopt on `main` as a breaking PR with its `library/seasons.json` change: the arm's values become the defaults, `sprintStoreEnabled` and the off path are deleted, the goldens re-pinned and `bench/baseline.json` re-recorded in their own commits | [judgement]  | T13, T14     |
+| T16 | Retrain the ladder on the adopted bodies, export the champions, and hand [training-stages.md](training-stages.md) the new `hunt` pass share                                                                                                        | [mechanical] | T15          |
+| T17 | Conformance review of Phase 3                                                                                                                                                                                                                      | [judgement]  | T15, T16     |
 
 ## Verification
 
