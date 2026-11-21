@@ -5,10 +5,12 @@ import { rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readArchiveFile, readDrillConfig } from './lib/archive-source.mjs';
+import { reflexBars } from '../js/evo/reflex-bars.js';
 import { REFLEX_CASES } from '../js/evo/reflex-cases.js';
 import { reflexRow } from '../js/evo/reflex-score.js';
 import { REFLEX_TRIALS } from '../js/evo/reflex-stage.js';
 import { createConfig } from '../js/sim/config.js';
+import { SPEC_NAMES } from '../js/sim/specs.js';
 import { LOG_LEVEL, createSimLog } from '../js/sim/log.js';
 import { exitCodeOf, intValue, parseFlags } from './lib/cli-args.mjs';
 import { eliteSubjects, fileSubject } from './lib/drill-subjects.mjs';
@@ -23,7 +25,7 @@ const EVAL_WORKER_URL = new URL('./eval-worker.mjs', import.meta.url);
 export const POLICY_TICKS = 20000;
 const NAMES = REFLEX_CASES.map((c) => c.name);
 const USAGE =
-    'usage: reflex (--champions <dir> | --archive <file> | --policy <name>) [--count <n>] [--cases <a,b>] [--seed <n>] [--trials <n>] [--config <file.json>] [--level <name>] [--json] [--out <path>] [--workers <n>]';
+    'usage: reflex (--champions <dir> | --archive <file> | --policy <name>) [--count <n>] [--cases <a,b>] [--role <spec>] [--seed <n>] [--trials <n>] [--config <file.json>] [--level <name>] [--json] [--out <path>] [--workers <n>]';
 
 /**
  * @typedef {object} ReflexArgs
@@ -31,7 +33,7 @@ const USAGE =
  * @property {string | null} archive an archive file (`archive-<g>.json`)
  * @property {string | null} policy a registered policy to run for `POLICY_TICKS` and take the best archive elites of
  * @property {number} count elites taken with `--policy`
- * @property {string[]} cases the cases to run (default all)
+ * @property {string[]} cases the cases to run (default all; with `--role`, the role's)
  * @property {number} seed the case seed
  * @property {number} trials trials per case
  * @property {string | null} config a config overrides file
@@ -53,6 +55,19 @@ function parseCases(value) {
         throw new Error(`--cases: unknown case "${unknown[0]}"; known: ${NAMES.join(', ')}\n${USAGE}`);
     }
     return names;
+}
+
+/**
+ * @param {string | undefined} value a specialisation name
+ * @returns {string[]} the names of the cases that specialisation faces
+ * @throws {Error} on an unknown specialisation, listing the known ones
+ */
+function parseRole(value) {
+    const spec = SPEC_NAMES.indexOf(String(value));
+    if (spec < 0) {
+        throw new Error(`--role: unknown specialisation "${value}"; known: ${SPEC_NAMES.join(', ')}\n${USAGE}`);
+    }
+    return REFLEX_CASES.filter((c) => c.spec === spec).map((c) => c.name);
 }
 
 /**
@@ -100,6 +115,7 @@ export function parseArgs(argv) {
         ...Object.fromEntries(SOURCE_KINDS.map((kind) => [`--${kind}`, textFlag(kind)])),
         '--count': intFlag('count', 1),
         '--cases': flagOf('cases', parseCases),
+        '--role': flagOf('role', parseRole),
         '--seed': intFlag('seed', 0),
         '--trials': intFlag('trials', 1),
         '--config': textFlag('config'),
@@ -122,6 +138,12 @@ export function parseArgs(argv) {
     const args = /** @type {ReflexArgs} */ (
         parseFlags(argv, { valueFlags, booleanFlags: { '--json': 'json' }, defaults, usage: USAGE })
     );
+    const { role } = /** @type {Record<string, any>} */ (args);
+    if (role !== undefined) {
+        const named = args.cases !== NAMES;
+        args.cases = named ? args.cases.filter((name) => role.includes(name)) : role;
+        delete (/** @type {Record<string, any>} */ (args).role);
+    }
     if (SOURCE_KINDS.filter((kind) => /** @type {Record<string, any>} */ (args)[kind] !== null).length !== 1) {
         throw new Error(`give exactly one of --champions, --archive and --policy\n${USAGE}`);
     }
@@ -206,7 +228,11 @@ export async function runReflex(args, { logDir = '.sim/logs', print = () => {} }
         const genomes = await genomesOf(args, { config, log });
         const result = await scoreGenomes(args, { genomes, config, log });
         const text = args.json
-            ? JSON.stringify(reportJson(args.cases, result), null, 2)
+            ? JSON.stringify(
+                  { ...reportJson(args.cases, result), barSources: reflexBars(createConfig(config)).sources },
+                  null,
+                  2,
+              )
             : formatReport(args.cases, result);
         print(text);
         if (args.out !== null) {
