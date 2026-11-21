@@ -27,7 +27,7 @@ export const SAMPLE_AGENTS = Object.freeze([
 /**
  * Builds a sustained chase pair (hunter 200 units behind its prey, aimed at it, within 2.5 hunter sizes) at `xOffset`.
  * @param {number} [xOffset] horizontal offset for the current snapshot
- * @returns {import('../../../js/app/director/moments.js').AgentRecord[]} hunter-prey pair
+ * @returns {import('../../../../js/app/director/moments.js').AgentRecord[]} hunter-prey pair
  */
 export function makeChasePair(xOffset = 0) {
     return [
