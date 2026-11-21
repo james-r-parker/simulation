@@ -66,12 +66,40 @@ const isSelectionState = (value) => value === SELECTION_STATES.TRACKING || value
 const isTickerItems = (value) =>
     Array.isArray(value) &&
     value.every((item) => isObject(item) && isUint(item.tick) && isString(item.kind) && isString(item.text));
+/** @type {Check} the families of a stats message: each a lineage with its size, its oldest member and its numbers */
+const isFamilies = (value) =>
+    value === undefined ||
+    (Array.isArray(value) &&
+        value.every(
+            (family) =>
+                isObject(family) &&
+                isUint(family.id) &&
+                isUint(family.count) &&
+                isNumber(family.share) &&
+                isUint(family.oldestGenomeId) &&
+                Array.isArray(family.bySpec) &&
+                isNumber(family.kills) &&
+                isNumber(family.deepest),
+        ));
+/** @type {Check} the records of a stats message: each a value, its holder and whether the holder is alive */
+const isRecords = (value) =>
+    value === undefined ||
+    (isObject(value) &&
+        ['longestLife', 'mostKills', 'mostChildren'].every(
+            (name) =>
+                isObject(value[name]) &&
+                isNumber(value[name].value) &&
+                isUint(value[name].genomeId) &&
+                isBoolean(value[name].alive),
+        ));
 /** @type {Check} */
 const isStats = (value) =>
     isObject(value) &&
     isNumber(value.tick) &&
     isNumber(value.ticksPerSecond) &&
-    [value.foodEnergy, value.meanTemperature].every((reading) => reading === undefined || isNumber(reading));
+    [value.foodEnergy, value.meanTemperature].every((reading) => reading === undefined || isNumber(reading)) &&
+    isFamilies(value.families) &&
+    isRecords(value.records);
 
 /** @typedef {[string, Check, string]} Field a field's name, its check and what it must be */
 
@@ -139,7 +167,7 @@ const SHAPES = Object.freeze({
             [
                 'stats',
                 isStats,
-                'an object with tick and ticksPerSecond (and numbers for foodEnergy and meanTemperature when present)',
+                'an object with tick and ticksPerSecond (and, when present, numbers for foodEnergy and meanTemperature, families and records)',
             ],
         ],
     },

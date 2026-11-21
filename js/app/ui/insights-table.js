@@ -115,3 +115,17 @@ function paint(row, cells, data) {
         row.style.setProperty('--swatch', data.color);
     }
 }
+
+/**
+ * @param {{createElement: (tag: string) => any}} doc the document
+ * @param {any} parent where the note goes
+ * @param {string} text what it says
+ * @returns {any} the note's element
+ */
+export function mountNote(doc, parent, text) {
+    const note = doc.createElement('p');
+    note.className = 'insights-note';
+    note.textContent = text;
+    parent.appendChild(note);
+    return note;
+}

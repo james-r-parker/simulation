@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mountTable } from '../../../js/app/ui/insights-table.js';
+import { mountNote, mountTable } from '../../../js/app/ui/insights-table.js';
 import { byClass, fakeDocument } from '../helpers/fake-dom.js';
 
 /** @param {Record<string, any>} [options] extra table options @returns {any} a table in a fake document */
@@ -17,6 +17,15 @@ function shown(parent) {
         .filter((r) => !r.hidden)
         .map((r) => r.children.map((/** @type {any} */ c) => c.textContent));
 }
+
+describe('mountNote', () => {
+    it('adds a note paragraph with its text', () => {
+        const doc = fakeDocument();
+        const parent = doc.createElement('div');
+        const note = mountNote(doc, parent, 'Click a row.');
+        expect([note.className, note.textContent, parent.children]).toEqual(['insights-note', 'Click a row.', [note]]);
+    });
+});
 
 describe('mountTable', () => {
     it('writes a heading row once and a row per entry, hiding the surplus when the rows shrink', () => {

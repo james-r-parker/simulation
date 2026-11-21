@@ -5,8 +5,16 @@
 
 import { appLog } from './app-log.js';
 import { createChartsLifecycle } from './interface-charts.js';
+import { familyTableRows, recordTableRows } from './insights-lists.js';
 import { createInsightsData, noteInsightStats, readyInsights, worldView } from './insights-data.js';
-import { createSceneCounters, noteFrame, noteSceneEffect, resetSceneCounters, sceneRows } from './scene-counters.js';
+import {
+    advanceSeason,
+    createSceneCounters,
+    noteFrame,
+    noteSceneEffect,
+    resetSceneCounters,
+    sceneRows,
+} from './scene-counters.js';
 import { familyCss } from './ui/css-color.js';
 import { mountInsights } from './ui/insights.js';
 
@@ -39,18 +47,35 @@ function createWorldCharts(ctx, getUi) {
 }
 
 /**
+ * @param {Record<string, any>} deps the interface's deps: `getAgents`
+ * @param {ReturnType<typeof createSceneCounters>} scenes the counters
+ * @returns {{ticks: number, genome: number, alive: boolean}} the longest pursuit the frame saw, and whether its hunter is
+ *   in the frame now
+ */
+function longestChase(deps, scenes) {
+    const { ticks, genome } = scenes.frame.longest;
+    const agents = deps.getAgents?.();
+    let alive = false;
+    for (let i = 0; agents !== undefined && !alive && i < agents.count; i++) {
+        alive = agents.genomeId[i] === genome;
+    }
+    return { ticks, genome, alive: ticks > 0 && alive };
+}
+
+/**
  * @param {Record<string, any>} deps the interface's deps: `getAgents` and `getPursuits`
  * @param {ReturnType<typeof createSceneCounters>} scenes the counters
  * @returns {(nowMs: number) => void} reads the frame into the counters; does nothing before the page has agents
  */
 function createFrameFeed(deps, scenes) {
-    const frame = { agents: /** @type {any} */ (null), pursuits: /** @type {any} */ (null), nowMs: 0 };
+    const frame = { agents: /** @type {any} */ (null), pursuits: /** @type {any} */ (null), nowMs: 0, tick: 0 };
     return (nowMs) => {
         const agents = deps.getAgents?.();
         if (agents !== undefined) {
             frame.agents = agents;
             frame.pursuits = deps.getPursuits?.() ?? null;
             frame.nowMs = nowMs;
+            frame.tick = scenes.tick;
             noteFrame(scenes, frame);
         }
     };
@@ -78,7 +103,12 @@ export function mountInsightsPart(ctx) {
         },
     });
     const charts = createWorldCharts(ctx, () => ui);
-    const view = () => ({ world: worldView(data), scenes: sceneRows(scenes, data.stats?.tick ?? scenes.tick) });
+    const view = () => ({
+        world: worldView(data),
+        scenes: sceneRows(scenes, data.stats?.tick ?? scenes.tick),
+        families: familyTableRows(data, (id) => familyCss(deps.slots, id)),
+        records: recordTableRows(data, longestChase(deps, scenes)),
+    });
     return {
         ui,
         view,
@@ -98,7 +128,10 @@ export function mountInsightsPart(ctx) {
             charts.close();
             charts.sync();
         },
-        noteStats: (stats) => noteInsightStats(data, stats),
+        noteStats(stats) {
+            noteInsightStats(data, stats);
+            advanceSeason(scenes, stats.tick);
+        },
         noteEffect: (effect) => noteSceneEffect(scenes, effect),
         noteFrame: createFrameFeed(deps, scenes),
     };

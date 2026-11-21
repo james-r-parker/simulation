@@ -162,6 +162,93 @@ describe('the insights drawer in the interface', () => {
         expect(rows[1].children.map((/** @type {any} */ c) => c.textContent)).toEqual(['A real chase', '1']);
     });
 
+    it('shows the families and the records from the stats, and follows a family or a living holder when clicked', () => {
+        const targets = /** @type {any[]} */ ([]);
+        const stored = { [PREFS_KEY]: JSON.stringify({ seen: true, insightsTab: 'families' }) };
+        const { ui, elements } = setup({ stored, deps: { followTarget: (/** @type {any} */ t) => targets.push(t) } });
+        ui.listeners.onReady(ready);
+        const record = { value: 7, genomeId: 31, alive: true };
+        ui.listeners.onStats({
+            tick: 10,
+            ticksPerSecond: 60,
+            lineages: { top: [{ id: 4, share: 0.5 }] },
+            families: [
+                {
+                    id: 4,
+                    count: 3,
+                    share: 0.5,
+                    oldestGenomeId: 300,
+                    oldestAgeTicks: 36000,
+                    bySpec: [3, 0, 0, 0, 0],
+                    kills: 2,
+                    deepest: 4,
+                },
+            ],
+            records: {
+                longestLife: record,
+                mostKills: { ...record, alive: false },
+                mostChildren: { value: 0, genomeId: 0, alive: false },
+            },
+        });
+        ui.hooks.toggleDrawer(INSIGHTS_DRAWER);
+        const families = byClass(byClass(elements.drawers, 'insights-families')[0], 'insights-row');
+        expect(families).toHaveLength(1);
+        expect(families[0].children[1].textContent).toBe('3 (50%)');
+        families[0].dispatch('click');
+        byClass(elements.drawers, 'insights-tab')[3].dispatch('click');
+        const records = byClass(byClass(elements.drawers, 'insights-records')[0], 'insights-row');
+        expect(records.map((r) => r.children[2].textContent)).toEqual(['blob 31', 'blob 31 (gone)', '-', '-']);
+        records.forEach((r) => r.dispatch('click'));
+        expect(targets).toEqual([
+            { kind: 'family', genomeId: 300 },
+            { kind: 'record', genomeId: 31 },
+        ]);
+    });
+
+    it('shows the longest chase the frame saw, and follows its hunter while it is in the frame', () => {
+        const agents = createInterpolated(8);
+        agents.count = 1;
+        agents.genomeId[0] = 60;
+        const state = { pursuits: { count: 1, hunter: Int32Array.of(0) } };
+        const targets = /** @type {any[]} */ ([]);
+        const stored = { [PREFS_KEY]: JSON.stringify({ seen: true, insightsTab: 'records' }) };
+        const { ui, elements, setClock } = setup({
+            stored,
+            deps: {
+                getAgents: () => agents,
+                getPursuits: () => state.pursuits,
+                followTarget: (/** @type {any} */ t) => targets.push(t),
+            },
+        });
+        ui.listeners.onReady(ready);
+        const none = { value: 0, genomeId: 0, alive: false };
+        ui.listeners.onStats({
+            tick: 0,
+            ticksPerSecond: 60,
+            records: { longestLife: none, mostKills: none, mostChildren: none },
+        });
+        ui.tick(0);
+        ui.listeners.onStats({
+            tick: 1200,
+            ticksPerSecond: 60,
+            records: { longestLife: none, mostKills: none, mostChildren: none },
+        });
+        ui.tick(100);
+        state.pursuits = { count: 0, hunter: new Int32Array(1) };
+        ui.tick(2000);
+        ui.tick(4000);
+        setClock(4000);
+        ui.hooks.toggleDrawer(INSIGHTS_DRAWER);
+        const rows = byClass(byClass(elements.drawers, 'insights-records')[0], 'insights-row');
+        expect(rows[3].children.map((/** @type {any} */ c) => c.textContent)).toEqual([
+            'longest chase',
+            '20 s',
+            'blob 60',
+        ]);
+        rows[3].dispatch('click');
+        expect(targets).toEqual([{ kind: 'record', genomeId: 60 }]);
+    });
+
     it('treats a missing pursuit table as no pursuits', () => {
         const agents = createInterpolated(8);
         const { ui } = setup({ deps: { getAgents: () => agents } });

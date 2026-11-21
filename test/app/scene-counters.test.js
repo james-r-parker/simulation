@@ -187,10 +187,10 @@ describe('the frame', () => {
         place(2, 102, 13);
         place(3, 450, 90, 1);
         const pursuits = { count: 1, hunter: Int32Array.of(3) };
-        noteFrame(c, { agents, pursuits, nowMs: 0 });
+        noteFrame(c, { agents, pursuits, nowMs: 0, tick: 0 });
         place(3, 550, 90, 1);
-        noteFrame(c, { agents, pursuits, nowMs: 300 });
-        noteFrame(c, { agents, pursuits: { count: 0, hunter: new Int32Array(1) }, nowMs: 5000 });
+        noteFrame(c, { agents, pursuits, nowMs: 300, tick: 300 });
+        noteFrame(c, { agents, pursuits: { count: 0, hunter: new Int32Array(1) }, nowMs: 5000, tick: 5000 });
         expect(row(c, 'chase')).toMatchObject({ count: 1, genomeId: 90 });
         expect(row(c, 'abort')).toMatchObject({ count: 1, genomeId: 90 });
         expect(row(c, 'refuge')).toMatchObject({ count: 1, genomeId: 11, x: 100, y: 100 });

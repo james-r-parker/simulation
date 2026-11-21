@@ -2,7 +2,7 @@
 // last four seasons, or `no live signal` for a scene that has no on-screen signature. A scene that has been seen is
 // clickable: the click hands its newest participant to `onPick` so the camera follows a live instance.
 
-import { mountTable } from './insights-table.js';
+import { mountNote, mountTable } from './insights-table.js';
 
 /** What a scene with no on-screen signature reads. */
 export const NO_SIGNAL = 'no live signal';
@@ -44,9 +44,6 @@ export function mountScenesTab(doc, panel, hooks) {
         columns: ['scene', 'seen'],
         onPick: hooks.onPick,
     });
-    const note = doc.createElement('p');
-    note.className = 'insights-note';
-    note.textContent = 'Click a scene that has been seen to follow a live instance.';
-    panel.appendChild(note);
+    mountNote(doc, panel, 'Click a scene that has been seen to follow a live instance.');
     return { update: (scenes) => table.update(sceneTableRows(scenes)) };
 }

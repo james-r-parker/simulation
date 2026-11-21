@@ -107,6 +107,32 @@ describe('validateMessage', () => {
         expect(() => validateMessage({ ...GOOD.stats, stats: { tick: 1 } })).toThrow('stats.stats');
     });
 
+    it('validates the families and the records the insights drawer reads', () => {
+        const stats = { tick: 5, ticksPerSecond: 60 };
+        const family = {
+            id: 5,
+            count: 3,
+            share: 0.5,
+            oldestGenomeId: 9,
+            oldestAgeTicks: 100,
+            bySpec: [1, 2],
+            kills: 0,
+            deepest: 1,
+        };
+        const record = { value: 4, genomeId: 9, alive: true };
+        const records = { longestLife: record, mostKills: record, mostChildren: record };
+        const send = (/** @type {Record<string, any>} */ more) => () =>
+            validateMessage({ ...GOOD.stats, stats: { ...stats, ...more } });
+        expect(send({ families: [family], records })).not.toThrow();
+        expect(send({ families: [] })).not.toThrow();
+        expect(send({ families: 'many' })).toThrow('stats.stats');
+        expect(send({ families: [{ ...family, bySpec: 'x' }] })).toThrow('stats.stats');
+        expect(send({ families: [{ ...family, id: -1 }] })).toThrow('stats.stats');
+        expect(send({ records: { ...records, mostKills: { ...record, alive: 'yes' } } })).toThrow('stats.stats');
+        expect(send({ records: { ...records, longestLife: undefined } })).toThrow('stats.stats');
+        expect(send({ records: 3 })).toThrow('stats.stats');
+    });
+
     it('validates the stats readings the insights drawer reads', () => {
         const stats = { tick: 5, ticksPerSecond: 60 };
         expect(() =>

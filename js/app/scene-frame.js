@@ -20,11 +20,13 @@ export const FRAME_EVENT = Object.freeze({ CHASE: 0, ABORT: 1, REFUGE: 2, CROSS:
 /**
  * @typedef {object} FrameSignals
  * @property {Uint32Array} epGenome the hunter of each tracked pursuit, 0 for a free slot
- * @property {Float64Array} epStartMs when it began
- * @property {Float64Array} epLastMs when it was last in the table
+ * @property {Float64Array} epStartMs when it began, wall ms
+ * @property {Float64Array} epLastMs when it was last in the table, wall ms
+ * @property {Float64Array} epStartTick the sim tick it began
+ * @property {Float64Array} epLastTick the sim tick it was last in the table
  * @property {Uint8Array} epBitten 1 once the hunter has bitten during it
  * @property {Uint8Array} epSeen scratch: 1 when this frame's table holds it
- * @property {{ms: number, genome: number}} longest the longest pursuit of this world, with its hunter
+ * @property {{ticks: number, genome: number}} longest the longest pursuit of this world in sim ticks, with its hunter
  * @property {Uint8Array} canHunt 1 for the specs that hunt
  * @property {readonly {x: number, y: number, radius: number}[]} refuges the refuge discs
  * @property {Uint8Array} stacked 1 for a refuge that is stacked now
@@ -40,9 +42,11 @@ export function createFrameSignals() {
         epGenome: new Uint32Array(MAX_PURSUITS),
         epStartMs: new Float64Array(MAX_PURSUITS),
         epLastMs: new Float64Array(MAX_PURSUITS),
+        epStartTick: new Float64Array(MAX_PURSUITS),
+        epLastTick: new Float64Array(MAX_PURSUITS),
         epBitten: new Uint8Array(MAX_PURSUITS),
         epSeen: new Uint8Array(MAX_PURSUITS),
-        longest: { ms: 0, genome: 0 },
+        longest: { ticks: 0, genome: 0 },
         canHunt: new Uint8Array(0),
         refuges: [],
         stacked: new Uint8Array(0),
@@ -61,7 +65,7 @@ export function createFrameSignals() {
  */
 export function resetFrameSignals(f, info) {
     f.epGenome.fill(0);
-    f.longest.ms = 0;
+    f.longest.ticks = 0;
     f.longest.genome = 0;
     f.canHunt = pursuitRules(info).canHunt;
     f.refuges = info.terrain?.refuges ?? [];
@@ -108,11 +112,11 @@ function slotOfHunter(f, genome) {
  * abort when the hunter never bit, and the record when it was the longest.
  * @param {FrameSignals} f the signals
  * @param {{agents: import('./interpolate.js').Interpolated, pursuits: {count: number, hunter: Int32Array},
- *   nowMs: number}} frame the frame
+ *   nowMs: number, tick: number}} frame the frame
  * @param {Emit} emit hears each begun and dropped pursuit
  * @returns {void}
  */
-function trackPursuits(f, { agents, pursuits, nowMs }, emit) {
+function trackPursuits(f, { agents, pursuits, nowMs, tick }, emit) {
     f.epSeen.fill(0);
     for (let p = 0; p < pursuits.count; p++) {
         const i = pursuits.hunter[p];
@@ -125,10 +129,12 @@ function trackPursuits(f, { agents, pursuits, nowMs }, emit) {
             }
             f.epGenome[k] = genome;
             f.epStartMs[k] = nowMs;
+            f.epStartTick[k] = tick;
             f.epBitten[k] = 0;
             emit(FRAME_EVENT.CHASE, genome, agents.x[i], agents.y[i]);
         }
         f.epLastMs[k] = nowMs;
+        f.epLastTick[k] = tick;
         f.epSeen[k] = 1;
     }
     for (let k = 0; k < MAX_PURSUITS; k++) {
@@ -145,9 +151,9 @@ function trackPursuits(f, { agents, pursuits, nowMs }, emit) {
  * @returns {void}
  */
 function endPursuit(f, k, emit) {
-    const ms = f.epLastMs[k] - f.epStartMs[k];
-    if (ms > f.longest.ms) {
-        f.longest.ms = ms;
+    const ticks = f.epLastTick[k] - f.epStartTick[k];
+    if (ticks > f.longest.ticks) {
+        f.longest.ticks = ticks;
         f.longest.genome = f.epGenome[k];
     }
     if (f.epBitten[k] === 0) {
@@ -210,13 +216,14 @@ function scanCrossings(f, agents, emit) {
  * Reads one frame: the pursuits every frame, the refuges and the wall every `CHECK_MS`.
  * @param {FrameSignals} f the signals
  * @param {{agents: import('./interpolate.js').Interpolated, pursuits: {count: number, hunter: Int32Array} | null,
- *   nowMs: number}} frame the frame's agents, the renderer's pursuit table (null before one) and the clock
+ *   nowMs: number, tick: number}} frame the frame's agents, the renderer's pursuit table (null before one), the wall
+ *   clock and the newest sim tick
  * @param {Emit} emit hears each begun pursuit, abort, stack and crossing
  * @returns {void}
  */
-export function noteSceneFrame(f, { agents, pursuits, nowMs }, emit) {
+export function noteSceneFrame(f, { agents, pursuits, nowMs, tick }, emit) {
     if (pursuits !== null) {
-        trackPursuits(f, { agents, pursuits, nowMs }, emit);
+        trackPursuits(f, { agents, pursuits, nowMs, tick }, emit);
     }
     if (nowMs - f.lastCheckMs >= CHECK_MS) {
         f.lastCheckMs = nowMs;

@@ -14,6 +14,7 @@ import {
     noteCalls,
     predatorCount,
 } from './world-numbers.js';
+import { createRecords, familyRows, noteRecords } from './world-board.js';
 import { createLineageBoard, rebuildCounts, topLineages, updateBoard } from './lineage-board.js';
 import {
     ageItems,
@@ -65,6 +66,7 @@ const DEATH_CAUSES = Object.keys(DEATH_CAUSE).length;
  * @property {number} lastElderScan the tick of the last elder scan
  * @property {{spec: number, cell: number, tick: number} | null} newestReplacement the latest `ArchiveReplaced`
  * @property {import('./ticker-milestones.js').Milestones} milestones what has been announced once
+ * @property {import('./world-board.js').Records} records this world's records, for the insights drawer
  */
 
 /** @returns {LiveStats} state for a fresh run */
@@ -79,6 +81,7 @@ export function createLiveStats() {
         lastElderScan: 0,
         newestReplacement: null,
         milestones: createMilestones(),
+        records: createRecords(),
     };
 }
 
@@ -352,6 +355,8 @@ export function collectStats(live, { world, observer, policy, generations }, run
         deathsByCause: deaths,
         combat: combatDelta(live, observer),
         lineages: { count: live.board.counts.size, top },
+        families: familyRows(top, { world, observer, generations }),
+        records: noteRecords(live.records, { world, observer }),
         archive: archiveStats(policy, live),
         generationMax: generation.max,
         generationMedian: generation.median,

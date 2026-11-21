@@ -179,6 +179,34 @@ describe('collectStats', () => {
         expect([stats.generationMax, stats.generationMedian]).toEqual([0, 0]);
     });
 
+    it('reports the families with their numbers, and the records with their holders', () => {
+        const { world, observer, live, policy } = setup();
+        for (const [slot, lineage, spec, age] of [
+            [0, 5, 0, 40],
+            [1, 5, 1, 90],
+            [2, 8, 1, 10],
+        ]) {
+            world.alive[slot] = 1;
+            world.lineageId[slot] = lineage;
+            world.spec[slot] = spec;
+            world.ageTicks[slot] = age;
+            world.genomeId[slot] = 100 + slot;
+        }
+        observer.kills[1] = 3;
+        world.population = 3;
+        const stats = collectStats(
+            live,
+            { world, observer, policy, generations: createGenerations(world.config) },
+            RUN,
+        );
+        expect(stats.families.map((/** @type {any} */ f) => [f.id, f.count, f.oldestGenomeId, f.kills])).toEqual([
+            [5, 2, 101, 3],
+            [8, 1, 102, 0],
+        ]);
+        expect(stats.records.longestLife).toEqual({ value: 90, genomeId: 101, alive: true });
+        expect(stats.records.mostKills).toEqual({ value: 3, genomeId: 101, alive: true });
+    });
+
     it('reports the food energy and the mean temperature', () => {
         const { world, observer, live, policy } = setup();
         world.alive[0] = 1;
