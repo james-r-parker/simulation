@@ -6,19 +6,25 @@
 import { HEARD_FROM_STRIDE } from './agent-arrays.js';
 import { EVENT, EVENT_TYPE, pushEvent } from './events.js';
 import { HUNT_FROM } from './effect-hear.js';
+import { panicOn, woundOn } from './effect-numbers.js';
 import { dropStack } from './effect-raise.js';
 import { EFFECT, SYSTEM, raiseOn } from './effects.js';
 
 /**
- * A body that a bite leaves alive is `wounded` and `panicked`, one stack of each a bite (`applyBite`, js/sim/feeding.js).
+ * A body that a bite leaves alive is `wounded` and `panicked`, one stack of each a bite (`applyBite`, js/sim/feeding.js);
+ * each only while one of its numbers is above 0 (`woundOn`, `panicOn`), since at 0 its stacks change nothing.
  * @param {any} world the world
  * @param {number} victim the bitten slot, still alive
  * @param {number} biter the biting slot
  * @returns {void}
  */
 export function noteBitten(world, victim, biter) {
-    raiseOn(world, victim, EFFECT.WOUNDED, biter);
-    raiseOn(world, victim, EFFECT.PANICKED, biter);
+    if (woundOn(world.config)) {
+        raiseOn(world, victim, EFFECT.WOUNDED, biter);
+    }
+    if (panicOn(world.config)) {
+        raiseOn(world, victim, EFFECT.PANICKED, biter);
+    }
 }
 
 /**

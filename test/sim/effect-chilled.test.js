@@ -1,5 +1,6 @@
 // The `chilled` clock (docs/designs/status-effects.md, "The social effects"): one stack every `coldStackTicks` ticks under
-// the optimal band, one off every `coldRecoverTicks` ticks back in it, capped at 10, counted with every number at 0.
+// the optimal band, one off every `coldRecoverTicks` ticks back in it, capped at 10, counted only while `coldStackRate` is
+// above 0 (at 0 a stack changes nothing, so the clock is skipped).
 
 import { describe, expect, it } from 'vitest';
 import { stepChilled } from '../../js/sim/effect-chilled.js';
@@ -12,7 +13,7 @@ import { smallWorld } from './helpers/small-world.js';
  * @returns {{w: any, slot: number, min: number}} a world with one body, and its band's lower edge
  */
 function body(over = {}) {
-    const w = smallWorld({ coldStackTicks: 4, coldRecoverTicks: 2, ...over });
+    const w = smallWorld({ coldStackTicks: 4, coldRecoverTicks: 2, coldStackRate: 0.1, ...over });
     const slot = allocBody(w, 0);
     w.alive[slot] = 1;
     return { w, slot, min: w.lanes.temperatureOptimalMin[slot] };
@@ -34,10 +35,17 @@ function run(w, slot, ticks) {
 }
 
 describe('stepChilled', () => {
-    it('adds one stack every coldStackTicks ticks under the band, at the default rate of 0 too', () => {
+    it('adds one stack every coldStackTicks ticks under the band', () => {
         const { w, slot, min } = body();
         w.temperature[slot] = min - 1;
         expect(run(w, slot, 9)).toEqual([0, 0, 0, 1, 1, 1, 1, 2, 2]);
+    });
+
+    it('keeps no clock and adds no stack at the default rate of 0, where a stack would change nothing', () => {
+        const { w, slot, min } = body({ coldStackRate: 0 });
+        w.temperature[slot] = min - 1;
+        expect(run(w, slot, 9)).toEqual([0, 0, 0, 0, 0, 0, 0, 0, 0]);
+        expect([w.effectTicks[0][slot], w.events.count]).toEqual([0, 0]);
         expect(effectFactor(w, slot, EFFECT.CHILLED, 'passiveLoss')).toBe(1);
     });
 
