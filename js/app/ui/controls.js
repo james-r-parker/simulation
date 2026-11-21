@@ -14,7 +14,6 @@ export const CONTROL_BUTTONS = Object.freeze([
     { action: 'follow', text: 'Follow', label: 'Follow a blob; continue after death' },
     { action: 'toggleCharts', text: 'Charts', label: 'Charts drawer' },
     { action: 'toggleInspector', text: 'Inspect', label: 'Inspector drawer' },
-    { action: 'toggleInsights', text: 'Insights', label: 'Insights drawer' },
     { action: 'toggleHelp', text: '?', label: 'Help' },
 ]);
 
@@ -103,7 +102,6 @@ export function mountControls(doc, root, { perform, onSeed }) {
             }
             buttons.toggleCharts.classList.toggle('on', drawer === 'charts');
             buttons.toggleInspector.classList.toggle('on', drawer === 'inspector');
-            buttons.toggleInsights.classList.toggle('on', drawer === 'insights');
             buttons.toggleHelp.classList.toggle('on', drawer === 'help');
             if (!seedField.typing() && seed !== null && field.value !== String(seed)) {
                 field.value = String(seed);

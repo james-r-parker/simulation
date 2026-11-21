@@ -49,7 +49,10 @@ function buildTab(doc, { strip, root, def, hooks, show }) {
     button.className = 'control insights-tab';
     button.textContent = def.label;
     button.setAttribute('role', 'tab');
-    button.addEventListener('click', () => show(def.id));
+    button.addEventListener('click', () => {
+        show(def.id);
+        button.blur?.();
+    });
     strip.appendChild(button);
     const panel = doc.createElement('div');
     panel.className = `insights-panel insights-${def.id}`;
