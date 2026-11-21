@@ -1,5 +1,6 @@
 // The shipped tuning spec parses and proposes arms against the shipped ladder. Shipped data: the exact arms are
 // asserted on frozen copies in test/evo/train-tune.test.js, so a PR that edits only evals/train-tune.json passes here.
+// reads: evals/train-ladder.json
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { proposeArms } from '../../js/evo/train-tune.js';

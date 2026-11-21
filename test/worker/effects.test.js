@@ -91,7 +91,7 @@ describe('collectEffects', () => {
         expect(floats[0].slice(2, 4)).toEqual([140, 260]);
     });
 
-    it('yields BORN at the newborn with its genome, lineage, spec and cause', () => {
+    it('yields BORN at the newborn with its genome, lineage, mother and cause', () => {
         const world = smallWorld();
         world.tick = 8;
         place(world, 2, { x: 30, y: 40, genomeId: 11, lineageId: 5, spec: 3 });
@@ -100,7 +100,7 @@ describe('collectEffects', () => {
         collectEffects(log, world, NO_SLOTS);
         const { records, floats } = drain(log);
         expect(records).toEqual([
-            [EFFECT_KIND.BORN, 8, expect.anything(), expect.anything(), 11, 5, 3, BORN_CAUSE.MATE],
+            [EFFECT_KIND.BORN, 8, expect.anything(), expect.anything(), 11, 5, 7, BORN_CAUSE.MATE],
         ]);
         expect(floats[0].slice(2, 4)).toEqual([30, 40]);
     });

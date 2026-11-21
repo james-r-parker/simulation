@@ -60,6 +60,7 @@ const COUNTER_AT = Object.freeze({
  * @property {Float32Array} hidden the hidden activations
  * @property {{label: string, value: number, firing: boolean}[]} outputs the outputs, values clamped to -1..1
  * @property {{label: string, text: string}[]} counters the counters as text
+ * @property {{ageSeasons: number, kills: number, children: number}} stats the numbers the subject plate reads
  */
 
 /** The view of nothing selected. @type {InspectorView} */
@@ -71,6 +72,7 @@ export const NO_INSPECTION = Object.freeze({
     hidden: new Float32Array(0),
     outputs: [],
     counters: [],
+    stats: { ageSeasons: 0, kills: 0, children: 0 },
 });
 
 /**
@@ -281,5 +283,10 @@ export function inspectorView({ snapshot, ready, slots }) {
             };
         }),
         counters: countersOf(counters, { specName: spec, family, info, male: (found.flags & layout.flags.MALE) !== 0 }),
+        stats: {
+            ageSeasons: counters[COUNTER_AT.ageTicks] / info.seasonLength,
+            kills: counters[COUNTER_AT.kills],
+            children: counters[COUNTER_AT.children],
+        },
     };
 }

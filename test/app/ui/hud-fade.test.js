@@ -26,5 +26,7 @@ describe('persistentNodes', () => {
         const title = {};
         expect(persistentNodes({ title, bar, ticker: null })).toEqual([bar, title]);
         expect(persistentNodes({})).toEqual([]);
+        const plate = {};
+        expect(persistentNodes({ plate, bar })).toEqual([bar, plate]);
     });
 });

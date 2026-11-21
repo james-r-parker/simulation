@@ -1,7 +1,8 @@
-// The query-string parameters the page reads: seed, agents, speed, backend, gputime, tv, audio, policy, merit and hold. A value that is missing or
+// The query-string parameters the page reads: seed, agents, speed, backend, gputime, tv, dim, audio, policy, merit and hold. A value that is missing or
 // invalid is ignored (null, or false for a flag), never an error: a bad link still opens the app.
 
 import { TICKS_PER_SECOND_CHOICES } from '../worker/protocol.js';
+import { DIM_MIN } from './prefs.js';
 
 /** The most agents `?agents=` accepts. */
 export const MAX_AGENTS_PARAM = 4096;
@@ -14,6 +15,8 @@ export const MAX_AGENTS_PARAM = 4096;
  * @property {'webgpu' | 'webgl2' | null} backend a forced GPU backend; null lets the stage choose
  * @property {boolean} gputime record GPU frame times through timestamp queries
  * @property {boolean} tv TV mode: HUD hidden, director running, wake lock on
+ * @property {'auto' | number | null} dim the night dim: `auto`, or a fixed brightness from 0.3 to 1; null leaves it to the
+ *   `dim` preference
  * @property {boolean} audio start with audio on
  * @property {string | null} policy a registered policy name to preview (dev switch); the worker rejects an unknown one
  * @property {boolean} merit preview in-world merit with the `MERIT_PREVIEW` settings (dev switch)
@@ -44,6 +47,17 @@ function uintOf(text) {
  */
 function flagOf(text) {
     return text === '1' || text === 'true';
+}
+
+/**
+ * @param {string | null} text the `dim` value
+ * @returns {'auto' | number | null} `auto`, or the level when it is a decimal from `DIM_MIN` to 1, else null
+ */
+function dimOf(text) {
+    if (text === 'auto') {
+        return 'auto';
+    }
+    return text !== null && /^\d*\.?\d+$/.test(text) ? inRange(Number(text), DIM_MIN, 1) : null;
 }
 
 /**
@@ -94,6 +108,7 @@ export function readParams(search) {
         backend: backendOf(query.get('backend')),
         gputime: flagOf(query.get('gputime')),
         tv: flagOf(query.get('tv')),
+        dim: dimOf(query.get('dim')),
         audio: flagOf(query.get('audio')),
         policy: policyOf(query.get('policy')),
         merit: flagOf(query.get('merit')),

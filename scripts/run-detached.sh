@@ -7,7 +7,9 @@
 # Writes <dir>/<name>.log (stdout and stderr), <dir>/<name>.pid and, when the command ends, <dir>/<name>.done (its exit
 # code, written last and atomically). <dir> is $RUNS_DIR, default .runs/ in the repo root (gitignored). The run is
 # recorded in <dir>/runs.json (name, command, pid, directories, start time). An existing name is refused (exit 2), so a
-# second lane cannot overwrite a run: pick a new name.
+# second lane cannot overwrite a run: pick a new name. The record also holds `workers`: `--workers <n>` from the command,
+# else the pool default for eval, ladder, league, train, drill, reflex and screen, else null. When the run claims under
+# half the free workers and no other run is in flight on this machine, one warning line says so.
 #
 # --frozen copies the tree (minus node_modules, .git, coverage, .sim, .checklogs and the runs directory) into a NEW
 # directory <dir>/frozen-<name>-<timestamp>, symlinks node_modules, and runs the command from there, so editing,

@@ -90,7 +90,7 @@ describe('createOverlays', () => {
         layer.dispose();
     });
 
-    it('adds trails as ticks pass and a follow marker', () => {
+    it('adds trails as ticks pass, and leaves the follow ring to its own layer', () => {
         const { info } = smallReady();
         const layer = createOverlays({ info });
         const camera = createCameraController({
@@ -113,6 +113,6 @@ describe('createOverlays', () => {
             );
             count = layer.object.geometry.instanceCount * 2;
         }
-        expect(count).toBe(2 * 2 * 2 + 32 * 2);
+        expect(count).toBe(2 * 2 * 2);
     });
 });

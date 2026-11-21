@@ -1,3 +1,4 @@
+// reads: test
 import { existsSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { HEAVY_TESTS, STATISTICAL_TESTS, excludedFor, includedFor } from '../scripts/lib/test-scope.mjs';

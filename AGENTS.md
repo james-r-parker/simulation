@@ -44,7 +44,7 @@ The ones used in every session:
 - Install: `npm ci`. Run the app: `npm run dev` (Vite, http://localhost:5173).
 - Start a chunk: `scripts/task-start.sh <type>/<desc> [--plan <doc>] [--here]`.
 - Ship a chunk: `scripts/ship.sh --title <subject> --body <file> [--base main] [--no-merge]`.
-- Pre-push check (what an agent runs): `scripts/check.sh --fix --quick`; CI is the PR gate and runs everything.
+- Pre-push check (what an agent runs): `scripts/check.sh --fix --quick`; CI is the PR gate: a pull request runs the tests its change reaches (`scripts/affected.mjs`), the push to `main` all of them.
 - Docs-only change: `scripts/check.sh --fix --docs`.
 - Tests: `npm test`; one file `npx vitest run <file>`; one test `npx vitest run -t '<name>'`; fast only
   `TEST_SCOPE=fast npx vitest run`.
@@ -88,8 +88,13 @@ four columns (`#`, `Task`, `Nature`, `Depends on`), `T`-numbered ids and `[mecha
 
 Full text: [docs/agent-reference.md](docs/agent-reference.md). The rules:
 
-- **One chunk at a time** (user, 2026-10-22), each branched from the latest `origin/main`; parallel branches cost more
-  in rework than they save.
+- **One chunk at a time per stream** (user, 2026-10-22), each branched from the latest `origin/main`. A stream is a
+  lane handed to another session with a prompt (`docs/handoffs/TEMPLATE.md`, committed as
+  `docs/handoffs/<YYYY-MM-DD>-<stream>.md` before it starts); streams run side by side only when their Owns paths are
+  disjoint, since parallel branches in one path cost more in rework than they save.
+- **One coordinator, one model family.** One session owns the queue, the ledger and every plan doc's status line.
+  Streams are sessions of its model family; a session of another model family edits no plan doc and records no
+  experiment (a flaky test or a renderer spike is its work).
 - **Build in chunks** (user, 2026-10-29): one PR is one chunk of 4 to 8 related tasks, built in order by one subagent on
   one branch, one commit per task. Each commit runs the pre-commit hook; the pre-push check runs once per chunk PR and
   CI runs the full gate. The delegating agent reviews each task's commit against its plan row. Evals, screens and timing
@@ -102,7 +107,10 @@ Full text: [docs/agent-reference.md](docs/agent-reference.md). The rules:
 - **Never strand a run** (user, 2026-10-23). A subagent runs a command under about 9 minutes in the foreground and does
   not end its turn with a background job running; for a longer run it commits something, then ends its turn reporting
   the run name, and the delegating agent waits and resumes it.
-- **Clean up after each merge** (user, 2026-10-23): `git worktree remove <path>`, never `--force`.
+- **Worker budget.** Run `npm run state` before a long run: it lists every run in flight on the machine, the worker
+  budget and the workers free; pass `--workers <free>` (a lone run claiming under half of them gets a warning).
+- **Clean up after each merge** (user, 2026-10-23): `scripts/worktree-gc.sh` removes the worktrees of merged PRs (class
+  `safe`; `--list` shows every class and why a worktree is kept), never with `--force`.
 - **Summarise results with a script**, not by reading whole reports.
 - **Only timing work needs a quiet machine** (`bench`, `bench-compare`, `bench:micro`, `perf:browser`, `alloc-check`,
   the full local gate): run it through `flock /tmp/claude-1000/cpu.lock <cmd>` while no eval or screen runs. Evals,
@@ -171,7 +179,7 @@ New code is small modules that each do one job and are tested on their own.
   (`conventions`).
 
 A test that runs a real world for many ticks, a worker pool or a full eval (about 0.5 s or more) goes in
-`<module>.slow.test.js` beside the mirrored test; CI runs only the fast tests, every local run runs all
+`<module>.slow.test.js` beside the mirrored test; a pull request runs the tests its change reaches, every local run runs all
 (`docs/designs/quality-gates-and-test-tiers.md`).
 
 A limit is a signal to split, never a target to pad up to. Do not silence a limit with `eslint-disable`; split the

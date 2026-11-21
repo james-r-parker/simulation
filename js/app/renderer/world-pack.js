@@ -100,15 +100,15 @@ function put2(lane, o, x, y) {
     lane[o + 1] = y;
 }
 
-/** @param {Record<string, any>} pack the pack @param {{f32: Float32Array}} snap the snapshot @param {import('../snapshot-view.js').Sections} s its sections @returns {void} */
-function packRocks(pack, snap, s) {
+/** @param {Record<string, any>} pack the pack @param {{f32: Float32Array}} snap the snapshot @param {import('../snapshot-view.js').Sections} s its sections @param {{x: number, y: number}} shift the static lines' drift in world units @returns {void} */
+function packRocks(pack, snap, s, shift) {
     const b = pack.rock;
     b.count = Math.min(s.obstacleCount, b.pose.length / ITEM);
     for (let i = 0; i < b.count; i++) {
         const w = s.obstacleStart + i * OBSTACLE_STRIDE;
         const o = i * ITEM;
         const k = (i % (pack.shapes.length / SHAPE_FLOATS)) * SHAPE_FLOATS;
-        put2(b.pose, o, snap.f32[w], snap.f32[w + 1]);
+        put2(b.pose, o, snap.f32[w] + shift.x, snap.f32[w + 1] + shift.y);
         put2(b.pose, o + 2, 0, snap.f32[w + 2]);
         color(b, o, NEON.rock, FILL_SHARE.default);
         put2(b.gate, o, pack.shapes[k], pack.shapes[k + 1]);
@@ -118,15 +118,15 @@ function packRocks(pack, snap, s) {
     }
 }
 
-/** @param {Record<string, any>} pack the pack @param {Record<string, any>} info `ready.info` @param {Float32Array | null} levels refuge occupancy @returns {void} */
-function packRefuges(pack, info, levels) {
+/** @param {Record<string, any>} pack the pack @param {Record<string, any>} info `ready.info` @param {{levels: Float32Array | null, shift: {x: number, y: number}}} at refuge occupancy and the static lines' drift @returns {void} */
+function packRefuges(pack, info, { levels, shift }) {
     const refuges = info.terrain?.refuges ?? [];
     const b = pack.refuge;
     b.count = Math.min(refuges.length, b.pose.length / ITEM);
     for (let r = 0; r < b.count; r++) {
         const o = r * ITEM;
-        b.pose[o] = refuges[r].x;
-        b.pose[o + 1] = refuges[r].y;
+        b.pose[o] = refuges[r].x + shift.x;
+        b.pose[o + 1] = refuges[r].y + shift.y;
         b.pose[o + 2] = 0;
         b.pose[o + 3] = refuges[r].radius;
         color(b, o, NEON.rock, 0);
@@ -190,19 +190,21 @@ function packClouds(pack, snap, { s, smokeRadius }) {
     }
 }
 
+const NO_SHIFT = Object.freeze({ x: 0, y: 0 });
 const AT = { s: /** @type {any} */ (null), radius: 0, timeSec: 0, dung: 0, smokeRadius: 0 };
 
 /**
  * @param {{f32: Float32Array, u32: Uint32Array}} snapshot the newest snapshot
  * @param {Record<string, any>} pack the world pack
- * @param {{info: Record<string, any>, dung: number, levels: Float32Array | null, timeSec: number}} view `ready.info`,
- *   the dung zone origin code, the refuge occupancy levels and the wall time
+ * @param {{info: Record<string, any>, dung: number, levels: Float32Array | null, timeSec: number,
+ *   shift?: {x: number, y: number}}} view `ready.info`, the dung zone origin code, the refuge occupancy levels, the wall
+ *   time and the drift of the rocks and refuge rings in world units (none when absent)
  * @returns {import('../snapshot-view.js').Sections} the snapshot's sections
  */
-export function packWorld(snapshot, pack, { info, dung, levels, timeSec }) {
+export function packWorld(snapshot, pack, { info, dung, levels, timeSec, shift = NO_SHIFT }) {
     const s = readSections(snapshot.u32, pack.sections);
-    packRocks(pack, snapshot, s);
-    packRefuges(pack, info, levels);
+    packRocks(pack, snapshot, s, shift);
+    packRefuges(pack, info, { levels, shift });
     AT.s = s;
     AT.radius = info.foodPatchRadius;
     AT.timeSec = timeSec;

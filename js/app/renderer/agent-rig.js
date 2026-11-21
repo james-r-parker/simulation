@@ -9,6 +9,7 @@ import { applyClip, restRig } from './clip-sampler.js';
 import { CH, CHANNELS, clipForTween } from './clips.js';
 import { dentAt } from './dents.js';
 import { SPRINT_FROM, sprintAmp, thrustOf } from './hunt-cues.js';
+import { HALO_LANE_MAX } from './rim-halo.js';
 import { FILL_FLOOR, FILL_SHARE, NEON, toDisplay } from './palette.js';
 
 const N = CHANNELS.length;
@@ -55,7 +56,8 @@ export const STALK_SPEED = 0.35;
  * @property {Float32Array} rig2 ring, ringAlpha, limb, head
  * @property {Float32Array} gate pregnant, sick, infected, pollen
  * @property {Float32Array} gate2 calling, in cover, gestation01, the membrane and flagellum wave phase
- * @property {Float32Array} accent pollen colour r, g, b and the call kind (1 alarm, 2 pack call)
+ * @property {Float32Array} accent pollen colour r, g, b and the call kind (1 alarm, 2 pack call) plus, in its fraction,
+ *   the rim falloff strength of an event (0 to 0.999, `rim-halo.js`)
  * @property {Float32Array} dent the membrane dent: bearing in the body frame, signed depth, width and the dying value
  *   (a dying body's tear and fade; its dent is the tear)
  * @property {Float32Array} call call colour r, g, b and the flagella's thrust
@@ -268,7 +270,7 @@ function gateRow(ctx, { bucket, o, flags }, out, rgb) {
         const hue = ((flags >>> ctx.flags.POLLEN_HUE_SHIFT) & ctx.flags.POLLEN_HUE_MASK) / ctx.flags.POLLEN_HUE_MASK;
         toDisplay(floraColor(hue * 2 - 1, rgb), rgb);
     }
-    putRgb(out.accent, o, pollen ? rgb : NEON.pollen, callKind);
+    putRgb(out.accent, o, pollen ? rgb : NEON.pollen, callKind + Math.min(bucket.halo[o / ITEM], HALO_LANE_MAX));
     putRgb(out.call, o, callKind === 2 ? NEON.huntCall : NEON.alarm, thrustOf(bucket.motion[o]));
 }
 

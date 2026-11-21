@@ -86,6 +86,19 @@ describe('run-detached.sh and wait-run.sh', { timeout: SPAWN_TIMEOUT_MS }, () =>
         expect(Date.parse(record.started)).not.toBeNaN();
     });
 
+    it('records the workers a run claims: --workers, the pool default, or null', () => {
+        run(DETACH, ['w1', '--', 'bash', '-c', 'exit 0', 'x', '--workers', '3']);
+        run(DETACH, ['w2', '--', 'bash', '-c', 'exit 0', 'eval']);
+        run(DETACH, ['w3', '--', 'bash', '-c', 'exit 0']);
+        for (const name of ['w1', 'w2', 'w3']) {
+            run(WAIT, [name]);
+        }
+        const [a, b, c] = readRuns(join(dir, 'runs', 'runs.json'));
+        expect(a.workers).toBe(3);
+        expect(b.workers).toBeGreaterThanOrEqual(1);
+        expect(c.workers).toBeNull();
+    });
+
     it('refuses an existing name and leaves the first run alone', () => {
         run(DETACH, ['dup', '--', 'bash', '-c', 'echo first']);
         run(WAIT, ['dup']);

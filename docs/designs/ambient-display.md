@@ -264,24 +264,24 @@ Both stay inside budget with the reel's ring running; a clip is encoded off the 
 
 ### Phase 3 - Follow as a story
 
-| #   | Task                                                                                                                                   | Nature       | Depends on         |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------------ |
-| T12 | Hold follow for the clip length plus 600 ms; add `js/app/follow-handoff.js` (killer, child, kin, pick) and the relation caption; tests | [judgement]  | T7                 |
-| T13 | Add look-ahead, pair framing and state zoom to `followStep`; tests                                                                     | [judgement]  | -                  |
-| T14 | Add the boredom timeout and the manual exemption; tests                                                                                | [mechanical] | T12                |
-| T15 | Add `ui/subject-plate.js` and the SDF ring; tests                                                                                      | [judgement]  | -                  |
-| T16 | Make the inspector follow a handoff and add the 12-event life line; tests                                                              | [judgement]  | T12                |
-| T17 | Conformance review of Phase 3                                                                                                          | [judgement]  | T13, T14, T15, T16 |
+| #   | Task                                                                                                                                                                                  | Nature       | Depends on         |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------------ |
+| T12 | Hold follow for the clip length plus 600 ms; add `js/app/follow-handoff.js` (killer, child, kin, pick) and the relation caption; tests (built)                                        | [judgement]  | T7                 |
+| T13 | Add look-ahead, pair framing and state zoom to the follow camera (`followSubject` in `camera.js`, the state in `follow-frame.js`; `followStep` stays for the director); tests (built) | [judgement]  | -                  |
+| T14 | Add the boredom timeout and the manual exemption; tests (built)                                                                                                                       | [mechanical] | T12                |
+| T15 | Add `ui/subject-plate.js` and the SDF ring; tests (built)                                                                                                                             | [judgement]  | -                  |
+| T16 | Make the inspector follow a handoff and add the 12-event life line; tests (built)                                                                                                     | [judgement]  | T12                |
+| T17 | Conformance review of Phase 3                                                                                                                                                         | [judgement]  | T13, T14, T15, T16 |
 
 ### Phase 4 - The far-screen look
 
-| #   | Task                                                                                                                                    | Nature       | Depends on         |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------------ |
-| T18 | TV rim weight and minimum size; the static-line dim and drift; the Look rules of [crisp-renderer.md](crisp-renderer.md) edited to match | [judgement]  | T2                 |
-| T19 | Three parallax depth layers with slow drift; tests on the pack output                                                                   | [judgement]  | -                  |
-| T20 | The event-only rim falloff (kill, birth, pack call), capped at 6 px and 500 ms; WebGL2 path; tests                                      | [judgement]  | T8                 |
-| T21 | Night dim by wall clock with `?dim` and the preference; tests with an injected clock                                                    | [mechanical] | -                  |
-| T22 | Conformance review of Phase 4 on the 4K OLED and the 1440p panel, with screenshots from 3 m                                             | [judgement]  | T18, T19, T20, T21 |
+| #   | Task                                                                                                                                            | Nature       | Depends on         |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------------ |
+| T18 | TV rim weight and minimum size; the static-line dim and drift; the Look rules of [crisp-renderer.md](crisp-renderer.md) edited to match (built) | [judgement]  | T2                 |
+| T19 | Three parallax depth layers with slow drift; tests on the pack output (built)                                                                   | [judgement]  | -                  |
+| T20 | The event-only rim falloff (kill, birth, pack call), capped at 6 px and 500 ms; WebGL2 path; tests (built)                                      | [judgement]  | T8                 |
+| T21 | Night dim by wall clock with `?dim` and the preference; tests with an injected clock (built)                                                    | [mechanical] | -                  |
+| T22 | Conformance review of Phase 4 on the 4K OLED and the 1440p panel, with screenshots from 3 m                                                     | [judgement]  | T18, T19, T20, T21 |
 
 ### Phase 5 - Every reading one key away
 

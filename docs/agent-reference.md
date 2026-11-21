@@ -6,8 +6,20 @@ Detail that [AGENTS.md](../AGENTS.md) summarises. AGENTS.md is read at the start
 
 When one agent hands tasks to others (user, 2026-10-22):
 
-- **One chunk at a time**, each branched from the latest `origin/main`. Parallel branches conflict in the config files
-  and the plan doc, and the rework costs more than the parallelism saves.
+- **One chunk at a time per stream**, each branched from the latest `origin/main`. Parallel branches in one path
+  conflict in the config files and the plan doc, and the rework costs more than the parallelism saves.
+- **Streams and one coordinator.** A stream is a lane given to another session with a prompt. One coordinator session
+  owns the Build queue, the experiment ledger and every plan doc's `**Status:**` line; streams are sessions of the
+  coordinator's model family and report to it. A session of another model family takes only work that edits no plan doc
+  and records no experiment (a flaky test, a renderer spike), since it does not load the skills and the memory the
+  workflow rests on. `docs/handoffs/TEMPLATE.md` is the prompt's form (goal and done, Owns, worker budget, experiment
+  ids, before it stops, ruled out); each handoff is committed as `docs/handoffs/<YYYY-MM-DD>-<stream>.md` before the
+  stream starts. Two live streams own no path in common; the plan doc and the ledger are edited by one stream at a time.
+- **Worker budget.** `npm run state` prints the queue, every run in flight under any worktree (name, workers, seeds
+  done), the machine (threads, load, `defaultWorkers` budget, workers claimed by runs in flight, workers free), the
+  ladder, the last experiments, the last 20 ships (median minutes, first-run green share), open PRs and the worktree
+  class counts. A stream's handoff names its `--workers` from that page; `run-detached.sh` records `workers` in
+  `runs.json` and prints one warning line when a lone run claims under half the free workers.
 - **Build in chunks (user, 2026-10-29).** One PR carries one chunk: 4 to 8 related tasks, usually most of a phase,
   built in order by one subagent on one branch, one commit per task. During the chunk each commit runs only the
   pre-commit hook (`scripts/check.sh --tier 1`), whose `test-related` gate runs the tests of the staged files, so the
@@ -34,9 +46,13 @@ When one agent hands tasks to others (user, 2026-10-22):
   its turn reporting the run name; the delegating agent starts its own `scripts/wait-run.sh <name>` in the background
   and resumes the subagent when it returns. Commit something on the branch first: a worktree with no commits is
   auto-deleted when the turn ends, and a non-frozen run dies with it.
-- **Clean up after each merge (user, 2026-10-23).** Once a subagent's PR merges, remove its worktree with
-  `git worktree remove <path>` (unlock it first if its locking process has exited). Never use `--force`: a worktree
-  with uncommitted files is left for the user to inspect.
+- **Clean up after each merge (user, 2026-10-23).** Once a subagent's PR merges, run `scripts/worktree-gc.sh`: it
+  removes the `safe` worktrees (a merged PR holds all of HEAD and the tree is clean) with `git worktree remove` and
+  deletes their local branches. Only worktrees under `<main checkout>/.claude/worktrees/` are removed; a named stream checkout elsewhere lists as `outside` and needs `--all`. Never use `--force`. `scripts/worktree-gc.sh --list` classes every worktree and says why
+  each kept one is kept: `live` (the main checkout, the calling session, a locked one, a process in it, a run in flight
+  or a run log under its `.runs/`), `dirty` (uncommitted or untracked files, left for the user to inspect),
+  `unmerged` (no merged PR, a detached HEAD, or commits the merged PR does not hold) and `gone` (the directory is
+  missing; `git worktree prune`). Unlock a worktree whose locking process has exited before it can be removed by hand.
 - **Summarise results with a script.** Extract the few numbers a decision needs from eval reports and logs into a
   short table instead of reading whole reports.
 - **Only timing work needs a quiet machine.** Performance work (`npm run bench`, `bench-compare`, `bench:micro`,

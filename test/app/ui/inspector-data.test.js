@@ -4,6 +4,7 @@ import {
     diseaseText,
     firingThreshold,
     inspectorView,
+    NO_INSPECTION,
     temperatureBand,
 } from '../../../js/app/ui/inspector-data.js';
 import { AGENT_FIELD, AGENT_STRIDE, HEADER_WORDS } from '../../../js/app/interpolate.js';
@@ -123,6 +124,13 @@ describe('inspectorView on a real selected agent', () => {
         expect(text()).toBe('immune to 2 strains');
         state.snapshot.f32[at] = 4;
         expect(text()).toBe('infected, strain 3');
+    });
+
+    it('gives the numbers the subject plate reads', () => {
+        expect(view.stats.ageSeasons).toBeGreaterThanOrEqual(0);
+        expect(view.stats.kills).toBeGreaterThanOrEqual(0);
+        expect(view.stats.children).toBeGreaterThanOrEqual(0);
+        expect(NO_INSPECTION.stats).toEqual({ ageSeasons: 0, kills: 0, children: 0 });
     });
 
     it('lists the counters as text', () => {
