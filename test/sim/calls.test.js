@@ -52,13 +52,15 @@ function run(w) {
 
 /**
  * @param {ReturnType<typeof senseWorld>} w the world
- * @returns {number[][]} the events pushed so far, each as `[type, ...fields]` without the tick
+ * @returns {number[][]} the call events pushed so far, each as `[type, ...fields]` without the tick (the effect records a
+ *   call also pushes, `hoarse` among them, are the registry's: test/sim/effect-calls.test.js reads those)
  */
 function events(w) {
-    return Array.from({ length: w.events.count }, (_v, i) => {
+    const all = Array.from({ length: w.events.count }, (_v, i) => {
         const o = i * EVENT_STRIDE;
         return [w.events.data[o], ...w.events.data.subarray(o + 2, o + 8)];
     });
+    return all.filter((e) => e[0] !== EVENT_TYPE.EFFECT_APPLIED && e[0] !== EVENT_TYPE.EFFECT_CAPPED);
 }
 
 /**
@@ -112,7 +114,7 @@ describe('alarm call', () => {
         const a = agent(w);
         setOutput(w, a, OUTPUT_INDEX.ALARM, 0);
         run(w);
-        expect([w.energy[a], w.events.count]).toEqual([100, 0]);
+        expect([w.energy[a], events(w).length]).toEqual([100, 0]);
     });
 
     it('is not available to a specialisation that can hunt', () => {
@@ -120,7 +122,7 @@ describe('alarm call', () => {
         const a = agent(w, { spec: PREDATOR });
         setOutput(w, a, OUTPUT_INDEX.ALARM);
         run(w);
-        expect([w.energy[a], w.alarmTimer[a], w.events.count]).toEqual([100, 0, 0]);
+        expect([w.energy[a], w.alarmTimer[a], events(w).length]).toEqual([100, 0, 0]);
     });
 
     it('is refused unless the energy exceeds the cost', () => {
@@ -142,7 +144,7 @@ describe('alarm call', () => {
         for (let tick = 0; tick < 25; tick++) {
             w.events.count = 0;
             run(w);
-            fired += w.events.count;
+            fired += events(w).length;
         }
         expect(fired).toBe(3);
         expect(w.energy[a]).toBe(100 - 3 * 4);
@@ -156,7 +158,7 @@ describe('alarm call', () => {
         for (let tick = 0; tick < 12; tick++) {
             w.events.count = 0;
             run(w);
-            if (w.events.count > 0) {
+            if (events(w).length > 0) {
                 ticks.push(tick);
             }
         }
@@ -181,7 +183,7 @@ describe('hunt call', () => {
         const a = agent(w, { spec: FORAGER });
         setOutput(w, a, OUTPUT_INDEX.HUNT);
         run(w);
-        expect([w.energy[a], w.huntTimer[a], w.events.count]).toEqual([100, 0, 0]);
+        expect([w.energy[a], w.huntTimer[a], events(w).length]).toEqual([100, 0, 0]);
     });
 
     it('is refused at or below the cost and while the timer runs', () => {
@@ -189,12 +191,12 @@ describe('hunt call', () => {
         const a = agent(w, { spec: PREDATOR, energy: 6 });
         setOutput(w, a, OUTPUT_INDEX.HUNT);
         run(w);
-        expect(w.events.count).toBe(0);
+        expect(events(w).length).toBe(0);
         const b = agent(w, { spec: PREDATOR, x: 900, y: 900 });
         setOutput(w, b, OUTPUT_INDEX.HUNT);
         run(w);
         run(w);
-        expect([w.events.count, w.energy[b]]).toEqual([1, 94]);
+        expect([events(w).length, w.energy[b]]).toEqual([1, 94]);
     });
 });
 

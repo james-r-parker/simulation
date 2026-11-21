@@ -25,6 +25,10 @@ vi.mock('../../js/sim/environment.js', () => ({
     moveObstacles: rec('moveObstacles'),
     updateSeason: rec('updateSeason'),
 }));
+vi.mock('../../js/sim/effects.js', async (importOriginal) => ({
+    ...(await importOriginal()),
+    fadeEffects: rec('fadeEffects'),
+}));
 vi.mock('../../js/sim/eras.js', () => ({ advanceEra: rec('advanceEra') }));
 vi.mock('../../js/sim/feeding.js', () => ({ feed: rec('feed') }));
 vi.mock('../../js/sim/food.js', () => ({ ageFood: rec('ageFood'), spawnFood: rec('spawnFood') }));
@@ -104,6 +108,7 @@ describe('step phase bodies', () => {
             ['ageSmoke', world],
             ['meritPhase', world],
             ['assertInvariants', world],
+            ['fadeEffects', world],
         ]);
         expect(world.tick).toBe(4);
     });

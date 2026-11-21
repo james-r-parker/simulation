@@ -90,7 +90,7 @@ describe('renderMetricsDoc', () => {
         for (const name of Object.keys(METRICS)) {
             expect(cellsOf(doc, name), name).toHaveLength(1);
         }
-        expect(doc.split('\n').filter((line) => line.startsWith('## '))).toHaveLength(7);
+        expect(doc.split('\n').filter((line) => line.startsWith('## '))).toHaveLength(8);
     });
 
     it('is the text Prettier writes, so the format gate leaves it alone', async () => {

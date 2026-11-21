@@ -183,6 +183,7 @@ describe('observeScenes', () => {
             'divergence',
             'eat',
             'edge',
+            'effects',
             'families',
             'flora',
             'genes',

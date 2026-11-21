@@ -12,6 +12,7 @@ import { SCENES_ECOLOGY } from './scenes-ecology.js';
 import { SCENES_ECOLOGY_2 } from './scenes-ecology-2.js';
 import { SCENES_ECOLOGY_3 } from './scenes-ecology-3.js';
 import { SCENES_ECOLOGY_4 } from './scenes-ecology-4.js';
+import { SCENES_EFFECTS } from './scenes-effects.js';
 import { SCENES_SPRINT } from './scenes-sprint.js';
 import { SCENES_STILLNESS } from './scenes-stillness.js';
 import { SCENES_SCENT } from './scenes-scent.js';
@@ -80,6 +81,7 @@ export const METRICS = withRoles({
     ...withPower(withLiveness(SCENES_ECOLOGY_4)),
     ...withPower(withLiveness(SCENES_ECOLOGY_2)),
     ...withPower(withLiveness(SCENES_ECOLOGY_3)),
+    ...withPower(withLiveness(SCENES_EFFECTS)),
     ...withPower(withLiveness(SCENES_SPRINT)),
     ...withPower(withLiveness(SCENES_STILLNESS)),
     ...withPower(withLiveness(SCENES_SCENT)),

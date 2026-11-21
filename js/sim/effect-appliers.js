@@ -3,47 +3,12 @@
 
 import { LOSS_CAUSE, removeEnergy } from './energy.js';
 import { SYSTEM, numberOf } from './effects.js';
-import { EVENT, EVENT_TYPE, pushEvent } from './events.js';
+import { dropStack, raiseEffect, setStacks } from './effect-raise.js';
 
 /** @typedef {import('./effects.js').EffectSystem} EffectSystem */
 
-/**
- * Raises a `stacks` effect by one stack on a slot, up to its `maxStacks`; a stack past the cap is dropped
- * (`EFFECT_CAPPED`). A `ticks` effect restarts its timer; an `every` effect starts its clock only when it had no stack.
- * Pushes `EFFECT_APPLIED` for a stack gained.
- * @param {EffectSystem} system the effect readers the world was allocated with
- * @param {any} world the world
- * @param {number} slot the agent slot
- * @param {{effect: number, source: number}} cause the effect's index and what raised it (an agent slot, or 0)
- * @returns {boolean} whether a stack was gained
- */
-export function applyEffectOn(system, world, slot, cause) {
-    const { effect, source } = cause;
-    const row = system.rowOf[effect];
-    const def = system.list[effect];
-    if (row < 0) {
-        throw new Error(`applyEffect: ${def.name} stores no stacks, so nothing can raise it`);
-    }
-    const stacks = world.effectStacks[row];
-    const ticks = world.effectTicks[row];
-    if (stacks[slot] >= def.maxStacks) {
-        const at = pushEvent(world.events, EVENT_TYPE.EFFECT_CAPPED, world.tick);
-        world.events.data[at + EVENT.EFFECT_CAPPED.SLOT] = slot;
-        world.events.data[at + EVENT.EFFECT_CAPPED.EFFECT] = effect;
-        return false;
-    }
-    const fades = /** @type {NonNullable<typeof def.fades>} */ (def.fades);
-    if (fades.kind === 'ticks' || stacks[slot] === 0) {
-        ticks[slot] = world.config[fades.key];
-    }
-    stacks[slot] += 1;
-    const at = pushEvent(world.events, EVENT_TYPE.EFFECT_APPLIED, world.tick);
-    world.events.data[at + EVENT.EFFECT_APPLIED.SLOT] = slot;
-    world.events.data[at + EVENT.EFFECT_APPLIED.EFFECT] = effect;
-    world.events.data[at + EVENT.EFFECT_APPLIED.STACKS] = stacks[slot];
-    world.events.data[at + EVENT.EFFECT_APPLIED.SOURCE] = source;
-    return true;
-}
+/** `raiseEffect` of effect-raise.js under the name this module has always had, for a caller that holds its own system. */
+export const applyEffectOn = raiseEffect;
 
 /**
  * @param {any} world the world
@@ -88,4 +53,27 @@ export function drainEffectOn(system, world, slot, effect) {
  */
 export function drainEffect(world, slot, effect) {
     drainEffectOn(SYSTEM, world, slot, effect);
+}
+
+/**
+ * Takes one stack off a stored effect (an `answered` kill or a seen alarm takes one off `hoarse`).
+ * @param {any} world the world
+ * @param {number} slot the agent slot
+ * @param {number} effect an `EFFECT` code of a `stacks` effect
+ * @returns {boolean} whether a stack was taken off
+ */
+export function dropEffect(world, slot, effect) {
+    return dropStack(SYSTEM, world, slot, effect);
+}
+
+/**
+ * Sets a `held` effect's stacks to a recounted number (the huddle), capped at `maxStacks`.
+ * @param {any} world the world
+ * @param {number} slot the agent slot
+ * @param {{effect: number, count: number, source: number}} to an `EFFECT` code of a `held` effect, the new count and
+ *   the cause
+ * @returns {void}
+ */
+export function setEffectStacks(world, slot, to) {
+    setStacks(SYSTEM, world, slot, to);
 }
