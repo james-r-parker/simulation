@@ -11,6 +11,8 @@ import { CH_THREAT, eachAlive, setOutput, write } from './scripted-parts.js';
 
 /** A prey ray this near (1 at contact, 0 at the eye's range) is in the jaws; the staged jaws read about 0.8, a prey at half the view 0.5. */
 const JAWS_NEARNESS = 0.65;
+/** The gait of a body clearing a herd: all it has, since a herd bar derived from a row can be most of the range. */
+const HERD_THRUST = 1;
 /**
  * @param {Record<string, any>} world the world
  * @param {number} slot the agent
@@ -55,7 +57,7 @@ const onAlarm = (sign) => (world, slot) => {
  */
 function clearTheHerd(world, slot) {
     const k = nearestClassRay(world, slot, CH_MEGAFAUNA, CH_MEGAFAUNA);
-    write(world, slot, k < 0 ? 0 : GO_THRUST, k < 0 ? 0 : turnAway(k, world.config.rayCount));
+    write(world, slot, k < 0 ? 0 : HERD_THRUST, k < 0 ? 0 : turnAway(k, world.config.rayCount));
 }
 
 /** The reference's behaviour for each role case. */

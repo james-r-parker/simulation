@@ -160,7 +160,8 @@ const clearTheHerd = (spec) => ({
     spec,
     plan: herdPlan(spec),
     check: (outputs, { bearing }, bars = defaultBars()) =>
-        Math.sign(bearing) * outputs.turn <= -bars.role.herdTurn && outputs.thrust >= bars.role.herdThrust,
+        Math.sign(bearing) * outputs.turn <= -bars.role.herdTurn[SPEC_NAMES[spec]] &&
+        outputs.thrust >= bars.role.herdThrust[SPEC_NAMES[spec]],
 });
 
 /** @type {ReflexCase} A reproducer hears the call, and goes the other way. */

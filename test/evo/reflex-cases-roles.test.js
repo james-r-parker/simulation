@@ -186,12 +186,13 @@ describe('the heard-call cases', () => {
         expect(check(out({ turn: 1, thrust: 1 }), staging('alarm', -60 * DEG))).toBe(true);
     });
 
-    it('flee-on-alarm asks the forager for the turn the scout row needs, and the reproducer for its hand-set one', () => {
+    it('flee-on-alarm asks the forager and the reproducer for the turn the warn row needs of each', () => {
         const turnAway = BARS.role.turnAway;
         const s = staging('alarm', 60 * DEG);
         const forager = byName('flee-on-alarm').check;
         const reproducer = byName('flee-on-alarm:reproducer').check;
-        expect(turnAway.forager).toBeGreaterThan(turnAway.reproducer);
+        expect(turnAway.reproducer).toBeGreaterThan(0.15);
+        expect(reproducer(out({ turn: -turnAway.reproducer + 0.01, thrust: 1 }), s)).toBe(false);
         expect(forager(out({ turn: -turnAway.forager, thrust: 1 }), s)).toBe(true);
         expect(forager(out({ turn: -turnAway.forager + 0.01, thrust: 1 }), s)).toBe(false);
         expect(reproducer(out({ turn: -turnAway.reproducer, thrust: 1 }), s)).toBe(true);
@@ -231,6 +232,19 @@ describe('clear-the-herd', () => {
         expect(check(out({ turn: 1, thrust: 1 }), s)).toBe(false);
         expect(check(out({ turn: -1, thrust: 0 }), s)).toBe(false);
         expect(check(out({ turn: 0, thrust: 1 }), s)).toBe(false);
+    });
+
+    it('reads each specialisation its own herd bars: the scout needs the thrust its row derives', () => {
+        const { herdThrust, herdTurn } = BARS.role;
+        expect(herdThrust.scout).toBeGreaterThan(herdThrust.forager);
+        const scout = byName('clear-the-herd:scout').check;
+        const forager = byName('clear-the-herd').check;
+        const s = staging('herd', 25 * DEG);
+        expect(scout(out({ turn: -1, thrust: herdThrust.scout }), s)).toBe(true);
+        expect(scout(out({ turn: -1, thrust: herdThrust.scout - 0.01 }), s)).toBe(false);
+        expect(forager(out({ turn: -1, thrust: herdThrust.scout - 0.01 }), s)).toBe(true);
+        expect(scout(out({ turn: -herdTurn.scout + 0.01, thrust: 1 }), s)).toBe(false);
+        expect(forager(out({ turn: -herdTurn.forager, thrust: 1 }), s)).toBe(true);
     });
 
     it('is given to every specialisation, staged as its own body, with the same turn off the line', () => {

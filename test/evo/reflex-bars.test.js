@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createConfig } from '../../js/sim/config.js';
 import { defaultBars, reflexBars } from '../../js/evo/reflex-bars.js';
-import { HAND_SET, NO_ROW, TODO_ROWS } from '../../js/evo/reflex-bars-hand.js';
+import { HAND_SET, NO_ROW } from '../../js/evo/reflex-bars-hand.js';
 import { swingTicks } from '../../js/evo/role-budget-kinematics.js';
 import { roleParams } from '../../js/evo/role-budget-params.js';
 import { FORAGER_TURN } from '../../js/evo/role-budget-warn.js';
@@ -43,14 +43,25 @@ describe('reflexBars at the defaults', () => {
         expect(bars.role.sprint).toEqual(HAND_SET.role.sprint);
     });
 
-    it('keeps a TODO bar for each row that is not on main, naming the row and the pull request', () => {
-        for (const { bar: name, row, pr } of TODO_ROWS) {
-            const source = bar(bars, name);
-            expect(source).toMatchObject({ source: 'hand-set', row, rowStatus: 'not built' });
-            expect(source.note).toContain(`TODO`);
-            expect(source.note).toContain(pr);
+    it('derives the reproducer flight and the herd bars the rows of PRs 602 and 603 give, and keeps no TODO bar', () => {
+        expect(bar(bars, 'role.turnAway.reproducer')).toMatchObject({ source: 'budget', row: 'scout:predator' });
+        expect(bars.role.turnAway.reproducer).toBeGreaterThan(HAND_SET.role.turn);
+        expect(bar(bars, 'role.herdTurn.forager')).toMatchObject({ source: 'budget', row: 'forager:herd' });
+        expect(bar(bars, 'role.herdThrust.scout')).toMatchObject({ source: 'budget', row: 'scout:herd' });
+        expect(bars.role.herdThrust.scout).toBeGreaterThan(HAND_SET.role.herdThrust);
+        expect(bars.sources.some((s) => s.note.includes('TODO'))).toBe(false);
+        expect(bar(bars, 'forager.fleeThrust')).toMatchObject({ source: 'hand-set', rowStatus: 'n/a' });
+    });
+
+    it('has a source for every bar of a spec, and each bar a source names is one of the bars', () => {
+        const names = bars.sources.map((s) => s.bar);
+        expect(new Set(names).size).toBe(names.length);
+        for (const spec of ['forager', 'predator', 'reproducer', 'scout', 'defender']) {
+            for (const kind of ['herdTurn', 'herdThrust']) {
+                expect(names).toContain(`role.${kind}.${spec}`);
+                expect(typeof (/** @type {any} */ (bars.role)[kind][spec])).toBe('number');
+            }
         }
-        expect(bars.role.turnAway.reproducer).toBe(HAND_SET.role.turn);
     });
 
     it('labels every other hand-set bar as one no row reads', () => {
@@ -90,6 +101,21 @@ describe('a change moves a bar', () => {
         const source = bar(mute, 'role.turnAway.forager');
         expect(mute.role.turnAway.forager).toBe(HAND_SET.role.turn);
         expect(source).toMatchObject({ source: 'hand-set', row: 'scout:predator', rowStatus: 'impossible' });
+    });
+
+    it('a faster herd moves the thrust bars, and a quicker turn rate the herd turn bars', () => {
+        const slow = reflexBars(createConfig({ herdRunSpeed: 4 }));
+        expect(slow.role.herdThrust.scout).toBeLessThan(defaultBars().role.herdThrust.scout);
+        expect(bar(slow, 'role.herdThrust.forager').source).toBe('budget');
+        const quick = reflexBars(createConfig({ maxTurn: 0.5 }));
+        expect(quick.role.herdTurn.forager).toBeLessThan(defaultBars().role.herdTurn.forager);
+        expect(quick.role.herdTurn.scout).toBeLessThan(defaultBars().role.herdTurn.scout);
+        expect(quick.role.turnAway.reproducer).toBeLessThan(defaultBars().role.turnAway.reproducer);
+    });
+
+    it('a thrust the config gives more of needs a smaller share to clear the herd', () => {
+        const strong = reflexBars(createConfig({ maxThrust: 0.9 }));
+        expect(strong.role.herdThrust.scout).toBeLessThan(defaultBars().role.herdThrust.scout);
     });
 
     it('refuses a model option that is not one', () => {
