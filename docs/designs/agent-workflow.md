@@ -13,7 +13,7 @@ The repo is built by coding agents: a coordinator, its subagents, and outside st
 
 This doc is a lead: it holds a rank in the Build queue, and the docs below are built as its steps, in order, after its own next work. A step doc keeps its own phases, tasks and status line.
 
-Own work first: Phase 5 (start to merge), Phase 1 (context diet), Phase 3 (before the push), Phase 6 (affected tests in CI), then Phases 2 and 4.
+Own work first: Phases 5, 1 and 4 are built; Phases 3 and 6 are built except T30 and their reviews. Next: Phase 2 (the experiment ledger), then T30 and the open reviews.
 
 | Step | Doc                                                                | Built when                                                                               |
 | ---- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
