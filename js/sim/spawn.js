@@ -223,7 +223,8 @@ export function spawnAgent(world, policy, cause) {
     policy.initBrain(world, slot, world.rng['brain-init']);
     applyGenes(world, slot);
     const energy = startEnergy(c, cause);
-    placeClear(world, world.rng.spawn, Math.max(c.minSize, baseSizeOf(world, slot) + energy / c.energyToSize));
+    const { minSize, energyToSize } = world.lanes;
+    placeClear(world, world.rng.spawn, Math.max(minSize[slot], baseSizeOf(world, slot) + energy / energyToSize[slot]));
     world.x[slot] = world.point[0];
     world.y[slot] = world.point[1];
     world.angle[slot] = nextFloat(world.rng.spawn) * TWO_PI - PI;

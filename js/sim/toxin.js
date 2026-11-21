@@ -35,12 +35,12 @@ export function ingestToxin(world, slot, value, toxicity) {
  * @returns {void}
  */
 export function stepToxin(world) {
-    const { alive, dose, config } = world;
+    const { alive, dose, lanes } = world;
     for (let slot = 0; slot < alive.length; slot++) {
         if (alive[slot] !== 1 || dose[slot] === 0) {
             continue;
         }
         drainEffect(world, slot, EFFECT.SICK);
-        dose[slot] = Math.max(0, dose[slot] - config.doseDecay);
+        dose[slot] = Math.max(0, dose[slot] - lanes.doseDecay[slot]);
     }
 }

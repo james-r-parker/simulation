@@ -4,6 +4,7 @@ import { HEAT_BAND, LANES, LANE_COUNT, NOT_LANES, bodyProblem, laneBases, laneTa
 import { createConfig } from '../../js/sim/config.js';
 import { SPECIALISATION_FIELDS } from '../../js/sim/config-spec-rules.js';
 import { SPEC_NAMES } from '../../js/sim/specs.js';
+import { TRAITS } from '../../js/sim/body-traits.js';
 
 const config = createConfig();
 
@@ -66,6 +67,7 @@ describe('LANES', () => {
             'grazeThrust',
             'fatSlowShare',
             'sickThrust',
+            'predatorRestTicks',
             'antennaReach',
             'refugeSenseRange',
             'visionRange',
@@ -78,12 +80,23 @@ describe('LANES', () => {
             'turnCost',
             'sizeEnergyLoss',
             'visionCost',
+            'huntUpkeep',
             'baseSize',
+            'minSize',
+            'satiationShare',
             'digestTicks',
             'juvenileBurn',
+            'juvenilePlantShare',
+            'sickDose',
             'sickDrain',
+            'doseDecay',
+            'lethalDose',
             'diseaseDrain',
+            'diseaseTicks',
+            'plantFoodValue',
+            'meatFoodValue',
             'temperatureGainMove',
+            'temperatureGainEat',
             'temperatureLossPassive',
             'temperaturePassiveLossFactor',
             'temperatureEfficiencyColdSevere',
@@ -92,9 +105,59 @@ describe('LANES', () => {
             'temperatureEfficiencyHeatSevere',
             'heatSpeedCap',
             'sprintHeat',
+            'biteEnergy',
+            'biteCost',
+            'recoilEnergy',
+            'huntSizeRatio',
+            'biteArc',
+            'strikeMissCost',
+            'killShare',
+            'killGorgeCap',
+            'killGorgeShare',
             'alarmBiteShare',
+            'defenderRepelEnergy',
+            'defenderRepelCost',
+            'defenderRepelImpulse',
             'biteTakenMultiplier',
+            'kickMultiplier',
+            'juvenileTicks',
+            'mateSizeRatio',
+            'mateDistanceMax',
+            'mateMinEnergy',
+            'mateCost',
+            'mateRange',
             'childEnergyShare',
+            'childEnergyMin',
+            'splitMinEnergy',
+            'birthWindowTicks',
+            'maxBirthsPerWindow',
+            'reproductionCooldown',
+            'splitCooldownMultiplier',
+            'pregnancyTicks',
+            'maturityTicks',
+            'maxAgeTicks',
+            'birthReserve',
+            'splitDeliberateMin',
+            'splitDeliberateShareMin',
+            'splitMaxPerLife',
+            'splitMateScarceTicks',
+            'territoryRadius',
+            'territoryMax',
+            'callRadius',
+            'callTicks',
+            'alarmCost',
+            'huntCallCost',
+            'alarmThreshold',
+            'huntCallThreshold',
+            'smokeCost',
+            'smokeRadius',
+            'smokeTicks',
+            'smokeCooldown',
+            'smokeThreshold',
+            'pheromoneDeposit',
+            'rewardGain',
+            'rewardBase',
+            'rewardDecay',
         ]);
         expect(LANES.filter((lane) => lane.kind === 'offset').every((lane) => lane.moved)).toBe(true);
         expect(LANE_COUNT).toBe(115);
@@ -172,7 +235,7 @@ describe('bodyProblem', () => {
 
     it('refuses an unknown name, an unmoved lane and a threshold named directly', () => {
         expect(bodyProblem({ speed: 1 })).toMatch(/speed is neither/);
-        expect(bodyProblem({ biteEnergy: 1.2 })).toMatch(/no override of biteEnergy yet/);
+        expect(bodyProblem({ sprintFloor: 1.2 })).toMatch(/no override of sprintFloor yet/);
         expect(bodyProblem({ temperatureColdStress: 1 }, moved)).toMatch(/shift the thresholds with heatBand/);
         expect(bodyProblem({ [HEAT_BAND]: 1 }, unmoved)).toMatch(/no heatBand override yet/);
     });
@@ -189,8 +252,8 @@ describe('bodyProblem', () => {
     });
 
     it('is the rule createConfig applies to a spec body', () => {
-        expect(() => createConfig({ specialisations: { scout: { body: { biteEnergy: 2 } } } })).toThrow(
-            /config\.specialisations\.scout\.body is .*no override of biteEnergy yet/,
+        expect(() => createConfig({ specialisations: { scout: { body: { sprintFloor: 2 } } } })).toThrow(
+            /config\.specialisations\.scout\.body is .*no override of sprintFloor yet/,
         );
         expect(
             createConfig({ specialisations: { scout: { body: { maxThrust: 2 } } } }).specialisations.scout.body,
@@ -204,5 +267,17 @@ describe('bodyProblem', () => {
         const body = { baseSize: 1.1, childEnergyShare: 0.9 };
         expect(bodyProblem(body)).toBeNull();
         expect(createConfig({ specialisations: { scout: { body } } }).specialisations.scout.body).toEqual(body);
+    });
+});
+
+describe('the lanes a budget trait touches', () => {
+    it('are all moved, so the budget traits read them through the lane readers', () => {
+        const byName = new Map(LANES.map((lane) => [lane.name, lane]));
+        for (const trait of TRAITS.filter((t) => t.budget)) {
+            const touched = [...trait.effects.map((effect) => effect.lane), ...trait.costs.map((cost) => cost.lane)];
+            for (const name of touched) {
+                expect(byName.get(name)?.moved, `${trait.name} ${name}`).toBe(true);
+            }
+        }
     });
 });

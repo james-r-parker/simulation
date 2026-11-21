@@ -20,11 +20,12 @@ import { emitReport, runAsMain, withLogFile } from './lib/audit-io.mjs';
 import { exitCodeOf, parseFlags } from './lib/cli-args.mjs';
 import { formatDefenderSearch, searchDefenderRows } from './lib/role-budget-defender-search.mjs';
 import { formatBirthSearch, searchBirthRows } from './lib/role-budget-birth-search.mjs';
+import { genesMode, readGenes } from './lib/role-budget-genes-report.mjs';
 import { formatCheck, formatReport, formatSearch } from './lib/role-budget-report.mjs';
 import { logRunConfig } from './lib/run-config.mjs';
 
 const USAGE =
-    'usage: role-budget [--config <file.json>] [--set <path>=<value> ...] [--model <file.json>] [--mix <spec=w,...>] [--rows <a,b>] [--search] [--check] [--reliable] [--out-dir <dir>] [--json] [--out <path>]';
+    'usage: role-budget [--config <file.json>] [--set <path>=<value> ...] [--model <file.json>] [--mix <spec=w,...>] [--rows <a,b>] [--search] [--check] [--reliable] [--genes none|best-vs-worst|worst-vs-best|corners] [--out-dir <dir>] [--json] [--out <path>]';
 
 /** The most findings of one pair the search writes override files for. */
 const FILES_PER_PAIR = 5;
@@ -39,6 +40,7 @@ const FILES_PER_PAIR = 5;
  * @property {boolean} search whether to search a single setting for each row that is not fit
  * @property {boolean} check whether to play each row's scene beside the formula
  * @property {boolean} reliable whether the hunter acts only on a prey it reliably sees
+ * @property {string} genes `none`, `best-vs-worst`, `worst-vs-best` or `corners`: the rows read at the corners of the trait menus
  * @property {string} outDir where the search writes its override files
  * @property {boolean} json whether to print JSON
  * @property {string | null} out a file to write the output to
@@ -103,6 +105,7 @@ export function parseArgs(argv) {
             '--model': (v) => ['model', String(v)],
             '--mix': (v) => ['mix', parseMix(v)],
             '--rows': (v) => ['rows', String(v).split(',')],
+            '--genes': (v) => ['genes', genesMode(v)],
             '--out-dir': (v) => ['outDir', String(v)],
             '--out': (v) => ['out', String(v)],
         },
@@ -115,6 +118,7 @@ export function parseArgs(argv) {
             search: false,
             check: false,
             reliable: false,
+            genes: 'none',
             outDir: 'evals/role-budget',
             json: false,
             out: null,
@@ -312,20 +316,30 @@ function searchAll(config, { overrides, result, where }) {
 
 /**
  * @param {boolean} json whether to print JSON
- * @param {{hash: string, result: ReturnType<typeof matrix>, searched: any[], defence: any[], birth: any[], check: any}} parts the
- *   config hash, the matrix, the searches and the cross-check
+ * @param {{hash: string, result: ReturnType<typeof matrix>, searched: any[], defence: any[], birth: any[], check: any,
+ *   genes?: {text: string, data: any} | null}} parts the config hash, the matrix, the searches, the cross-check and the
+ *   rows read at the corners of the trait menus
  * @returns {string} the report: JSON, or the matrix followed by each part that was asked for
  */
-function render(json, { hash, result, searched, defence, birth, check }) {
+function render(json, { hash, result, searched, defence, birth, check, genes }) {
     if (json) {
         return JSON.stringify(
-            { configHash: hash, ...result, searched, defenderSearch: defence, birthSearch: birth, check },
+            {
+                configHash: hash,
+                ...result,
+                searched,
+                defenderSearch: defence,
+                birthSearch: birth,
+                check,
+                genes: genes?.data,
+            },
             null,
             2,
         );
     }
     return [
         formatReport(result, hash),
+        ...(genes ? [genes.text] : []),
         ...(searched.length > 0 ? [formatSearch(searched)] : []),
         ...(defence.length > 0 ? [formatDefenderSearch(defence)] : []),
         ...(birth.length > 0 ? [formatBirthSearch(birth)] : []),
@@ -388,7 +402,11 @@ export async function runBudget(args, { logDir = '.sim/logs', print = console.lo
             : { searched: [], defence: [], birth: [] };
         const world = createConfig(overrides);
         const check = args.check ? crossCheck(config, asked(args.rows ?? BUILT_ROWS, model, world), log) : null;
-        const text = render(args.json, { hash, result, searched, defence, birth, check });
+        const genes =
+            args.genes === 'none'
+                ? null
+                : readGenes(args.genes, { config, worldConfig: world, model, mix: args.mix }, args.rows ?? BUILT_ROWS);
+        const text = render(args.json, { hash, result, searched, defence, birth, check, genes });
         emitReport(text, { print, out: args.out });
         if (check !== null && check.drift > 0) {
             throw Object.assign(new Error(`RoleBudgetDrift: ${check.drift} reading(s) outside their tolerance`), {

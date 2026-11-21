@@ -6,7 +6,7 @@ import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
 import { ENERGY_SOURCE, addEnergy } from '../../js/sim/energy.js';
 import { feed } from '../../js/sim/feeding.js';
 import { buildHash, createSpatialHash } from '../../js/sim/spatial-hash.js';
-import { allocBody } from './helpers/body.js';
+import { allocBody, setSpec } from './helpers/body.js';
 import { smallWorld } from './helpers/small-world.js';
 
 const PREDATOR = 1;
@@ -20,7 +20,7 @@ function placeCub(w, ageTicks) {
     const slot = allocBody(w);
     w.x[slot] = 100;
     w.y[slot] = 100;
-    w.spec[slot] = PREDATOR;
+    setSpec(w, slot, PREDATOR);
     w.genomeId[slot] = slot + 1;
     w.ageTicks[slot] = ageTicks;
     addEnergy(w, slot, 20, ENERGY_SOURCE.INITIAL);

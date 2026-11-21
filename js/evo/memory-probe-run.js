@@ -52,6 +52,8 @@ const RULE_KEYS = Object.freeze([
  *   whether the trial is over, read after each step
  * @property {(world: Record<string, any>) => boolean} won whether the trial scored
  * @property {(won: boolean) => Record<string, any>} [trace] the trial's trace fields once it is over (drills log them)
+ * @property {(world: Record<string, any>) => void} [prepare] sets the staged world up before the first step (the role drills put
+ *   the herd of the stampede in place), after the agents are placed
  * @property {Record<string, (world: Record<string, any>) => void>} [controllers] scripted controllers by role, for the
  *   roles the combat controllers do not cover (the role drills' `stalker`, `caller` and `herd`): each drives every staged
  *   agent of its role, as the `hunter` and `prey` controllers do
@@ -178,6 +180,7 @@ export function playTrial({ plan, subject, controlSpec, seed, config, opponent, 
         seed,
         config: arena,
     });
+    plan.prepare?.(world);
     const control = createControl(world.config, { timing: plan.timing, scent: plan.scent, ...controlSpec });
     const brain = createBrain(world, fork(createRng(seed), 'scripted'), {
         subject,

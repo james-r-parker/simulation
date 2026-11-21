@@ -1,5 +1,5 @@
 // eat-choice (docs/designs/eat-choice.md): G1, a non-hunter eats only while it bites; G4, a strike at nothing costs.
-import { allocBody } from './helpers/body.js';
+import { allocBody, setSpec } from './helpers/body.js';
 import { describe, expect, it } from 'vitest';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
 import { createConfig } from '../../js/sim/config.js';
@@ -21,7 +21,7 @@ function eater(w, a) {
     const slot = allocBody(w);
     w.x[slot] = 100;
     w.y[slot] = 100;
-    w.spec[slot] = a.spec;
+    setSpec(w, slot, a.spec);
     w.genomeId[slot] = slot + 1;
     addEnergy(w, slot, a.energy ?? 20, ENERGY_SOURCE.INITIAL);
     w.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.BITE] = a.bite;

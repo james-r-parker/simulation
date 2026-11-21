@@ -21,6 +21,10 @@ function world({ bodies, bites, pairs, arc = Math.PI, views = {} }) {
     const layout = { inputCount: 128, pooled: offsets.pooled };
     const w = {
         config: { ...DEFAULTS, biteArc: arc },
+        lanes: {
+            biteArc: new Float64Array(N).fill(arc),
+            huntSizeRatio: new Float64Array(N).fill(DEFAULTS.huntSizeRatio),
+        },
         layout,
         alive: new Uint8Array(N),
         spec: new Uint8Array(N),

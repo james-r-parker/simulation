@@ -33,7 +33,8 @@ import { drillSubject, randomBrains, winBounds } from './drill.js';
 function reasonOf(passable, reference, { valid, binding }) {
     const score = `the reference wins ${reference.wins} of ${reference.trials}`;
     if (!passable) {
-        return `the row is impossible at "${binding}": no passable bar; ${score}`;
+        const base = `the row is impossible at "${binding}": no passable bar; ${score}`;
+        return reference.wins > 0 ? `${base}, so the scene is easier than the row says` : base;
     }
     return valid ? `valid: ${score} and the random brains do not` : `invalid: ${score}`;
 }

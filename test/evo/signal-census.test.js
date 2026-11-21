@@ -29,7 +29,10 @@ function fakeWorld(agents = 2) {
         parentB: new Uint32Array(agents),
         spec: new Uint8Array(agents),
         size: new Float32Array(agents).fill(10),
-        lanes: { visionRange: new Float64Array(agents).fill(300) },
+        lanes: {
+            visionRange: new Float64Array(agents).fill(300),
+            huntSizeRatio: new Float64Array(agents).fill(config.huntSizeRatio),
+        },
         x: new Float32Array(agents),
         y: new Float32Array(agents),
         foodAlive: new Uint8Array(4),

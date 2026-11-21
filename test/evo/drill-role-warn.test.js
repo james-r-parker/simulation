@@ -5,7 +5,15 @@ import { createRng, fork } from '../../js/sim/rng.js';
 import { SPEC } from '../../js/sim/specs.js';
 import { arenaConfig } from '../../js/evo/chase-arena.js';
 import { layerArena } from '../../js/evo/drill-body-rules.js';
-import { WARN_HERD, WARN_ROW, scoutReference, warnPlan } from '../../js/evo/drill-role-warn.js';
+import {
+    PARKED_GAP,
+    QUIET_TICKS,
+    WARN_HERD,
+    WARN_ROW,
+    lostReason,
+    scoutReference,
+    warnPlan,
+} from '../../js/evo/drill-role-warn.js';
 import { ROLE_ARENA } from '../../js/evo/drill-role-staging.js';
 import { drillSubject, randomBrains } from '../../js/evo/drill.js';
 import { playTrial } from '../../js/evo/memory-probe-run.js';
@@ -13,6 +21,8 @@ import { playWarning } from '../../js/evo/role-scenes-warn.js';
 
 const CONFIG = layerArena({}, ROLE_ARENA);
 const mute = { name: 'mute', id: 0, spec: SPEC.SCOUT, weights: null, act: () => {} };
+/** A scout that holds ALARM on from the first tick, whatever it sees. */
+const spammer = { name: 'spammer', id: 0, spec: SPEC.SCOUT, weights: null, act: lateCaller(0) };
 
 /**
  * @param {import('../../js/evo/memory-probe-run.js').Subject} subject the scout
@@ -37,19 +47,27 @@ describe('the warn-herd drill', () => {
         expect(WARN_HERD.arena).toBe(ROLE_ARENA);
     });
 
-    it('stages the hunter, the forager side-on to it and the scout facing the hunter, as the scene of playWarning', () => {
+    it('parks the hunter far behind the forager while the field is empty, and the scene starts where it appears', () => {
         const plan = WARN_HERD.plan(fork(createRng(1), 'drill:warn-herd'), 400, createConfig(ROLE_ARENA));
         const [hunter, forager, scout] = /** @type {any[]} */ (plan.stage.agents);
         expect([hunter.role, forager.role, scout.role]).toEqual(['stalker', 'herd', 'subject']);
         expect([hunter.spec, forager.spec, scout.spec]).toEqual([SPEC.PREDATOR, SPEC.FORAGER, SPEC.SCOUT]);
         const dist = (/** @type {any} */ a, /** @type {any} */ b) => Math.hypot(a.x - b.x, a.y - b.y);
-        expect(dist(hunter, forager)).toBeCloseTo(445, 0);
+        expect(dist(hunter, forager)).toBeCloseTo(PARKED_GAP + 445, 0);
+        expect(plan.maxTicks).toBe(QUIET_TICKS + 500);
+    });
+
+    it('stages the forager side-on to the hunter and the scout facing it, as the scene of playWarning', () => {
+        const plan = warnPlan(createConfig(ROLE_ARENA), { angle: 0, side: 1 });
+        const [, forager, scout] = /** @type {any[]} */ (plan.stage.agents);
+        const hunter = { x: forager.x - 445, y: forager.y };
+        const dist = (/** @type {any} */ a, /** @type {any} */ b) => Math.hypot(a.x - b.x, a.y - b.y);
         expect(dist(hunter, scout)).toBeCloseTo(445, 6);
         // the scene stands the scout 150 px to the side of the forager's line, as far from the hunter as the forager is
         expect(dist(scout, forager)).toBeCloseTo(Math.hypot(445 - Math.sqrt(445 ** 2 - 150 ** 2), 150), 0);
     });
 
-    it('plays the scene of playWarning for the oracle scout: the same alarm, hearing and first move, and a forager that lives', () => {
+    it('plays the scene of playWarning for the oracle scout, a quiet start later: the same hearing and first move', () => {
         const scene = playWarning(arenaConfig(), { reaction: 2, threshold: 0.1, side: 150, goAt: 5 });
         for (const [angle, side] of /** @type {[number, 1 | -1][]} */ ([
             [0, 1],
@@ -57,7 +75,13 @@ describe('the warn-herd drill', () => {
         ])) {
             const { won, trace } = play(scoutReference(), { angle, side });
             expect(won).toBe(!scene.outcome.caught);
-            expect(trace).toEqual({ heardTick: scene.ticks.heardTick, startTick: scene.ticks.startTick, reason: null });
+            // the hunter appears at tick QUIET_TICKS, and the scout sees it on the tick after
+            const late = QUIET_TICKS + 1;
+            expect(trace).toEqual({
+                heardTick: scene.ticks.heardTick + late,
+                startTick: scene.ticks.startTick + late,
+                reason: null,
+            });
         }
         expect(scene.outcome.caught).toBe(false);
     });
@@ -68,8 +92,23 @@ describe('the warn-herd drill', () => {
         expect(trace).toEqual({ heardTick: -1, startTick: -1, reason: 'no-warning' });
     });
 
+    it('is lost by a scout that holds ALARM on: it calls with no hunter there, and says so', () => {
+        const { won, trace } = play(spammer, { angle: 0, side: 1 });
+        expect(won).toBe(false);
+        expect(trace.reason).toBe('false-alarm');
+        expect(trace.startTick).toBe(-1);
+    });
+
+    it('is lost by a scout that calls once in the quiet and never again', () => {
+        const first = {
+            ...mute,
+            act: (/** @type {any} */ w) => (w.tick === 3 ? lateCaller(0)(w) : lateCaller(9999)(w)),
+        };
+        expect(play(first, { angle: 0, side: 1 }).trace.reason).toBe('false-alarm');
+    });
+
     it('is lost by a scout whose warning comes too late to save the forager, and says so', () => {
-        const slow = { ...mute, act: lateCaller(62) };
+        const slow = { ...mute, act: lateCaller(QUIET_TICKS + 62) };
         const { won, trace } = play(slow, { angle: 0, side: 1 });
         expect(won).toBe(false);
         expect(trace.reason).toBe('caught');
@@ -81,8 +120,20 @@ describe('the warn-herd drill', () => {
         expect(a.wins).toBe(4);
         expect(drillSubject(WARN_HERD, scoutReference(), { trials: 4, seed: 3 })).toEqual(a);
         const wins = randomBrains(WARN_HERD).map((brain) => drillSubject(WARN_HERD, brain, { trials: 4 }).wins);
-        // a brain that holds ALARM on wins too: the scene has no quiet trial, so a spammer is not told from a scout
         expect(wins.reduce((sum, w) => sum + w, 0)).toBeLessThan(16);
+    });
+
+    it('is won by a scout that holds ALARM on in no trial, and by one that never calls in none', () => {
+        expect(drillSubject(WARN_HERD, spammer, { trials: 6, seed: 3 }).wins).toBe(0);
+        expect(drillSubject(WARN_HERD, mute, { trials: 6, seed: 3 }).wins).toBe(0);
+    });
+});
+
+describe('lostReason', () => {
+    it('names a false alarm first, then a caught forager that heard, then no warning', () => {
+        expect(lostReason({ alarm: true, falseAlarm: true })).toBe('false-alarm');
+        expect(lostReason({ alarm: true, falseAlarm: false })).toBe('caught');
+        expect(lostReason({ alarm: false, falseAlarm: false })).toBe('no-warning');
     });
 });
 

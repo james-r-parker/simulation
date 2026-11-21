@@ -33,7 +33,6 @@ export function emptied(config, width, { herds = 0 } = {}) {
         minAgents: 0,
         initialFood: 0,
         maxFood: Math.max(config.maxFood, GRID_SIDE * GRID_SIDE),
-        foodSpawnRate: 0,
         fertileZoneMax: 0,
         refugeCount: 0,
         herdCount: herds,

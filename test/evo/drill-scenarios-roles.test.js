@@ -3,9 +3,14 @@ import { DRILLS } from '../../js/evo/drill-scenarios.js';
 import { ROLE_DRILLS } from '../../js/evo/drill-scenarios-roles.js';
 
 describe('ROLE_DRILLS', () => {
-    it('lists the two role drills built so far, each with a reference, a budget row and a scene of principles.md', () => {
-        expect(ROLE_DRILLS.map((d) => d.name)).toEqual(['defend-caller', 'warn-herd']);
-        expect(ROLE_DRILLS.map((d) => d.row)).toEqual(['defender:predator', 'scout:predator']);
+    it('lists the four role drills, each with a reference, a budget row and a scene of principles.md', () => {
+        expect(ROLE_DRILLS.map((d) => d.name)).toEqual(['defend-caller', 'warn-herd', 'clear-herd', 'make-a-living']);
+        expect(ROLE_DRILLS.map((d) => d.row)).toEqual([
+            'defender:predator',
+            'scout:predator',
+            'forager:herd',
+            'predator:living',
+        ]);
         for (const drill of ROLE_DRILLS) {
             expect(drill.reference().act).toBeTypeOf('function');
             expect(drill.reference()).not.toBe(drill.reference());

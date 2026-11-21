@@ -72,6 +72,73 @@ const MOVED = new Set([
     'temperatureEfficiencyColdModerate',
     'temperatureEfficiencyHeatModerate',
     'temperatureEfficiencyHeatSevere',
+    // body-genes Phase 5 T40: the combat readers (feeding, bite rule, kill body, defender repel).
+    'biteEnergy',
+    'biteCost',
+    'recoilEnergy',
+    'huntSizeRatio',
+    'biteArc',
+    'strikeMissCost',
+    'killShare',
+    'killGorgeCap',
+    'killGorgeShare',
+    'defenderRepelEnergy',
+    'defenderRepelCost',
+    'defenderRepelImpulse',
+    'kickMultiplier',
+    'predatorRestTicks',
+    // body-genes Phase 5 T41: the reproduction and life-history readers (mating, splits, births, age, territory).
+    'juvenileTicks',
+    'mateSizeRatio',
+    'mateDistanceMax',
+    'mateMinEnergy',
+    'mateCost',
+    'mateRange',
+    'childEnergyMin',
+    'splitMinEnergy',
+    'birthWindowTicks',
+    'maxBirthsPerWindow',
+    'reproductionCooldown',
+    'splitCooldownMultiplier',
+    'pregnancyTicks',
+    'maturityTicks',
+    'maxAgeTicks',
+    'birthReserve',
+    'splitDeliberateMin',
+    'splitDeliberateShareMin',
+    'splitMaxPerLife',
+    'splitMateScarceTicks',
+    'territoryRadius',
+    'territoryMax',
+    // body-genes Phase 5 T42: the signalling readers (calls, the smoke release, the pheromone deposit, the timers).
+    'callRadius',
+    'callTicks',
+    'alarmCost',
+    'huntCallCost',
+    'alarmThreshold',
+    'huntCallThreshold',
+    'smokeCost',
+    'smokeRadius',
+    'smokeTicks',
+    'smokeCooldown',
+    'smokeThreshold',
+    'pheromoneDeposit',
+    // body-genes Phase 5 T43: the energy, sickness, reward and food readers (size, upkeep, the store's satiation, the
+    // toxin and disease, the reward trace, the food values and the juvenile plant share, the eat's heat).
+    'minSize',
+    'huntUpkeep',
+    'satiationShare',
+    'juvenilePlantShare',
+    'sickDose',
+    'doseDecay',
+    'lethalDose',
+    'diseaseTicks',
+    'plantFoodValue',
+    'meatFoodValue',
+    'temperatureGainEat',
+    'rewardGain',
+    'rewardBase',
+    'rewardDecay',
     ...THRESHOLDS,
 ]);
 
@@ -242,6 +309,28 @@ export function bodyProblem(body, lanes = LANES) {
         }
     }
     return null;
+}
+
+/**
+ * The largest base of a lane over every spec: a world-level size (an array's stride) reads it, since an array cannot
+ * differ by body.
+ * @param {Readonly<Record<string, any>>} config the validated config
+ * @param {string} name a lane's name
+ * @returns {number}
+ */
+export function laneMaxOverSpecs(config, name) {
+    return Math.max(...SPEC_NAMES.map((specName) => laneBases(config, specName)[name]));
+}
+
+/**
+ * Whether a lane is above 0 for some spec's base. Traits only scale a lane by positive ratios, so a lane at 0 for every
+ * spec stays 0 in every body: a world-level gate (a feature that exists only when its lane can be on) reads this once.
+ * @param {Readonly<Record<string, any>>} config the validated config
+ * @param {string} name a lane's name
+ * @returns {boolean}
+ */
+export function laneOnForAnySpec(config, name) {
+    return SPEC_NAMES.some((specName) => laneBases(config, specName)[name] > 0);
 }
 
 /**

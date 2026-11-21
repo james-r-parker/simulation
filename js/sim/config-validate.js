@@ -39,7 +39,6 @@ const RULES = {
     floorTrigger: int(0),
     maxFood: int(1, 20000),
     initialFood: int(0),
-    foodSpawnRate: num(0),
     foodEnergy: positive(),
     foodRadius: positive(),
     obstacleDamage: num(0),

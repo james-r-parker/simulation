@@ -198,6 +198,36 @@ Borrowed from the buffs and debuffs of action role-playing games and kept only w
 | ----- | ---------- | ------- |
 | D     | T20 to T22 | Sonnet  |
 
+### Phase 5 - Speed (2026-11-21)
+
+**Targets:** bench.phase_ms.lifecycle@500, bench.phase_ms.physics@500, bench.step_ms@500
+
+Each back within 5% of the pre-effects reading (4e56979d) at neutral numbers: Phase 2's effects in, every number of theirs
+at 0, timed with `bench-compare --base 4e56979d` under the CPU lock. Every golden `worldHash` is unchanged by each commit:
+a skipped rule multiplies by exactly 1 and a level read once equals the same level read again. Scheduled by
+[throughput.md](throughput.md), "Order"; built after Phase 2 merges and before Phase 3, so the numbers are chosen on the
+fast path.
+
+The profile ([evals/decisions/speed-2026-11-21/results.md](../../evals/decisions/speed-2026-11-21/results.md)) puts the
+whole growth of both phases in `effect*.js`: 0% of samples before, 5.3% after Phase 1 and 9.5% with Phase 2. The cost is
+the dispatch, not the arithmetic:
+
+| Cost                                                                                      | After Phase 1 | With Phase 2 |
+| ----------------------------------------------------------------------------------------- | ------------- | ------------ |
+| level reads a body a tick, through `rule.read` (one megamorphic call site, never inlined) | 21.8          | 33.9         |
+| of them answered by the `pinSlot` memo                                                    | 6.0           | 6.0          |
+| rules folded for `maxThrust`, most at level 0 or with numbers at 0                        | 7             | 13           |
+| stored rows, each read through its own closure and walked by `fade` over every slot       | 0             | 10           |
+| `stepTemperature` lanes read outside the slot's pinned window                             | 0             | 2            |
+
+The fixes keep the registry's contract (`liveOf`, `gateOpen`, `levelOf`, the effect list as data) and change how it is
+compiled and read. Not moved to the WASM kernel: the readers touch about twenty per-slot arrays and the config, and these
+fixes reach the target first.
+
+| Chunk | Tasks      | Builder |
+| ----- | ---------- | ------- |
+| E     | T23 to T30 | Sonnet  |
+
 ## Decisions
 
 | Decision                                                       | Holds because                                                                                                                                                                                                                                                                                                                                                              |
@@ -272,6 +302,19 @@ Borrowed from the buffs and debuffs of action role-playing games and kept only w
 | T20 | Plan each later effect of the Phase 4 table in full in this doc (what raises it, its scales, its keys at 0, the scene it serves, its payoff and its cheat check), with the user's pick of which come first; no code | [judgement] | T19        |
 | T21 | Build the effects T20 picks, each with its keys at 0, its applier tests and an `eval.effect_share` entry; every golden unchanged                                                                                    | [judgement] | T20        |
 | T22 | Choose their numbers with `role:budget` and read them under the keep rule, as Phase 3 did; conformance review                                                                                                       | [judgement] | T21        |
+
+### Phase 5 - Speed (2026-11-21)
+
+| #   | Task                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | Nature       | Depends on              |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ----------------------- |
+| T23 | Add `bench/micro/effects-readers.bench.js` (`bench:micro -- --area effects`): `liveOf` on `maxThrust` and `passiveLoss`, `gateOpen` on `mate` and `eat`, `fadeEffects`, each over every slot of a warmed 500-agent world, so each later task is timed with `--compare origin/main`                                                                                                                                                                                                                                              | [mechanical] | T14                     |
+| T24 | Read a stored effect's stacks by row: `level` reads `world.effectStacks[rule.row][slot]` when the rule's `row` is 0 or more, and `createEffects` builds no closure per row (the `(anon)` frames, 1.2% of samples with Phase 2); keep a live count per stored row (raised by the appliers, lowered by `fade`), so `fold` and `gateOpen` skip a row's rules while its count is 0 and `fade` skips the row; contract test for the count against a scan of the row                                                                  | [judgement]  | T23                     |
+| T25 | Drop the neutral rules at `refreshConfig`: a lane's active list holds only the rules whose factor can differ from 1 at the current config (a `perStack` reference to a config key or literal at 0, or a `levels` table of all 1, is dropped; a lane reference is kept); `fold` walks the active list; a test that a world with every Phase 2 number at 0 folds each lane over the Phase 1 rules alone, and a hash test over 2000 ticks                                                                                          | [judgement]  | T23                     |
+| T26 | Dispatch levels without the indirect call: `levelOfEffect(world, slot, effect)` is a `switch` on the effect index calling each reader directly, written by a generator from `EFFECTS` and checked by a test that fails when the list and the switch differ, so the compiler inlines the small readers; `level` and `gateOpen` call it in place of `rule.read`                                                                                                                                                                   | [judgement]  | T23                     |
+| T27 | Read a slot's levels once for a group of lanes: `motionFactors` (the `maxThrust` and `maxTurn` lanes of `actAll`) and `costFactors` (the six lanes of `tickCost` and the two temperature lanes of `stepTemperature`, which then read inside the same window) each read every effect the group's rules name once, into a `Float64Array`, and multiply each lane's rules from it; the five temperature readers become one band read of `temperature[slot]` and its lanes; delete `pinSlot` and `unpinSlot` when no caller remains | [judgement]  | T24, T25, T26           |
+| T28 | Skip the social passes at neutral numbers: no huddle search while `huddleWarmth` is 0, no `heardFrom` or `settleCalls` bookkeeping while every number of `rallied`, `answered` and `hoarse` is 0 (whatever PR 613 has not already trimmed); a test that each pass runs once its number is above 0                                                                                                                                                                                                                               | [mechanical] | T23                     |
+| T29 | Measure: `flock /tmp/claude-1000/cpu.lock node scripts/bench-compare.mjs --base 4e56979d --sizes=500 --runs=5` on a quiet machine, the three Targets against the 5% bar, and a CPU profile through the same script as the results file, recorded in this phase; re-record `bench/baseline.json` in its own commit if the step moved                                                                                                                                                                                             | [judgement]  | T24, T25, T26, T27, T28 |
+| T30 | Conformance review of Phase 5 by a fresh agent, in parallel with `scripts/check.sh`; every golden unchanged                                                                                                                                                                                                                                                                                                                                                                                                                     | [judgement]  | T29                     |
 
 ## Verification
 
