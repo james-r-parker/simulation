@@ -1,0 +1,40 @@
+{
+  "id": "E272",
+  "plan": "body-genes.md",
+  "task": "T14",
+  "stream": "lane-b",
+  "date": "2026-11-21",
+  "branch": "batch/2026-11-21-evening",
+  "hypothesis": "Lane B step 5: the candidate numbers chosen with the role budget (step5-b, and step5-d with the effect numbers, the cold stack and the narrowed spans of E271) do no harm to the keep rule's seed guards on the live policy, and step5-d does least harm of the two.",
+  "prediction": "No harm on alive, under80 and held for both arms at 16 seeds; step5-d with fewer worse verdicts than step5-b; the rally share above 0 on step5-d.",
+  "targets": [
+    "eval.hunter_catches_per_1k_settled",
+    "eval.pursuit_kill_share",
+    "eval.chase_catch_share",
+    "eval.pack_kills_per_eaten_death"
+  ],
+  "before": "defaults: hunter catches 1.44 per 1k settled, pursuit kill share 0.673, chilled share 0.199, body_plan_coverage 0.18",
+  "after": "step5-b: keep rule no harm, 2 better / 6 worse (food_energy_per_1k@20k 376 to 310, defender and reproducer fitness); step5-d: keep rule no harm, 1 better / 3 worse (body_plan_coverage 0.18 to 0.055, defender fitness), chilled 0.101, rallied 0",
+  "verdicts": {
+    "step5-d guard.alive": "no-difference",
+    "step5-d guard.under80": "no-difference",
+    "step5-d guard.held": "no-difference",
+    "step5-d guard.eval.hunter_catches_per_1k_settled": "-",
+    "step5-d eval.body_plan_coverage": "worse",
+    "step5-d eval.mean_fitness.defender": "worse",
+    "step5-d eval.coverage": "better",
+    "step5-d eval.pack_kills_per_eaten_death": "no-difference",
+    "step5-b guard.alive": "no-difference",
+    "step5-b guard.under80": "no-difference",
+    "step5-b guard.held": "no-difference",
+    "step5-b eval.food_energy_per_1k@20k": "worse",
+    "step5-b eval.mean_fitness.defender": "worse",
+    "step5-b eval.mean_fitness.reproducer": "worse",
+    "step5-b eval.coverage": "better"
+  },
+  "effect": "no-difference",
+  "note": "16 seeds x 200000 ticks per arm, 8 workers each, on the batch at afc06532. step5-d is the finalist for the 64-seed keep-rule pair (E-BG-3). The rally prediction failed: no rally raised in 16 seeds. body_plan_coverage falls with the narrowed spans. Reports in evals/results/ (not committed), read with eval:compare --keep-rule --allow-config-diff.",
+  "kind": "compare",
+  "outcome": "finding",
+  "reports": ["evals/decisions/E272-step5-screen/results.md"]
+}

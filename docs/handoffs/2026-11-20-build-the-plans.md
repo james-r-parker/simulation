@@ -211,3 +211,67 @@ Lane B step 1: [registries.md](../designs/registries.md) Phase 1 (T1 to T5) land
 - Waiting on the user: the worktree `docs-body-genes-inventory` holds a discarded diff and needs removing by hand, because a hook stops this session from writing in another worktree. Subagents meet the same hook: build them in an isolated worktree, or ship from the coordinator's worktree.
 
 Next per lane: B - body-genes.md Phase 1 from T2, with fair-chase.md T7a (Sonnet for the chunk, Opus for T3 and T7). A - agent-workflow.md Phase 2. C - ambient-display.md Phase 6.
+
+## Progress - coordinator session 2026-11-21 evening (lane B steps 2 to 5, stopped at 22:00)
+
+Merged today, in Direction order (each PR's body has its measurements): registries Phase 1 and the detector interface
+([583](https://github.com/james-r-parker/simulation/pull/583), [588](https://github.com/james-r-parker/simulation/pull/588));
+the ledger ([584](https://github.com/james-r-parker/simulation/pull/584)); body-genes Phases 1, 2 and 5
+([585](https://github.com/james-r-parker/simulation/pull/585), [595](https://github.com/james-r-parker/simulation/pull/595),
+[596](https://github.com/james-r-parker/simulation/pull/596), [599](https://github.com/james-r-parker/simulation/pull/599),
+[609](https://github.com/james-r-parker/simulation/pull/609), [610](https://github.com/james-r-parker/simulation/pull/610),
+[616](https://github.com/james-r-parker/simulation/pull/616), [617](https://github.com/james-r-parker/simulation/pull/617),
+[620](https://github.com/james-r-parker/simulation/pull/620), [626](https://github.com/james-r-parker/simulation/pull/626));
+status-effects Phases 1 and 2 with T12, T13 and T14 ([600](https://github.com/james-r-parker/simulation/pull/600),
+[613](https://github.com/james-r-parker/simulation/pull/613), [624](https://github.com/james-r-parker/simulation/pull/624),
+[627](https://github.com/james-r-parker/simulation/pull/627), [629](https://github.com/james-r-parker/simulation/pull/629));
+role-budget Phases 1 to 5 ([593](https://github.com/james-r-parker/simulation/pull/593),
+[598](https://github.com/james-r-parker/simulation/pull/598), [601](https://github.com/james-r-parker/simulation/pull/601),
+[602](https://github.com/james-r-parker/simulation/pull/602), [603](https://github.com/james-r-parker/simulation/pull/603));
+the step 5 candidates ([614](https://github.com/james-r-parker/simulation/pull/614)); metric-noise Phase 6 and the gate-2
+verdict ([592](https://github.com/james-r-parker/simulation/pull/592), [608](https://github.com/james-r-parker/simulation/pull/608),
+[615](https://github.com/james-r-parker/simulation/pull/615), [621](https://github.com/james-r-parker/simulation/pull/621),
+[623](https://github.com/james-r-parker/simulation/pull/623)); the role reflex cases, bars and drills
+([590](https://github.com/james-r-parker/simulation/pull/590), [597](https://github.com/james-r-parker/simulation/pull/597),
+[604](https://github.com/james-r-parker/simulation/pull/604), [606](https://github.com/james-r-parker/simulation/pull/606),
+[612](https://github.com/james-r-parker/simulation/pull/612)); the calm camera and the reel
+([586](https://github.com/james-r-parker/simulation/pull/586), [594](https://github.com/james-r-parker/simulation/pull/594),
+[605](https://github.com/james-r-parker/simulation/pull/605), [611](https://github.com/james-r-parker/simulation/pull/611));
+plans for the later effects, `liver`, `armour` and the speed tasks ([607](https://github.com/james-r-parker/simulation/pull/607),
+[618](https://github.com/james-r-parker/simulation/pull/618)); `npm run sync` and the merge-churn plan
+([622](https://github.com/james-r-parker/simulation/pull/622)).
+
+**The evening batch** ([630](https://github.com/james-r-parker/simulation/pull/630), user, 2026-11-21: the remaining work
+ships as one PR with many commits; each chunk is built on its own branch from the batch and merged in). It holds
+body-genes T46, T51 (breaking: season 12's `rulesHash` moved in place to 5ea8af3e744bdb8f), T52, T53 and T55;
+status-effects T15 and T23 to T30; body-genes T17 (E271); brain-reflex-tests T21a and T22; the defender escort distance;
+E272 and this entry. Merge it on green if it is still open (no release PR merge: 503 deploys production).
+
+Findings to carry:
+
+- **Speed.** status-effects Phase 5 is built and its Targets are not met: lifecycle +57% and physics +19% above
+  4e56979d (5% bar), measured on a loaded machine. `foldGroup` is the largest added cost; the next steps are written in
+  Phase 5. body-genes T52 and T53 moved the body sense into Rust bit-identically with no gain (the cost is per-hit
+  arithmetic; an `f64x2` pair is the lever left). T54, `bench/baseline.json` and both speed reads need a quiet machine:
+  do them first, before any eval starts.
+- **Detector readings at neutral numbers.** After T28 and T30 every effect whose numbers are neutral is not raised at
+  all, so `eval.effect_share.*` reads 0 for all ten at the defaults; E270's 0.199 `chilled` share is from before T30.
+- **The defender.** `defender:predator` is red at the defaults for every body number. The user chose escort distance
+  (role-budget.md Decisions); it is built (87 px) and the row is still red at every distance from 150 to 10 px: the
+  defender starts at rest, side-on and at the grazing gait, while the hunter kills at tick 27. **Waiting on the user:**
+  how a good defender starts (the guard posture, facing the threat between it and the herd, was recommended; a faster
+  defender was the alternative).
+- **Step 5.** E272 (16 seeds): step5-b and step5-d both do no harm to the keep rule's seed guards; step5-d is the
+  finalist (1 better, 3 worse: `body_plan_coverage` 0.18 to 0.055 from the narrowed spans, the defender's fitness). No
+  rally was raised on step5-d although `rallyThrust` is 0.1. Before T18: correct the calculator's cold-stack formula
+  (`--check` exits 1 on step5-d, 3.9% short on `forager:idle`), re-run the predator corner reads at the final spans,
+  then the 64-seed keep-rule pair (E-BG-3).
+- **Process.** `gh run watch` polling from many watchers exhausted the GitHub API (5000 an hour) once; poll at
+  `-i 120` or slower. A stacked PR closes when its base branch is deleted: retarget it first. Coverage timeouts were
+  fixed one by one with `scaleTimeout`; the systemic fix is agent-workflow Phase 7.
+
+Next per lane: B - the quiet-machine speed reads (body-genes T54, status-effects Phase 5), then step 5's T18 path above
+and the user's defender answer; then step 6 (registries T12, metric-noise gate 2: the 128-seed season-12 baseline once
+step 5 is adopted) and step 7 (brain-reflex-tests T23, E-RT-1). A - agent-workflow Phase 7 (less merge churn). C - the
+real-GPU items: a 240 Hz `perf:browser` run with `?tv=1`, the user's OLED walk for ambient-display T40, the GPU clips of
+T6, T11 and T22.
