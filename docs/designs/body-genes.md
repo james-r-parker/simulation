@@ -391,6 +391,23 @@ One more trade trait for the same phase, chosen by the user (2026-11-21): `armou
 | ----- | ---------- | ------- |
 | F     | T47 to T50 | Sonnet  |
 
+### Phase 7 - Speed (2026-11-21)
+
+**Targets:** bench.phase_ms.sense@500w7680, bench.phase_ms.sense@500
+
+Back within 3% of the reading before Phase 1 (ab0b1833), timed with `bench-compare --base ab0b1833` under the CPU lock;
+every golden `worldHash` unchanged. Scheduled by [throughput.md](throughput.md), "Order".
+
+The lane readers cost nothing worth a task: on the default world no phase moved from ab0b1833 to 4e56979d, and
+`temperatureInputs` (six lane reads in place of five config numbers) is 0.3% of samples. The body sense costs the sense
+phase 7% in the wide world ([evals/decisions/speed-2026-11-21/results.md](../../evals/decisions/speed-2026-11-21/results.md)):
+`writeRay` zeroes `raySize`, `raySpeed` and `rayClosing` on every ray and calls `bodySenseOf` on every agent hit, which
+reads the caster's size and velocity again each ray. The sense kernel already holds the hit, so the values move into it.
+
+| Chunk | Tasks      | Builder                                                    |
+| ----- | ---------- | ---------------------------------------------------------- |
+| G     | T52 to T55 | Haiku for T52, Opus for T53 (Rust), Sonnet for T54 and T55 |
+
 ## Decisions
 
 | Decision                                                                                                                                               | Holds because                                                                                                                                                                                                                                  |
@@ -516,6 +533,15 @@ One more trade trait for the same phase, chosen by the user (2026-11-21): `armou
 | T48 | Add `liver` to `TRAITS` at a span of 0 with its lanes and the contract-test rows; every golden unchanged                                                                                                                                 | [judgement] | T47        |
 | T49 | Choose its span with the calculator and a screen, read it under the keep rule, and record whether a lineage holds a high `liver` where toxic food is common; conformance review                                                          | [judgement] | T48        |
 | T50 | Plan `armour` in full as T47 plans `liver` (its lanes, span, cost and the reading that shows a lineage uses it); then build and read it as T48 and T49 do                                                                                | [judgement] | T47        |
+
+### Phase 7 - Speed (2026-11-21)
+
+| #   | Task                                                                                                                                                                                                                                                                                                                                                                                                 | Nature       | Depends on |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T52 | Trim `writeRay` in `js/sim/ray-march.js`: zero a slot's `raySize`, `raySpeed` and `rayClosing` range once in `castSlot` before its rays in place of three stores a ray, and pass the caster's size, velocity and the speed span into `bodySenseOf` once a slot; every golden unchanged                                                                                                               | [mechanical] | T5         |
+| T53 | Rust (Opus): the sense kernel (`wasm/src/sense.rs`, `sense_slot`) writes `raySize`, `raySpeed` and `rayClosing` for each agent hit with the det-math `tanh`, bit-identical to `bodySenseOf`; delete the JS `writeBody` path (no fallback) and test the kernel's lanes against a naive reference in the test; rebuild `blob-kernels.wasm` and its hashes; `bench:micro -- --area wasm --compare HEAD` | [judgement]  | T52        |
+| T54 | Measure: `flock /tmp/claude-1000/cpu.lock node scripts/bench-compare.mjs --base ab0b1833 --sizes=500 --runs=5` on a quiet machine, the two Targets against the 3% bar (`bench.phase_ms.sense@500w7680` from the tracked w7680 row), recorded in this phase                                                                                                                                           | [judgement]  | T53        |
+| T55 | Conformance review of Phase 7 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                                                                                                                                                                                                                                  | [judgement]  | T54        |
 
 ## Verification
 
