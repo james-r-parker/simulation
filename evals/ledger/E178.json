@@ -1,0 +1,24 @@
+{
+  "id": "E178",
+  "hypothesis": "honest-budgets Phase 5: a call that is seen (a threat on the caller's rays at call time) changes the bite, so a bite on a seen caller moves only alarmBiteShare of the energy and a call is worth its cost only when a hunter is in view.",
+  "prediction": "On the 16-seed screen (honest-alarm.grid.json, 400000 ticks), the finalist reads eval.alarm_rate above 0 on most seeds with eval.alarm_calls_with_threat_per_1k rising with it, and the 64-seed keep rule reads no guard WORSE. Falsified when calls with no threat rise faster than calls with one.",
+  "targets": ["eval.alarm_rate", "eval.alarm_lift", "eval.alarm_calls_with_threat_per_1k"],
+  "before": "control arm of evals/screens/honest-alarm.grid.json (alarmBiteShare 1), seeds 1 to 16, 400000 ticks, floor on, policy live",
+  "after": "the alarm arms of the same screen (a75, a50)",
+  "verdicts": {
+    "eval.alarm_rate": "-",
+    "eval.alarm_lift": "-",
+    "eval.alarm_calls_with_threat_per_1k": "-"
+  },
+  "note": "Screen on main 0819058e (season 10, before the hunter-vision switch; arms paired with control on the same code): no finalist. eval.alarm_rate is above 0 on 4 of 16 seeds (mean 0.00004), eval.alarm_calls_with_threat_per_1k on 3 (mean 0.0000035); a75 and a50 are bit-identical to control on every metric because no bite lands on a seen caller while its timer runs. The liar clause is not triggered (calls with a threat rise with calls). The 64-seed keep rule (T30) is not run and the switch (T31) is parked: alarmBiteShare stays 1. Open: calls are too rare for any bite rule to act; selection must first produce calls on sight.",
+  "reports": [
+    "evals/decisions/E178/results.md",
+    "evals/decisions/E178/screen-table.md",
+    "evals/decisions/E178/screen-verdicts.json"
+  ],
+  "date": "2026-11-15",
+  "branch": "season/next",
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "effect": "no-difference"
+}

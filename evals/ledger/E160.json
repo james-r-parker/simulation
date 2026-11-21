@@ -1,0 +1,31 @@
+{
+  "id": "E160",
+  "hypothesis": "eat-choice Phase 2, E-EC-2 and the second pass: with fatSlowShare above 0 as well as grazeThrust below 1, agents near a full store stop eating once a full store costs speed.",
+  "prediction": "bite-graze-fat (grazeThrust 0.5, fatSlowShare 0.5) reads a lower eval.full_contact_bite_share than bite-graze-5, with no keep-rule guard worse against main's defaults. Falsified when it reads no lower share than bite-graze-5. The same pass reads G3 (bite vs main defaults), G1+G1b (bite-graze-5), G2 (bite-fat-5) and G4 (bite-strike-2, eval.bite_idle lower by the sign test) against main's defaults by the keep rule.",
+  "targets": [
+    "eval.full_contact_bite_share",
+    "eval.food_contact_bite_share",
+    "eval.bite_idle",
+    "eval.population_mean",
+    "eval.floor_episodes"
+  ],
+  "before": "evals/decisions/E160/main-defaults.report.json: main defaults on origin/main 4faea422, seeds 1 to 64, 400000 ticks",
+  "after": "evals/decisions/E160/<arm>.report.json for bite, bite-graze-5, bite-fat-5, bite-graze-fat, bite-strike-2 on the same seeds",
+  "note": "E-EC-2 holds: bite-graze-fat full_contact_bite_share 0.153 vs bite-graze-5 0.274, interval [-0.169, -0.078]. E-EC-1 falsified at 64 (graze-5 0.201 vs bite 0.183). Keep rule vs main: every arm WORSE - bite on under80, graze-5 and fat-5 on held, graze-fat only on hunter catches (-14%), strike-2 on hunters alive. See evals/decisions/E160/results.md.",
+  "reports": [
+    "evals/decisions/E160/results.md",
+    "evals/decisions/E160/table.md",
+    "evals/decisions/E160/main-defaults.report.json",
+    "evals/decisions/E160/bite.report.json",
+    "evals/decisions/E160/bite-graze-5.report.json",
+    "evals/decisions/E160/bite-fat-5.report.json",
+    "evals/decisions/E160/bite-graze-fat.report.json",
+    "evals/decisions/E160/bite-strike-2.report.json"
+  ],
+  "date": "2026-11-12",
+  "branch": "exp/eat-choice-screen",
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "effect": "worse",
+  "verdicts": {}
+}

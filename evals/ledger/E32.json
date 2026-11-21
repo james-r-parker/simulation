@@ -1,0 +1,15 @@
+{
+  "id": "E32",
+  "date": "2026-10-22",
+  "branch": "eval/wb-t59-screens",
+  "hypothesis": "A lower hebbianRate, a lower splitCost with sexes, or a minAgents above 40 frees the arms that E31 found pinned at the floor, and the all-on world then survives.",
+  "prediction": "hebbianRate 0.0001 or lower escapes the floor (born_share above 0.5) on 4 of 4 seeds; sexes with splitCost 25 or 10 does not change the floor-bound result; minAgents 80 or less stays floor-bound.",
+  "targets": ["eval.born_share", "eval.mating_share", "eval.births_per_1k"],
+  "beforePolicy": "map-elites-v1q",
+  "afterPolicy": "map-elites-v1q",
+  "before": "evals/screens/results/hebbian.report.json",
+  "after": "evals/screens/results/hebbian-0.0001.report.json",
+  "verdicts": {},
+  "effect": "better",
+  "note": "Same seeds as E31, 4 seeds per arm. hebbianRate born_share: 0.01 0.18, 0.003 0.31, 0.001 0.42, 0.0003 0.63 (1 of 4 seeds free), 0.0001 0.86 (4 of 4, defaults 0.88), 0.00003 0.76; FEATURES_ON takes 0.0001. sexes with splitCost 50/25/10: born_share 0.15/0.18/0.18, population at the floor 100 on every seed, not fixed by value. minAgents 40/60/80: born_share 0.20/0.24/0.54 (population at the floor on 4/4/3 of 4 seeds), 100 gives 0.88. basins-nodamage (obstacleDamage 0): pop mean 300 against 209 with damage, collision-cause deaths 1157-1416 against 1613-1885. allon (FEATURES_ON with hebbianRate 0.01, minAgents 40): born_share 0.07; allon-min100-nohebb-nosexes (hebbianRate 0, sexes off, minAgents 100): 4 of 4 seeds pass the 80% rule and catch_rate above 0, born_share 0.99, mating_share 0.01, pop at maxAgents, lineages 5.9-11.7. sexes and minAgents 40 remain open for the user."
+}

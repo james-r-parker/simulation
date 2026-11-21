@@ -1,0 +1,16 @@
+{
+  "id": "E154",
+  "hypothesis": "carrying-capacity Phase 3, E-CC-3: on a world food holds, the clonal cap does no harm, as for aphids.",
+  "prediction": "On the switched world the clonal cap does no harm: cap on against splitClonalMax 100000 reads no guard WORSE. Falsified when a guard reads WORSE with the cap on: the cap is deleted (T15).",
+  "targets": [],
+  "before": "evals/decisions/E151/defaults-floor-on.json: defaults, floor on, 128 seeds x 200000 ticks, configHash ff8d890a5a70c14d",
+  "after": "not run yet: Phase 3 (T15), 64 matched seeds",
+  "note": "Not run: the plan stopped at Phase 2 (E152), so Phase 3 was not built. Prediction recorded before any arm ran; no verdict yet. `reports` names the committed reference and the food-ratio probe the arms are set from, and is extended with the screen reports when they exist. Run in Phase 3.",
+  "reports": ["evals/decisions/E151/defaults-floor-on.json"],
+  "date": "2026-11-11",
+  "branch": "feat/carrying-capacity-calibrate",
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "effect": "no-difference",
+  "verdicts": {}
+}

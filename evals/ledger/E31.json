@@ -1,0 +1,21 @@
+{
+  "id": "E31",
+  "date": "2026-10-22",
+  "branch": "eval/wb-t59-screens",
+  "hypothesis": "Each Phase 3 feature switched on alone at its FEATURES_ON value keeps the live policy self-sustaining (no collapse) in a 4-seed, 200000-tick screen, so the single T41 switch-on can pin a failure on one feature.",
+  "prediction": "No arm worse than the defaults on the Phase 4 collapse criteria; patches and carcasses raise food_energy_per_1k, sexes lowers births_per_1k, mateDistanceMax lowers mating_share.",
+  "targets": [
+    "eval.mating_share",
+    "eval.lineages_alive",
+    "eval.births_per_1k",
+    "eval.food_energy_per_1k",
+    "eval.fed_median_lifespan"
+  ],
+  "beforePolicy": "map-elites-v1q",
+  "afterPolicy": "map-elites-v1q",
+  "before": "evals/screens/results/defaults.report.json",
+  "after": "evals/screens/results/<arm>.report.json (one per arm; table in evals/screens/results/table.md)",
+  "verdicts": {},
+  "effect": "worse",
+  "note": "Seeds 29-32 (offset 28), 200000 ticks, 4 seeds per arm, so no compare verdicts (eval:compare needs 16); read against the Phase 4 criteria. Defaults: pop above min 3/4, B18 fails (spec 0/4, pop<max 1/4), mating_share 0.16, born_share 0.88. Like the defaults: satiation (identical hashes), digest, handling, carcasses, basins (rock damage costs about 400 agents per seed, no collapse), specmut, eras, leak, traits, birthbudget, predplant. Food-rich: patches (pop ~491, food/1k 828, mating 0.04, lineages 6-7). mateDistanceMax 0.8: mating_share 0.04. Collapsed to the floor: hebbianRate 0.01 (born_share 0.18), sexesEnabled (0.15), minAgents 40 (0.20). All on with minAgents 40 collapses (born_share 0.07, catch_rate 0 on 3 seeds)."
+}

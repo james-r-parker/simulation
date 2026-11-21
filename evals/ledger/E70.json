@@ -1,0 +1,22 @@
+{
+  "id": "E70",
+  "date": "2026-11-01",
+  "branch": "docs/flora-calibration-contract",
+  "hypothesis": "Screen the Flora species energy, fruiting span and background share one lever at a time against defaults.",
+  "prediction": "8 seeds x 200000 ticks, live policy; exactly one defaults arm and no factorial combinations. Retain each default unless a one-factor arm improves the named seasonal/diet signal and passes local economy criteria. Record natural-selection survival and family measures as balancing diagnostics; they do not block Flora selection or completion. Qualitative plan predictions only; no numeric outcome is assumed.",
+  "targets": [
+    "eval.seasonal_diet_shift",
+    "eval.food_energy_per_1k",
+    "eval.winter_basin_density",
+    "eval.predators_at_end",
+    "eval.prey_types_at_end",
+    "eval.basin_family_effective"
+  ],
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "before": "pre-promotion Flora defaults, toxinDose 0.45 pinned in grid base",
+  "after": "evals/screens/results/flora-species/ (8 seeds x 200000 ticks)",
+  "verdicts": {},
+  "effect": "no-difference",
+  "note": "OAT only. Arm values are direct multipliers of documented defaults. Advancement requires improvement in the named seasonal/diet/seed/hue signal and passing local economy constraints; otherwise keep that lever at its default. Record Phase 4 survival/family measures as balancing diagnostics, not selection gates. Results are recorded in evals/screens/results/flora-species/. No E70 lever showed a sufficiently clear seasonal/diet gain without a within-screen local-economy regression, so defaults remain. E69 economy and global survival/family gaps are historical balancing diagnostics."
+}

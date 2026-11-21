@@ -1,0 +1,16 @@
+{
+  "id": "E252",
+  "date": "2026-11-20",
+  "branch": "feat/unit-knockout-p1",
+  "hypothesis": "E-UK-0 (unit-knockout T7): setting a hidden unit's leak gene to KNOCKOUT_LEAK_GENE (-8) reproduces brain inspection's silence edit on the same trials.",
+  "prediction": "Written before the run (unit-knockout.md): setting leak col 13 or col 14 to -8 on archive-159-predator-cell94 (prey-ahead, 128 trials, seed 1) yields 24/128 and 25/128 with the same before-only and after-only trials as the 2026-11-19 silence rows in sim-notes.md.",
+  "targets": [],
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "before": "intact archive-159-predator-cell94 on prey-ahead (128 trials, seed 1): 6/128 (0.046875)",
+  "after": "npm run inspect -- --champions .sim/champions/keep/ets-1h-o144 --name archive-159-predator-cell94 --drill prey-ahead --trials 128 --edit <leak=-8>",
+  "verdicts": {},
+  "effect": "better",
+  "note": "Prediction held: leak[13]=-8 gives 24/128 (0.187500, beforeOnly=[113], afterOnly=[1,2,21,22,39,47,48,61,69,76,78,79,88,89,100,111,117,119,123], p=0.000040) and leak[14]=-8 gives 25/128 (0.195313, beforeOnly=[11,86,113], afterOnly=[4,7,9,12,15,18,22,27,32,39,46,67,68,79,80,85,92,102,104,107,114,125], p=0.000157), matching the 2026-11-19 silence rows trial for trial.",
+  "reports": ["evals/decisions/E252/results.md"]
+}

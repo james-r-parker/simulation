@@ -1,0 +1,24 @@
+{
+  "id": "E187",
+  "hypothesis": "detector-baseline T7: one 128-seed floor-on and floor-off run of the season 10 defaults (hunter-vision switch, PR 464) gives the shared baseline that the planned detectors read against, in place of seven 16-seed runs. Training-stages T5 (E-TS-0) is read from its first 16 floor-on seeds, not run again.",
+  "prediction": "Carried from training-stages E-TS-0 on the first 16 floor-on seeds (seeds 1 to 16 of evals/seeds.json): eval.chase_lost_share is the largest part of the give-up share; eval.chase_quit_share is under 0.15; eval.pack_lift is within 0.2 of 1. On all 128 floor-on seeds the same three hold in direction (lost above quit, quit under 0.15, pack_lift near 1). The floor-off run is extinction-dominated on most seeds (E110: floor-off kills every world between 41k and 149k ticks), so its hunter and chase reads are characterization, not a baseline for verdicts. Falsified when the 16-seed subset contradicts a written E-TS-0 statement on the same seeds, or when the 128-seed floor-on mean of eval.pack_lift is outside 0.8 to 1.2.",
+  "targets": ["eval.chase_lost_share", "eval.chase_quit_share", "eval.pack_lift"],
+  "before": "not applicable: a baseline of the defaults, no arm compared; training-stages E-TS-0 is the same 16 floor-on seeds x 200000 ticks on the same defaults",
+  "after": "npm run eval -- --seeds 128 --ticks 200000 --policy live --workers 12 --save-champions 2 (floor on), and the same with --config evals/floor-off-config.json (floor off); reports to the scratchpad, then evals/power/defaults-floor-on-E187.json and defaults-floor-off-E187.json and evals/decisions/E187/",
+  "verdicts": {
+    "eval.chase_lost_share": "-",
+    "eval.chase_quit_share": "-",
+    "eval.pack_lift": "-"
+  },
+  "note": "Run started 2026-11-16 on the frozen HEAD of eval/shared-baseline (after 6ee46a46). T5 reuse: E-TS-0 asks for 16 floor-on seeds x 200000 ticks on the defaults; the first 16 seeds of this floor-on run are the same settings (default config, policy live, seed offset 0), so the reads are taken from them and E-TS-0 is not run again. Check on resume that the report seeds begin with evals/seeds.json entries 1 to 16. Four detector plans (sprint-burst, stillness, scent-trails, body-genes) have no detector merged, so their metrics are not in this read; they get a top-up run on the same defaults later (coordinator decision, 2026-11-16). Effect is no-difference because the schema has no pending value and this is characterization only (as E150 and E151); the coordinator sets the record on completion. Result (2026-11-16, run done 13:23): floor-on and floor-off reports committed; E-TS-0 read on seeds 1-16 of the floor-on run. chase_lost_share is the largest give-up part (0.173 vs outrun 0.141, quit 0.099; give-up 0.412 on 16 seeds, not the 0.60 the prediction cited); chase_quit_share held; pack_lift falsified (1.72 on 16 seeds, 1.78 on 128: a lift of the pack, not co-location). Power: the power.js write from this report is held out of the PR: it breaks four unit tests that pin main's readings, so those expectations need a decision first. Liveness: main readings kept; 12 misses split out as T8a.",
+  "reports": [
+    "evals/decisions/E187/defaults-floor-on.json",
+    "evals/decisions/E187/defaults-floor-off.json",
+    "evals/decisions/E187/prediction.json"
+  ],
+  "date": "2026-11-16",
+  "branch": "eval/shared-baseline",
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "effect": "no-difference"
+}

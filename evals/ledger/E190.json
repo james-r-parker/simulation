@@ -1,0 +1,16 @@
+{
+  "id": "E190",
+  "date": "2026-11-18",
+  "branch": "feat/honest-budgets-juvenile-diagnosis",
+  "hypothesis": "Diagnosis after E189 (honest-budgets Phase 6): eval.hunter_juvenile_death_share (0.86) is the share of hunter deaths under juvenileTicks 3000, a lifespan statistic, and hunters die young because they hold BITE on most ticks with no body in their jaws, so strikeMissCost and recoil burn the energy a hunter needs to reach its first meal; the E189 levers act on the first hundred ticks and cannot move it.",
+  "prediction": "Diagnostic, written before the replays: if juveniles die because they cannot feed in the first hundreds of ticks, most deaths fall before 600 ticks and an early first kill predicts survival to 3000; if the cost is a standing drain, deaths spread over the window and an early kill does not predict survival. A counterfactual with the suspect cost at 0 lowers the share if the drain is real.",
+  "targets": ["eval.hunter_juvenile_death_share"],
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "before": "control (defaults, killGorgeShare 0.4), seeds 1 to 6, 100000 ticks, replay --level debug, hunters born after tick 10000",
+  "after": "cub-plant (juvenilePlantShare 0.25) and strikeMissCost 0, same seeds and length; a scratch probe of seeds 1 to 6 at 80000 ticks for birth energy and strike counts",
+  "verdicts": {},
+  "effect": "no-difference",
+  "note": "No eval ran, so no verdict. Control: share of deaths 0.85, 15% of hunters reach 3000 ticks, deaths spread evenly over the window, 45% of juvenile deaths have zero income and starve at about 390 ticks from about 720 birth energy; juveniles hold BITE on 70% of ticks, 61% with nothing in the jaws; misses are 48% and recoil 42% of the bite cost. cub-plant 0.74, strikeMissCost 0 0.63 (reach 3000: 0.27 and 0.40; one run per seed, a lead). Outcome to task: T40 screens strikeMissCost and recoilEnergy as lower-price arms.",
+  "reports": ["evals/decisions/E190/results.md"]
+}

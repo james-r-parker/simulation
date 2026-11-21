@@ -1,0 +1,16 @@
+{
+  "id": "E199",
+  "date": "2026-11-19",
+  "branch": "feat/training-stages-hunt",
+  "hypothesis": "E-TS-1i (training-stages Phase 6, T55, T56): a denser nursery world (1800 x 1200, foodPatchRadius 280, hashCellSize 560: 1.8 times the food per area) lets the offsets that stall the nursery food-behind gate pass it.",
+  "prediction": "Written before the run (commit 8966ed75): nursery passes on at least 2 of the 3 stalled offsets (80, 48, 16) within 40 generations and on the control offset 144. Falsified when at most 1 of the 3 passes.",
+  "targets": [],
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "before": "E-TS-1h: the nursery at 2400 x 1600 (stalls on 16, 48, 64, 80)",
+  "after": "npm run train -- --curriculum evals/train-ladder.json --until habitat --generations 380 --ticks 4000 --offer-from 100 --seed-offset <k> --workers 8, k = 80, 48, 16, 144, from feat/training-stages-hunt at 8966ed75",
+  "verdicts": {},
+  "effect": "no-difference",
+  "note": "No eval ran, so no verdict. Falsified: nursery passes on 1 of the 3 stalled offsets (80 at 30, then hunt-contact, hunt-weak and hunt-mid and a hunt stall at prey-ahead 0.000, prey-crossing -0.007, kin-spared -0.015). Offsets 48 and 16 are worse (food-behind -0.115 and -0.046). The control offset 144 passes nursery but regresses to it at 70 and stalls at hunt-weak (-0.013) where it passed every rung through hunt-mid in E-TS-1h. T55 reverted; the nursery stays at 2400 x 1600. Outcome to task: T54 (the turn read) stays open.",
+  "reports": ["evals/decisions/E-TS-1i/results.md"]
+}

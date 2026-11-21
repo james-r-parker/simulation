@@ -1,0 +1,15 @@
+{
+  "id": "E86",
+  "date": "2026-10-31",
+  "branch": "evals/balance-screen",
+  "hypothesis": "A slower predator life history (slow breeding, long handling, carrion) damps the hunter boom and bust and keeps hunters to the end.",
+  "prediction": "Slow breeding lifts predators at the end from 3/8 to 5/8 or more; handling 30 lowers presence but steadies it; carrion helps a little.",
+  "targets": ["eval.predators_at_end", "eval.prey_types_at_end", "eval.basin_lineage_effective", "eval.mating_share"],
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "before": "evals/screens/results/predator-life/defaults.report.json",
+  "after": "evals/screens/results/predator-life/ (6 arms x 8 seeds x 200000 ticks)",
+  "verdicts": {},
+  "effect": "no-difference",
+  "note": "A screen. No arm beats the defaults: predators at the end 0-3/8; handling 30 cuts presence to 0.20. Prediction wrong."
+}

@@ -1,0 +1,13 @@
+{
+  "id": "E62",
+  "date": "2026-10-29",
+  "branch": "eval/fs-t48f-split-heat",
+  "hypothesis": "Heat screen (fitness-and-selection T48f): lowering temperatureGainEat to 1.5 and raising temperatureLossPassive to 0.009 on the live default brings eval.heat_stress_share near 0.3 and keeps eval.cold_stress_share under 0.1 without a collapse.",
+  "prediction": "16 seeds (offset 32), 200000 ticks, map-elites-v6. ref: heat about 0.44, cold about 0.06 (T42a, replays). eat-1.5 alone: eating is 61% of the heat gain, so heat about 0.35 to 0.38. loss-0.009 alone (+20% loss): heat about 0.36 to 0.40, cold up to about 0.08. both: heat about 0.28 to 0.33, cold 0.08 to 0.12 (the cold edge is the risk). Mating share rises a little (less heat blocking), fed lifespan within 5%, no collapse. Pick both if cold stays under 0.1, else eat-1.5.",
+  "targets": ["eval.heat_stress_share", "eval.cold_stress_share"],
+  "before": "evals/screens/results/heat/ref.report.json",
+  "after": "evals/screens/results/heat/<arm>.report.json (one per arm; table in evals/screens/results/heat/table.md)",
+  "verdicts": {},
+  "effect": "no-difference",
+  "note": "T48f heat screen, 4 arms x 16 seeds (offset 32) x 200000 ticks, policy map-elites-v6; a screen, not a verdict. Ids E61 and E62 (E48-E60 are reserved by the brain plan). ref: heat 0.496, cold 0.074, mating 0.125, fed lifespan 7753, skill_trend -0.036. eat-1.5: heat 0.415, cold 0.097, mating 0.183, fed lifespan -6%, skill_trend -0.015. loss-0.009: heat 0.387, cold 0.137. both: heat 0.358, cold 0.159, mating 0.171, skill_trend -0.001. No arm reaches heat 0.3; only ref and eat-1.5 keep cold under 0.1. No collapse (pop 307-346). Predictions: heat for both (0.28-0.33) and cold for loss-0.009 wrong (heat stayed higher, cold rose more); eat-1.5 heat (0.35-0.38) a little low. Pick: eat-1.5 (cold limit holds). See sim-notes 2026-10-29 'Split and heat screens'."
+}

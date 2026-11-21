@@ -268,10 +268,8 @@ beforeEach(() => {
         join(repo, 'evals', 'train-screens', 'results', 'g', 'yield.json'),
         JSON.stringify({ base: { runs: 4, stages: [{ stage: 'nursery', passShare: 0.75 }] } }),
     );
-    writeFileSync(
-        join(repo, 'evals', 'experiments.json'),
-        JSON.stringify({ experiments: [{ id: 'E1', date: '2026-11-19' }] }),
-    );
+    mkdirSync(join(repo, 'evals', 'ledger'));
+    writeFileSync(join(repo, 'evals', 'ledger', 'E1.json'), JSON.stringify({ id: 'E1', date: '2026-11-19' }));
     writeFileSync(
         join(repo, '.checklogs', 'ship.jsonl'),
         `${JSON.stringify({ result: 'merged', minutes: 8, ciRuns: 1 })}\n`,

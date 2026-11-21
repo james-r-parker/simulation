@@ -1,0 +1,32 @@
+{
+  "id": "E80",
+  "date": "2026-11-02",
+  "branch": "feat/megafauna-p4-rendering",
+  "hypothesis": "The full Megafauna defaults continue to show avoidance, herd movement and dung or carcass feeding over a longer live-policy run.",
+  "prediction": "Preregistered before running: compare herd-free with the chosen final defaults on 16 matched seeds x 600000 ticks under live policy. Expect dodge_skill to stay at least 0.5 and herd activity to remain present; record herd deaths, crossings, recolonisations, economy and all survival/family criteria per seed. Generic population, predator and family gate misses remain balancing diagnostics, not passes or feature blockers.",
+  "targets": [
+    "eval.predators_at_end",
+    "eval.prey_types_at_end",
+    "eval.basin_lineage_effective",
+    "eval.dodge_skill",
+    "eval.trampled_share",
+    "eval.herd_animals",
+    "eval.herd_grazed_share",
+    "eval.herd_stampede_rate",
+    "eval.herd_gap_crossings",
+    "eval.herd_recolonisations",
+    "eval.herd_carcass_meal_share",
+    "eval.dung_food_share",
+    "eval.herd_seeded_patches",
+    "eval.food_energy_per_1k",
+    "eval.fed_median_lifespan",
+    "eval.input_active_share"
+  ],
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "before": "Herd-free control on the same 16 seeds x 600000 ticks",
+  "after": "evals/screens/results/megafauna-e80/ 16-seed, 600000-tick final-defaults report and seedChecks",
+  "verdicts": {},
+  "effect": "no-difference",
+  "note": "Registered before the E80 run. Results are in evals/screens/results/megafauna-e80/ (16 matched seeds x 600000 ticks, live policy, config hash 6eab957f3bf57b72); the paired herd-free control uses the same seeds/config. For final defaults, dodge >=0.5 and trampled_share in range hold on 16/16, but dodge mean decreases from E79's 0.9806 to 0.9751 (so the E80 higher-than-E79 criterion is not met); `trample_unavoidable_share <=0.5` on 0/16; herd animals and crossings on 16/16; stampede rate in range on 10/16; carcass meal share >=0.05 on 2/16; grazing share in range on 0/16; dung-food >=0.03 on 16/16; seeded-patch rate >=0.1/1000 on 0/16; and predator/prey/family gate counts 4/16, 16/16, 4/16. Population, predator and family misses remain balancing diagnostics under user direction; the behavioral, scavenging and seed/grazing misses are recorded as misses, not passes."
+}

@@ -1,0 +1,29 @@
+{
+  "id": "E155",
+  "hypothesis": "low-density-edge Phase 2, E-LD-1: under 100 prey the prey lose more than they replace, and the mating rate is what falls furthest below its value at 100 to 400 prey.",
+  "prediction": "eval.edge_birth_death_ratio is under 0.6 on at least half the seeds with an edge span, and the mate-birth swap (the seed's edge mating-birth rate replaced by its reference-span rate) closes the largest median share of the edge deficit (prey deaths minus prey births in edge spans) of the four swaps: mate births, split births, starvation, predation. Falsified when the ratio is 0.6 or more on more than half those seeds, or the starvation or predation swap closes a larger share.",
+  "targets": [
+    "eval.edge_birth_death_ratio",
+    "eval.edge_mate_births_per_prey",
+    "eval.edge_split_births_per_prey",
+    "eval.edge_starve_per_prey",
+    "eval.edge_eaten_per_prey",
+    "eval.edge_hunters_per_prey",
+    "eval.edge_intake_ratio",
+    "eval.edge_mate_unreached_share"
+  ],
+  "before": "evals/decisions/E151/defaults-floor-on.json: defaults, floor on, 128 seeds x 200000 ticks, configHash ff8d890a5a70c14d (carries none of the edge detectors, so it is the reference to re-run, not the reading)",
+  "after": "evals/decisions/E155/defaults-floor-on.json: defaults, floor on, 128 seeds x 200000 ticks, configHash ff8d890a5a70c14d, run at 67d39a9c, carrying the edge detectors",
+  "note": "Verdict (T10): FALSIFIED on its first clause. eval.edge_birth_death_ratio is under 0.6 on 2 of 107 seeds with an edge span (median 0.969, mean 0.972; 21 seeds have no edge span). The mate-swap clause holds: of 65 seeds with a positive edge deficit, the mate swap closes a median 1.44 of it (pooled 1.44), starvation 0.70, split -0.78, predation -0.94, so edge mating is the largest gap, and it is larger than the whole deficit. Read as rates, not as a verified-metric verdict: the 15 edge-span detectors are unverified (null on 21 of 128 seeds; eval-power cannot read them). Diagnosis in docs/designs/sim-notes.md (2026-11-11, T10) and evals/decisions/E155/edge-diagnosis.txt; 16 probe replays in evals/decisions/E155/edge-probes/.",
+  "reports": [
+    "evals/decisions/E151/defaults-floor-on.json",
+    "evals/decisions/E155/defaults-floor-on.json",
+    "evals/decisions/E155/edge-diagnosis.txt"
+  ],
+  "date": "2026-11-11",
+  "branch": "feat/low-density-edge-detectors",
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "effect": "no-difference",
+  "verdicts": {}
+}

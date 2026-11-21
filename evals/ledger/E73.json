@@ -1,0 +1,32 @@
+{
+  "id": "E73",
+  "date": "2026-11-01",
+  "branch": "docs/flora-calibration-contract",
+  "hypothesis": "The measured toxin-dose and patch-pool candidates improve their named Flora signals without a clear local-economy regression against the current Flora defaults.",
+  "prediction": "16 seeds x 200000 ticks, live policy, paired same-seed comparisons. E70 selected no lever. Candidate C1 changes only toxinDose to 1.2. Candidate C2 changes toxinDose to 1.2 and floraPatchMax to 48. These are the exact config-diff allowlists against current Flora defaults; no other differences are allowed. Compare each candidate to the defaults reference with eval:compare at its default minimum effect. E69 predates Flora and lacks these detectors; record its metric gaps and global survival/family counts as balancing diagnostics, not pass/fail gates. Select no candidate if its named signal does not improve without a clear local-economy regression.",
+  "targets": [
+    "eval.toxic_death_share",
+    "eval.toxic_avoidance",
+    "eval.flora_patch_pool_full_share",
+    "eval.flora_patch_death_rate",
+    "eval.flora_seed_bank_occupancy_share",
+    "eval.pollination_rate",
+    "eval.flora_hue_spread",
+    "eval.food_energy_per_1k",
+    "eval.fed_median_lifespan",
+    "eval.deliberate_food_share",
+    "eval.patch_leave_depleted",
+    "eval.carcass_meal_share",
+    "eval.winter_basin_density",
+    "eval.predators_at_end",
+    "eval.prey_types_at_end",
+    "eval.basin_family_effective"
+  ],
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "before": "pre-promotion Flora defaults, toxinDose 0.45 pinned in grid base",
+  "after": "evals/screens/flora-e73.grid.json (3 arms x 16 seeds x 200000 ticks)",
+  "verdicts": {},
+  "effect": "no-difference",
+  "note": "Pre-promotion reference toxinDose 0.45 pinned in grid base. Ran 16 matched seeds x 200000 ticks. Paired reports are evals/screens/results/flora-e73/C1-vs-defaults.compare.json and C2-vs-defaults.compare.json; full arm reports and per-seed outputs are in the same directory. All 3 reports, table, verdicts and comparisons validate with 16 seeds; the silent screen session was interrupted after writing all artifacts (exit 130), so the command did not return cleanly and is not called a command pass. C1 toxinDose 1.2 raised toxic-death share to 0.01164 (16/16 seeds) and avoidance by 0.0470 (95% CI +0.0266 to +0.0794); local food energy and fed lifespan were no-difference at the 5% minimum effect, carcass meal share fell 2.06%, below that material-effect threshold. Advance C1 to E74. C2 raised pollination by 0.0428/1k and hue spread by 0.00112, but patch-leave-depleted share rose 3.52 percentage points (paired CI +0.73 to +6.48 points), a local regression; do not advance floraPatchMax 48. E69 differences and global survival/family outcomes remain balancing diagnostics."
+}

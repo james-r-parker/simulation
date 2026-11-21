@@ -1,0 +1,16 @@
+{
+  "id": "E197",
+  "date": "2026-11-19",
+  "branch": "feat/training-stages-hunt",
+  "hypothesis": "E-TS-1g (training-stages Phase 6, T48, T49): a hunt-mid rung (the hunt world with the prey sprintBoost 0.5, gate drill.prey-mid.edgeLow 0.001) carries the hunters from hunt-weak (0.2) towards hunt.",
+  "prediction": "Written before the run (commit cc89ff61): offsets 0, 128, 192 repeat the stages before hunt-mid to the digit; hunt-mid passes on at least 1 of the 2 offsets that reach it; prey-ahead winShareOverReference above 0.119 on at least 1 run that reaches hunt; kin-spared under 0.001; offset 48 passes nursery. Falsified when hunt-mid stalls on both offsets that reach it.",
+  "targets": [],
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "before": "E-TS-1f: the same ladder without hunt-mid",
+  "after": "npm run train -- --curriculum evals/train-ladder.json --until habitat --generations 380 --ticks 4000 --offer-from 100 --seed-offset <k> --workers 8, k = 0, 128, 192, 48, from feat/training-stages-hunt at cc89ff61",
+  "verdicts": {},
+  "effect": "no-difference",
+  "note": "No eval ran, so no verdict. Determinism holds through hunt-weak on 0, 128, 192. hunt-mid stalls on both offsets that reach it (0 at -0.013, 192 at -0.010 to -0.015; each cycled back to hunt-weak): falsified. hunt not reached. Offset 48 stalls nursery (food-behind 0.191 at every checkpoint): nursery food-behind stalls on 3 of 6 distinct offsets (16, 48, 64). Cause from the E-TS-1f graded-sprint table: the hunt-weak passer wins 6 of 64 at sprint 0.2, 6 at 0.3, 5 at 0.4 and 1 at 0.5, so a step to 0.5 is too wide. Next: E-TS-1h, the rung at sprint 0.3. Outcome to task: T52, T53 in training-stages.md Phase 6.",
+  "reports": ["evals/decisions/E-TS-1g/results.md"]
+}

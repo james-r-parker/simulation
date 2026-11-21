@@ -1,0 +1,19 @@
+{
+  "id": "E173",
+  "hypothesis": "eat-choice T27: contact shares counted in the feed phase, before feeding removes the item, vary less across seeds than the sampled shares, so they gain the power to be verified.",
+  "prediction": "On a 64-seed reference of the season 10 defaults (seeds 1 to 64, 400000 ticks), eval:power gives eval.food_contact_bite_share and eval.full_contact_bite_share a detectable change of at most 0.05 at 32 seeds. Falsified when either is above 0.05.",
+  "targets": ["eval.food_contact_bite_share", "eval.full_contact_bite_share"],
+  "before": "E164 power (sampled shares): detectable change 0.15 at 32 seeds",
+  "after": "evals/decisions/E173/reference.report.json: main (season 10), seeds 1 to 64, 400000 ticks, floor on, policy live",
+  "verdicts": {
+    "eval.food_contact_bite_share": "-",
+    "eval.full_contact_bite_share": "-"
+  },
+  "note": "Falsified (a power reading, no comparison, so no verdicts). Feed-phase counting tightens the detectable change at 32 seeds to 0.1 and 0.075, above the 0.05 bar; the spread left is between seeds (bite share per contact 0.01 to 0.49), the lineage each world settles on, so both shares stay watch.",
+  "reports": ["evals/decisions/E173/results.md", "evals/decisions/E173/power.json"],
+  "date": "2026-11-14",
+  "branch": "chore/eat-choice-contact-power",
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "effect": "no-difference"
+}

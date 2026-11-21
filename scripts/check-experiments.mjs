@@ -1,11 +1,12 @@
-// Validates evals/experiments.json against evals/experiments.schema.json (the `conventions` gate runs it).
-// Usage: node scripts/check-experiments.mjs [ledger.json] [schema.json]
-import { existsSync, readFileSync, statSync } from 'node:fs';
-import { resolve } from 'node:path';
+// Validates every record in evals/ledger/ against evals/experiments.schema.json (the `conventions` gate runs it).
+// Usage: node scripts/check-experiments.mjs [ledger-dir] [schema.json]
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { RECORD_FILE } from './lib/ledger.mjs';
 import { validate } from './lib/json-schema-lite.mjs';
 
-const LEDGER = new URL('../evals/experiments.json', import.meta.url);
+const LEDGER = new URL('../evals/ledger/', import.meta.url);
 const SCHEMA = new URL('../evals/experiments.schema.json', import.meta.url);
 const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url));
 
@@ -15,49 +16,14 @@ export const FIRST_REPORT_ID = 151;
 export const REPORT_DIR = 'evals/decisions/';
 
 /**
- * Names where an entry sits: `experiments[2] (E3)`, or just the index when it has no usable id.
- * @param {number} index the entry's position
- * @param {unknown} entry the entry
- * @returns {string} the label
- */
-function label(index, entry) {
-    const id = entry !== null && typeof entry === 'object' ? /** @type {any} */ (entry).id : undefined;
-    return typeof id === 'string' ? `experiments[${index}] (${id})` : `experiments[${index}]`;
-}
-
-/**
- * Formats a schema error, naming the entry and the schema path.
- * @param {string} prefix the entry label, or '' for the ledger itself
+ * Formats a schema error, naming the file and the schema path.
+ * @param {string} file the record's file name
  * @param {import('./lib/json-schema-lite.mjs').SchemaError} error the error
  * @returns {string} the line
  */
-function format(prefix, error) {
+function format(file, error) {
     const at = error.instancePath === '' ? '' : `at ${error.instancePath.slice(1)}: `;
-    return `${prefix === '' ? '' : `${prefix}: `}${error.schemaPath === '' ? '/' : error.schemaPath}: ${at}${error.message}`;
-}
-
-/**
- * Checks ids are unique and increase down the list.
- * @param {{ id?: unknown }[]} entries the entries that passed the schema
- * @returns {string[]} problems
- */
-function checkIds(entries) {
-    /** @type {string[]} */
-    const problems = [];
-    const seen = new Map();
-    let last = -1;
-    entries.forEach((entry, index) => {
-        const id = String(entry.id);
-        const number = Number(id.slice(1));
-        if (seen.has(id)) {
-            problems.push(`${label(index, entry)}: duplicate id ${id} (first at experiments[${seen.get(id)}])`);
-        } else if (number <= last) {
-            problems.push(`${label(index, entry)}: ids must increase, ${id} follows E${last}`);
-        }
-        seen.set(id, seen.get(id) ?? index);
-        last = Math.max(last, number);
-    });
-    return problems;
+    return `${file}: ${error.schemaPath === '' ? '/' : error.schemaPath}: ${at}${error.message}`;
 }
 
 /**
@@ -75,82 +41,107 @@ function reportProblem(path, root) {
 
 /**
  * Checks that a record from `FIRST_REPORT_ID` on names its reports and that each is a file under `evals/decisions/`.
- * @param {{ id?: unknown, reports?: unknown }[]} entries the entries that passed the schema
+ * @param {{ id: string, reports?: string[] }} record a record that passed the schema
+ * @param {string} file the record's file name
  * @param {string} root the repo root the report paths are relative to
  * @returns {string[]} problems
  */
-function checkReports(entries, root) {
+function checkReports(record, file, root) {
+    if (Number(record.id.slice(1)) < FIRST_REPORT_ID) {
+        return [];
+    }
+    const reports = record.reports ?? [];
     /** @type {string[]} */
-    const problems = [];
-    entries.forEach((entry, index) => {
-        if (Number(String(entry.id).slice(1)) < FIRST_REPORT_ID) {
-            return;
+    const problems = reports.length === 0 ? [`${file}: from E${FIRST_REPORT_ID} on a record names its reports`] : [];
+    for (const path of reports) {
+        const problem = reportProblem(path, root);
+        if (problem !== null) {
+            problems.push(`${file}: reports: ${problem}`);
         }
-        const reports = /** @type {string[]} */ (entry.reports ?? []);
-        if (reports.length === 0) {
-            problems.push(`${label(index, entry)}: from E${FIRST_REPORT_ID} on a record names its reports`);
-        }
-        for (const path of reports) {
-            const problem = reportProblem(path, root);
-            if (problem !== null) {
-                problems.push(`${label(index, entry)}: reports: ${problem}`);
-            }
-        }
-    });
+    }
     return problems;
 }
 
 /**
- * Validates a ledger.
- * @param {unknown} ledger the parsed ledger
- * @param {Record<string, any>} schema the parsed schema
+ * Validates one record.
+ * @param {unknown} record the parsed record
+ * @param {Record<string, any>} schema the parsed schema (describes one record)
+ * @param {string} file the record's file name, `E<id>.json`
  * @param {string} [root] the repo root the report paths are relative to
- * @returns {string[]} one line per problem; empty when the ledger is valid
+ * @returns {string[]} one line per problem; empty when the record is valid
  */
-export function checkLedger(ledger, schema, root = REPO_ROOT) {
-    const entrySchema = schema.properties.experiments.items;
-    /** @type {string[]} */
-    const problems = [];
-    const top = validate({ ...schema, properties: { experiments: { type: 'array' } } }, ledger);
-    problems.push(...top.map((error) => format('', error)));
-    const entries = ledger !== null && typeof ledger === 'object' ? /** @type {any} */ (ledger).experiments : undefined;
-    if (!Array.isArray(entries)) {
-        return problems;
+export function checkRecord(record, schema, file, root = REPO_ROOT) {
+    const found = validate(schema, record).map((error) => format(file, error));
+    if (found.length > 0) {
+        return found;
     }
-    entries.forEach((entry, index) => {
-        for (const error of validate(entrySchema, entry)) {
-            problems.push(format(label(index, entry), error));
-        }
-    });
-    if (problems.length === 0) {
-        problems.push(...checkIds(entries), ...checkReports(entries, root));
-    }
-    return problems;
+    const entry = /** @type {{ id: string, reports?: string[] }} */ (record);
+    const named = `${entry.id}.json`;
+    return [
+        ...(named === file ? [] : [`${file}: the file name must match the id ${entry.id} (${named})`]),
+        ...checkReports(entry, file, root),
+    ];
 }
 
 /**
- * @param {string | URL} path a JSON file
+ * @param {string} message why a file could not be read
+ * @param {string} path the file
+ * @returns {string} the problem line
+ */
+const unreadable = (message, path) => `${path}: ${message}`;
+
+/**
+ * @param {string} path a JSON file
  * @returns {{ value?: any, problem?: string }} the parsed value, or why it could not be read
  */
 function readJson(path) {
     try {
         return { value: JSON.parse(readFileSync(path, 'utf8')) };
     } catch (error) {
-        return { problem: `${String(path)}: ${error instanceof Error ? error.message : String(error)}` };
+        return { problem: unreadable(error instanceof Error ? error.message : String(error), path) };
     }
 }
 
 /**
- * Reads, validates and reports the ledger files.
- * @param {string | URL} ledgerPath the ledger file
+ * Validates every file in a ledger directory.
+ * @param {string} dir the ledger directory
+ * @param {Record<string, any>} schema the parsed schema
+ * @param {string} [root] the repo root the report paths are relative to
+ * @returns {string[]} the problems, sorted by file
+ */
+export function checkDirectory(dir, schema, root = REPO_ROOT) {
+    /** @type {string[]} */
+    const problems = [];
+    for (const name of readdirSync(dir).sort()) {
+        if (!RECORD_FILE.test(name)) {
+            problems.push(`${name}: not a record file; a ledger file is named E<id>.json`);
+            continue;
+        }
+        const read = readJson(join(dir, name));
+        problems.push(...(read.problem === undefined ? checkRecord(read.value, schema, name, root) : [read.problem]));
+    }
+    return problems;
+}
+
+/**
+ * @param {string | URL} path a path or a file URL
+ * @returns {string} the path
+ */
+const toPath = (path) => (path instanceof URL ? fileURLToPath(path) : path);
+
+/**
+ * Reads, validates and reports the ledger.
+ * @param {string | URL} ledgerDir the ledger directory
  * @param {string | URL} schemaPath the schema file
  * @returns {string[]} the problems
  */
-export function checkFiles(ledgerPath = LEDGER, schemaPath = SCHEMA) {
-    const ledger = readJson(ledgerPath);
-    const schema = readJson(schemaPath);
-    const unreadable = [ledger, schema].flatMap((read) => (read.problem === undefined ? [] : [read.problem]));
-    return unreadable.length > 0 ? unreadable : checkLedger(ledger.value, schema.value);
+export function checkFiles(ledgerDir = LEDGER, schemaPath = SCHEMA) {
+    const schema = readJson(toPath(schemaPath));
+    const dir = toPath(ledgerDir);
+    if (schema.problem !== undefined) {
+        return [schema.problem];
+    }
+    return existsSync(dir) ? checkDirectory(dir, schema.value) : [unreadable('no such directory', dir)];
 }
 
 /* v8 ignore start -- thin CLI; the exported functions are tested */

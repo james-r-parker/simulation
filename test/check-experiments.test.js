@@ -3,14 +3,14 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { checkFiles, checkLedger } from '../scripts/check-experiments.mjs';
+import { checkDirectory, checkFiles, checkRecord } from '../scripts/check-experiments.mjs';
 import { validate } from '../scripts/lib/json-schema-lite.mjs';
 
 const schema = JSON.parse(readFileSync(new URL('../evals/experiments.schema.json', import.meta.url), 'utf8'));
 
 /**
  * @param {Record<string, unknown>} [over] fields to replace
- * @returns {Record<string, unknown>} a valid entry
+ * @returns {Record<string, unknown>} a valid record
  */
 function entry(over = {}) {
     return {
@@ -30,75 +30,67 @@ function entry(over = {}) {
 }
 
 /**
- * @param {...Record<string, unknown>} entries ledger entries
- * @returns {string[]} problems
+ * @param {Record<string, unknown>} record a record
+ * @returns {string[]} problems, the record read from the file `E<id>.json`
  */
-const check = (...entries) => checkLedger({ experiments: entries }, schema);
+const check = (record) => checkRecord(record, schema, `${record.id}.json`);
 
-describe('checkLedger', () => {
-    it('accepts an empty ledger and a valid entry with optional policies', () => {
-        expect(check()).toEqual([]);
-        expect(check(entry(), entry({ id: 'E2', beforePolicy: 'baseline-v5', afterPolicy: 'live' }))).toEqual([]);
+describe('checkRecord', () => {
+    it('accepts a valid record with optional policies', () => {
+        expect(check(entry())).toEqual([]);
+        expect(check(entry({ id: 'E2', beforePolicy: 'baseline-v5', afterPolicy: 'live' }))).toEqual([]);
     });
 
-    it('names the entry, the schema path and the value for an enum error', () => {
-        expect(check(entry(), entry({ id: 'E3', effect: 'maybe' }))).toEqual([
-            'experiments[1] (E3): /properties/effect/enum: at effect: "maybe" is not one of better, worse, no-difference, exploit',
+    it('names the file, the schema path and the value for an enum error', () => {
+        expect(check(entry({ id: 'E3', effect: 'maybe' }))).toEqual([
+            'E3.json: /properties/effect/enum: at effect: "maybe" is not one of better, worse, no-difference, exploit',
         ]);
     });
 
     it('names a bad id pattern and a bad date', () => {
-        const problems = check(entry({ id: 'x1', date: '16/10/2026' }));
-        expect(problems).toContain('experiments[0] (x1): /properties/id/pattern: at id: "x1" does not match ^E\\d+$');
+        const problems = checkRecord(entry({ id: 'x1', date: '16/10/2026' }), schema, 'x1.json');
+        expect(problems).toContain('x1.json: /properties/id/pattern: at id: "x1" does not match ^E\\d+$');
         expect(problems.some((p) => p.includes('/properties/date/pattern'))).toBe(true);
     });
 
     it('names a missing field and an unexpected one', () => {
         const rest = entry();
         delete rest.note;
-        expect(check(rest)).toEqual(['experiments[0] (E1): /required: missing required "note"']);
+        expect(check(rest)).toEqual(['E1.json: /required: missing required "note"']);
         expect(check(entry({ extra: 1 }))).toEqual([
-            'experiments[0] (E1): /additionalProperties: at extra: unexpected property "extra"',
+            'E1.json: /additionalProperties: at extra: unexpected property "extra"',
         ]);
     });
 
     it('names wrong types inside arrays and the verdicts object', () => {
         expect(check(entry({ targets: ['a', 3] }))).toEqual([
-            'experiments[0] (E1): /properties/targets/items/type: at targets/1: 3 is not of type string',
+            'E1.json: /properties/targets/items/type: at targets/1: 3 is not of type string',
         ]);
-        const bad = check(entry({ verdicts: { 'pop.mean': 'nope' } }));
-        expect(bad).toEqual([
-            'experiments[0] (E1): /properties/verdicts/additionalProperties/enum: at verdicts/pop.mean: "nope" is not one of better, worse, no-difference, -',
-        ]);
-    });
-
-    it('labels an entry without an id by its index', () => {
-        expect(check({})[0]).toMatch(/^experiments\[0\]: \/required: missing required "id"/);
-        expect(check(/** @type {any} */ (7))[0]).toBe('experiments[0]: /type: 7 is not of type object');
-    });
-
-    it('rejects a duplicate id and ids that do not increase', () => {
-        expect(check(entry(), entry())).toEqual(['experiments[1] (E1): duplicate id E1 (first at experiments[0])']);
-        expect(check(entry({ id: 'E2' }), entry({ id: 'E1' }))).toEqual([
-            'experiments[1] (E1): ids must increase, E1 follows E2',
+        expect(check(entry({ verdicts: { 'pop.mean': 'nope' } }))).toEqual([
+            'E1.json: /properties/verdicts/additionalProperties/enum: at verdicts/pop.mean: "nope" is not one of better, worse, no-difference, -',
         ]);
     });
 
-    it('rejects a ledger of the wrong shape', () => {
-        expect(checkLedger([], schema)[0]).toBe('/type: [] is not of type object');
-        expect(checkLedger({}, schema)).toEqual(['/required: missing required "experiments"']);
-        expect(checkLedger({ experiments: {} }, schema)[0]).toContain('/properties/experiments/type');
+    it('rejects a value that is not a record', () => {
+        expect(checkRecord(7, schema, 'E1.json')).toEqual(['E1.json: /type: 7 is not of type object']);
+        expect(checkRecord({}, schema, 'E1.json')[0]).toMatch(/^E1\.json: \/required: missing required "id"/);
+    });
+
+    it('requires the file name to match the id', () => {
+        expect(checkRecord(entry({ id: 'E2' }), schema, 'E1.json')).toEqual([
+            'E1.json: the file name must match the id E2 (E2.json)',
+        ]);
     });
 });
 
-describe('checkLedger reports', () => {
+describe('checkRecord reports', () => {
     const root = mkdtempSync(join(tmpdir(), 'ledger-'));
     mkdirSync(join(root, 'evals/decisions/E151'), { recursive: true });
     mkdirSync(join(root, 'evals/results'), { recursive: true });
     writeFileSync(join(root, 'evals/decisions/E151/report.json'), '{}');
     writeFileSync(join(root, 'evals/results/r.json'), '{}');
-    const at = (/** @type {Record<string, unknown>[]} */ ...entries) =>
-        checkLedger({ experiments: entries }, schema, root);
+    const at = (/** @type {Record<string, unknown>} */ record) =>
+        checkRecord(record, schema, `${record.id}.json`, root);
 
     it('asks nothing of a record before E151, and accepts reports on one', () => {
         expect(at(entry({ id: 'E150' }))).toEqual([]);
@@ -106,7 +98,7 @@ describe('checkLedger reports', () => {
     });
 
     it('requires a record from E151 on to name its reports', () => {
-        expect(at(entry({ id: 'E151' }))).toEqual(['experiments[0] (E151): from E151 on a record names its reports']);
+        expect(at(entry({ id: 'E151' }))).toEqual(['E151.json: from E151 on a record names its reports']);
         expect(at(entry({ id: 'E152', reports: [] }))).toHaveLength(1);
     });
 
@@ -122,17 +114,63 @@ describe('checkLedger reports', () => {
             'evals/decisions/../results/r.json',
         ];
         expect(at(entry({ id: 'E151', reports }))).toEqual([
-            'experiments[0] (E151): reports: evals/decisions/E151/missing.json: no such file',
-            'experiments[0] (E151): reports: evals/decisions/E151: no such file',
-            'experiments[0] (E151): reports: evals/results/r.json: a report lives under evals/decisions/',
-            'experiments[0] (E151): reports: evals/decisions/../results/r.json: a report lives under evals/decisions/',
+            'E151.json: reports: evals/decisions/E151/missing.json: no such file',
+            'E151.json: reports: evals/decisions/E151: no such file',
+            'E151.json: reports: evals/results/r.json: a report lives under evals/decisions/',
+            'E151.json: reports: evals/decisions/../results/r.json: a report lives under evals/decisions/',
         ]);
     });
 
     it('reads the repo root by default, where evals/decisions/ exists', () => {
-        expect(
-            checkLedger({ experiments: [entry({ id: 'E151', reports: ['evals/decisions/.gitkeep'] })] }, schema),
-        ).toEqual([]);
+        expect(checkRecord(entry({ id: 'E151', reports: ['evals/decisions/.gitkeep'] }), schema, 'E151.json')).toEqual(
+            [],
+        );
+    });
+});
+
+describe('checkDirectory', () => {
+    /**
+     * @param {Record<string, string>} files file name to contents
+     * @returns {string} a ledger directory holding them
+     */
+    function ledger(files) {
+        const dir = mkdtempSync(join(tmpdir(), 'ledger-dir-'));
+        for (const [name, text] of Object.entries(files)) {
+            writeFileSync(join(dir, name), text);
+        }
+        return dir;
+    }
+
+    it('accepts a directory of valid records', () => {
+        const dir = ledger({ 'E1.json': JSON.stringify(entry()), 'E2.json': JSON.stringify(entry({ id: 'E2' })) });
+        expect(checkDirectory(dir, schema)).toEqual([]);
+    });
+
+    it('names a stray file, a file that is not JSON and a bad record, in file order', () => {
+        const dir = ledger({
+            'E1.json': JSON.stringify(entry({ effect: 'maybe' })),
+            'E2.json': '{',
+            'notes.txt': 'x',
+        });
+        const problems = checkDirectory(dir, schema);
+        expect(problems).toHaveLength(3);
+        expect(problems[0]).toContain('E1.json: /properties/effect/enum');
+        expect(problems[1]).toContain(join(dir, 'E2.json'));
+        expect(problems[2]).toBe('notes.txt: not a record file; a ledger file is named E<id>.json');
+    });
+
+    it('reports a record that is null', () => {
+        const dir = ledger({ 'E1.json': 'null' });
+        expect(checkDirectory(dir, schema)).toEqual(['E1.json: /type: null is not of type object']);
+    });
+});
+
+describe('checkFiles', () => {
+    it('reports a missing directory and an unreadable schema as problems', () => {
+        expect(checkFiles('/nonexistent/ledger')).toEqual(['/nonexistent/ledger: no such directory']);
+        expect(checkFiles(undefined, '/nonexistent/schema.json')).toEqual([
+            expect.stringContaining('/nonexistent/schema.json'),
+        ]);
     });
 });
 
@@ -146,28 +184,12 @@ describe('validate', () => {
     });
 });
 
-describe('the real ledger', () => {
-    it('passes', () => {
-        expect(checkFiles()).toEqual([]);
-    });
-
-    it('reports an unreadable file as a problem', () => {
-        expect(checkFiles('/nonexistent/ledger.json')[0]).toContain('/nonexistent/ledger.json');
-        expect(checkFiles(undefined, '/nonexistent/schema.json')).toEqual([
-            expect.stringContaining('/nonexistent/schema.json'),
-        ]);
-    });
-});
-
 describe('the command line', () => {
-    it('exits 0 on the real ledger', () => {
-        expect(spawnSync('node', ['scripts/check-experiments.mjs']).status).toBe(0);
-    });
-
     it('exits 1 and prints the problem for a bad ledger', () => {
-        const bad = new URL('./fixtures/bad-ledger.json', import.meta.url);
-        const run = spawnSync('node', ['scripts/check-experiments.mjs', bad.pathname], { encoding: 'utf8' });
+        const dir = mkdtempSync(join(tmpdir(), 'ledger-cli-'));
+        writeFileSync(join(dir, 'E1.json'), JSON.stringify(entry({ effect: 'maybe' })));
+        const run = spawnSync('node', ['scripts/check-experiments.mjs', dir], { encoding: 'utf8' });
         expect(run.status).toBe(1);
-        expect(run.stdout).toContain('experiments[0] (E1): /properties/effect/enum');
+        expect(run.stdout).toContain('experiments: E1.json: /properties/effect/enum');
     });
 });

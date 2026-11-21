@@ -1,0 +1,16 @@
+{
+  "id": "E255",
+  "date": "2026-11-20",
+  "branch": "exp/fair-chase-rung",
+  "hypothesis": "E-FC-2 (fair-chase T7): with the courser sprint store (sprintStoreEnabled, drain 0.01, predator sprintDrainMultiplier 0.5) laid over the rung worlds, the hunt rung's drill prey-ahead is learnable from random brains: at least 2 of 8 populations reach its bar. On the ladder as it is (E-feasible record above) prey-ahead is 0/8, best 0.03 against a bar of 0.109.",
+  "prediction": "Written before running train:feasible (npm run train:feasible -- --curriculum <arm ladder> --until hunt --workers 16, 8 populations, 200 generations, 64 brains, 4 trials): base reproduces the old reading, prey-ahead 0/8 (best about 0.03, not learnable). courser makes prey-ahead learnable on 2 to 4 of 8 populations (best share 0.15 to 0.4), because the store ends the unbounded flee that the prey-ahead evader wins, so a brain that merely closes and bites now wins some trials; moderate confidence (about 55 percent), the risk being that the bar scales with the memoryless reference's win share, which the store also raises, and that the drill's scripted prey may not spend the store. The earlier rungs (food-ahead, food-behind, prey-adrift, prey-weak) stay learnable on both arms; prey-mid stays marginal (1 to 3 of 8). Falsified if courser prey-ahead is under 2 of 8.",
+  "targets": [],
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "before": "base: npm run train:feasible -- --curriculum evals/train-ladder.json --until hunt --workers 16",
+  "after": "courser: the same, on the ladder with evals/train-screens/stages/fair-chase-<stage>.json as each stage's config (evals/train-screens/fair-chase.grid.json, arm courser)",
+  "verdicts": {},
+  "effect": "worse",
+  "note": "Prediction FALSIFIED: courser prey-ahead 1/8 (best 0.125, bar 0.109), under the 2 needed. The check as run (fc2-feasible) used the default config for drills (DRILL_CONFIG = {} in scripts/lib/feasible-run.mjs; fixed by PR 571), so base and courser read identically (prey-ahead 0/8 best 0.03; prey-mid 1/8 0.56; prey-crossing 2/8 0.81; kin-spared 0/8; prey-weak 3/8 0.88; food and prey-adrift 8/8). The courser numbers come from a one-off script (scripts/fc2-courser-drills.mjs, not committed) calling learnLesson with evals/fair-chase/courser.json as the drill config at the check sizes: prey-adrift 8/8 (1.00), prey-weak 2/8 (0.25), prey-mid 0/8 (0), prey-ahead 1/8 (0.125, bar 0.109), prey-crossing 0/8 (0), kin-spared 0/8. Per-drill table in the report.",
+  "reports": ["evals/decisions/E255/results.md"]
+}

@@ -20,7 +20,7 @@ before starting any task, and restamp it when it checks out.
 2. **Find the doc.** Read the **Build queue** in `docs/designs/README.md` and the newest file in `docs/handoffs/`.
    The queue holds lead docs by `**Priority:**` rank; under each lead are the docs it schedules, in step order. Read
    the lead's `## Order` section: its own next phase comes first, then its steps. That is next, unless the user or the
-   handoff names another. If the latest experiments in `evals/experiments.json` argue for a
+   handoff names another. If the latest experiments in `evals/ledger/` argue for a
    different order, say so and ask before re-ranking.
 3. **Read it fully.** Status line, Validated stamp, Depends on, every phase, the Delivery requirements and Task
    breakdown tables. Also read any doc it depends on, and confirm those are `Implemented` or far enough along.

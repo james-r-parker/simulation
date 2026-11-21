@@ -1,0 +1,14 @@
+{
+  "id": "E185",
+  "hypothesis": "senses-and-motor Phase 2 (plan id E-SM-1): on the default bodies a predator at a sprint can catch a forager and a fair band exists inside the pursuer's view.",
+  "prediction": "The oracle predator at a sprint catches a forager from inside 0.6 of its view at every bearing, a fair band (catch share 0.2 to 0.8) exists between 0.6 and 1.0 of view, and a kill returns more energy than the chase costs only inside the fair band's near half. Falsified when no fair band exists between 0.6 and 1.0 of view.",
+  "targets": [],
+  "before": "not applicable: a scripted audit of the default config, no arms",
+  "after": "npm run audit:chase on the defaults, seed 1, 4 trials per cell",
+  "verdicts": {},
+  "note": "Falsified: the breaking oracle forager is caught only from inside 0.2 of view (0.31 there, 0 beyond), against 0.75 to 0.88 for a straight runner; no fair band between 0.6 and 1.0. Heuristic oracles, so a limit of this evader not a bound.",
+  "reports": ["evals/decisions/E185/results.md"],
+  "date": "2026-11-15",
+  "branch": "feat/senses-motor-phase3",
+  "effect": "no-difference"
+}

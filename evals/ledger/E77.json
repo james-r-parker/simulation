@@ -1,0 +1,21 @@
+{
+  "id": "E77",
+  "date": "2026-11-01",
+  "branch": "feat/megafauna-p2-sense",
+  "hypothesis": "For the scenes A real chase and Luck is not skill, giving herds a dedicated input and adding a wary reflex lets blobs detect and avoid megafauna, reducing trample exposure while retaining enough sensory activity to learn from the new channel.",
+  "prediction": "Preregistered before the screen: compare the Phase 1 adopted defaults against one-key arms for herdWary 0, 0.5 and 1, trampleDamage 200, 400 and 800, herdCount 4 and 6, and herdSize 8 and 12 (8 seeds x 200000 ticks, policy live). For Luck is not skill, expect the wary reflex to lower eval.trampled_share and improve eval.dodge_skill relative to herdWary 0; watch eval.input_active_share for the six values in the megafauna channel against the 0.02 target. Record eval.spec_effective, predator presence, and the survival gate as diagnostics. No arm is adopted before the registered runs and subsequent review.",
+  "targets": [
+    "eval.dodge_skill",
+    "eval.trampled_share",
+    "eval.spec_effective",
+    "eval.input_active_share",
+    "bench.step_ms@500"
+  ],
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "before": "Megafauna Phase 1 adopted defaults (herdCount 6, herdStartleRadius 200, herdCarcassTicks 12000)",
+  "after": "11-arm E77 reports and table in evals/screens/results/herd-sense/ (8 seeds x 200000 ticks, policy live)",
+  "verdicts": {},
+  "effect": "no-difference",
+  "note": "E77 completed all 11 arms with no runner errors. Important baseline caveat: this branch ran against the pre-Flora toxinDose 0.45 defaults (config hash e2cf27dfd276b012), not current main's toxinDose 1.2, so these are exploratory results only and no arm is adopted. Wary=1 is the best local behavior arm: mean dodge_skill 0.9907, trampled_share 0.0143, spec_effective 3.190, input_active_share 0.2761; all six megafauna input values exceed 0.02. Reference Wary=0.5 has 0.9744, 0.0400, 2.944, and 0.2745 respectively. All arms fail the generic population gate (0/8); Wary=1 has predators at end 1/8, prey types 8/8, and basin_lineage_effective >=3 on 1/8. These survival/family misses are not claimed as passes and remain balancing follow-ups. The full per-arm table and reports are in evals/screens/results/herd-sense/. E92 is preregistered separately on current main's toxinDose 1.2 before any adoption."
+}

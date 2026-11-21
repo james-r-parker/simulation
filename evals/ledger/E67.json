@@ -1,0 +1,15 @@
+{
+  "id": "E67",
+  "date": "2026-10-30",
+  "branch": "claude/big-bag-branch-status-730fab",
+  "hypothesis": "Survival screen of the big-bang world (natural-selection T5): a lower bite cost and hunt upkeep keep predators alive on random-brain genomes, so the world meets the merge gate (population above the floor at the end on every seed, eval.predator_presence >= 0.5, eval.spec_effective > 1.5).",
+  "prediction": "8 seeds x 200000 ticks, live policy, the big-bang defaults. biteCost and huntUpkeep arms (bite4-upkeep0.002, bite8-upkeep0.001, bite12-upkeep0.001) hold predator_presence near 0.5 to 0.6 with one arm best; spec_effective stays above 1.5; no seed under the floor. If no arm holds predators, the cause is not the cost and the next screen diagnoses it.",
+  "targets": ["eval.predator_presence", "eval.spec_effective", "eval.floor_episodes"],
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "before": "evals/screens/results/survival-diag/defaults.report.json",
+  "after": "evals/screens/results/survival/<arm>.report.json (table in evals/screens/results/survival-diag/table.md)",
+  "verdicts": {},
+  "effect": "no-difference",
+  "note": "Prediction wrong: the grid was stopped after 3 arms because no arm kept predators. predator_presence 0.053 (bite4-upkeep0.002), 0.134 (bite8-upkeep0.001), 0.035 (bite12-upkeep0.001); catch_rate 0.014, 0.058, 0.008; floor episodes per seed 2.75, 1.13, 2.13. The cost is not the lever. The diagnosis screen (survival-diag, 7 arms, same seeds) tried the old brain, energy 6k and 25k and no kick: defaults predators 0.06 and pop 142; no arm above 0.08 and none passes (pop > min 0 to 2 of 8 seeds). Cause found by replay: predators starved as random brains (never landed a bite; the movement cost of thrashing). Fix from biology, see E68. Merge gate unmet at this point."
+}

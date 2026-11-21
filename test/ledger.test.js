@@ -12,25 +12,11 @@ beforeEach(() => {
 afterEach(() => rmSync(root, { recursive: true, force: true }));
 
 describe('readLedger', () => {
-    it('reads the old single file when there is no ledger directory', () => {
-        writeFileSync(
-            join(root, 'evals', 'experiments.json'),
-            JSON.stringify({ experiments: [{ id: 'E2' }, { id: 'E1' }] }),
-        );
-        expect(readLedger(root).map((r) => r.id)).toEqual(['E2', 'E1']);
-    });
-
-    it('reads an empty list from a single file with no experiments key', () => {
-        writeFileSync(join(root, 'evals', 'experiments.json'), '{}');
+    it('reads no records when the directory is absent', () => {
         expect(readLedger(root)).toEqual([]);
     });
 
-    it('reads no records when neither source exists', () => {
-        expect(readLedger(root)).toEqual([]);
-    });
-
-    it('prefers the directory, in numeric id order, and ignores other files', () => {
-        writeFileSync(join(root, 'evals', 'experiments.json'), JSON.stringify({ experiments: [{ id: 'E99' }] }));
+    it('reads the directory in numeric id order and ignores other files', () => {
         mkdirSync(ledgerDir(root));
         for (const id of ['E10', 'E9', 'E100']) {
             writeFileSync(join(ledgerDir(root), `${id}.json`), JSON.stringify({ id }));

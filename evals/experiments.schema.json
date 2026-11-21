@@ -1,50 +1,40 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "evals/experiments.schema.json",
-  "title": "Experiment ledger",
-  "description": "evals/experiments.json: an object with one key, experiments, the list the run-evolution-loop skill appends to. beforePolicy and afterPolicy may be omitted; the default (live) is applied by readers, the validator does not fill it in. reports lists the committed report files a verdict rests on; scripts/check-experiments.mjs requires it from E151 on.",
+  "title": "Experiment record",
+  "description": "evals/ledger/E<id>.json: one experiment, a file the run-evolution-loop skill adds. beforePolicy and afterPolicy may be omitted; the default (live) is applied by readers, the validator does not fill it in. reports lists the committed report files a verdict rests on; scripts/check-experiments.mjs requires it from E151 on.",
   "type": "object",
-  "required": ["experiments"],
+  "required": [
+    "id",
+    "date",
+    "branch",
+    "hypothesis",
+    "prediction",
+    "targets",
+    "before",
+    "after",
+    "verdicts",
+    "effect",
+    "note"
+  ],
   "additionalProperties": false,
   "properties": {
-    "experiments": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": [
-          "id",
-          "date",
-          "branch",
-          "hypothesis",
-          "prediction",
-          "targets",
-          "before",
-          "after",
-          "verdicts",
-          "effect",
-          "note"
-        ],
-        "additionalProperties": false,
-        "properties": {
-          "id": { "type": "string", "pattern": "^E\\d+$" },
-          "date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
-          "branch": { "type": "string", "minLength": 1 },
-          "hypothesis": { "type": "string", "minLength": 1 },
-          "prediction": { "type": "string", "minLength": 1 },
-          "targets": { "type": "array", "items": { "type": "string", "minLength": 1 } },
-          "beforePolicy": { "type": "string", "minLength": 1, "default": "live" },
-          "afterPolicy": { "type": "string", "minLength": 1, "default": "live" },
-          "before": { "type": "string", "minLength": 1 },
-          "after": { "type": "string", "minLength": 1 },
-          "verdicts": {
-            "type": "object",
-            "additionalProperties": { "enum": ["better", "worse", "no-difference", "-"] }
-          },
-          "effect": { "enum": ["better", "worse", "no-difference", "exploit"] },
-          "note": { "type": "string" },
-          "reports": { "type": "array", "items": { "type": "string", "minLength": 1 } }
-        }
-      }
-    }
+    "id": { "type": "string", "pattern": "^E\\d+$" },
+    "date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+    "branch": { "type": "string", "minLength": 1 },
+    "hypothesis": { "type": "string", "minLength": 1 },
+    "prediction": { "type": "string", "minLength": 1 },
+    "targets": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "beforePolicy": { "type": "string", "minLength": 1, "default": "live" },
+    "afterPolicy": { "type": "string", "minLength": 1, "default": "live" },
+    "before": { "type": "string", "minLength": 1 },
+    "after": { "type": "string", "minLength": 1 },
+    "verdicts": {
+      "type": "object",
+      "additionalProperties": { "enum": ["better", "worse", "no-difference", "-"] }
+    },
+    "effect": { "enum": ["better", "worse", "no-difference", "exploit"] },
+    "note": { "type": "string" },
+    "reports": { "type": "array", "items": { "type": "string", "minLength": 1 } }
   }
 }

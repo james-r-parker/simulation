@@ -1,0 +1,23 @@
+{
+  "id": "E92",
+  "date": "2026-11-01",
+  "branch": "feat/megafauna-p2-sense",
+  "hypothesis": "On current main's toxinDose 1.2 baseline, herdWary 1 preserves the sensory-channel activity and behavioral benefit suggested by E77 relative to herdWary 0.5.",
+  "prediction": "On 16 matched seeds x 200000 ticks with live policy and current defaults, herdWary 1 will increase eval.dodge_skill and lower eval.trampled_share versus the herdWary 0.5 reference, with all six megafauna input values above 0.02. Population, predator, prey-type and per-basin family outcomes are recorded as balancing diagnostics; they are not adoption blockers under the user's explicit partial-acceptance direction.",
+  "targets": [
+    "eval.dodge_skill",
+    "eval.trampled_share",
+    "eval.spec_effective",
+    "eval.input_active_share",
+    "eval.predators_at_end",
+    "eval.prey_types_at_end",
+    "eval.basin_lineage_effective"
+  ],
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "before": "Current main reference: herdWary 0.5, toxinDose 1.2",
+  "after": "Matched E92 reports, table and verdicts in evals/screens/results/herd-sense-current/ (16 seeds x 200000 ticks, policy live)",
+  "verdicts": {},
+  "effect": "no-difference",
+  "note": "Completed after preregistration on current main defaults (toxinDose 1.2): matched Wary 0.5 versus 1 on 16 seeds x 200000 ticks. Wary 1 improves mean dodge_skill 0.98826 to 0.99225 and lowers trampled_share 0.02846 to 0.01398; spec_effective rises 3.0057 to 3.2288 and input_active_share stays 0.27271 to 0.27319. The six Wary 1 input-activity means are 0.05110, 0.05110, 0.04955, 0.02962, 0.02962 and 0.02902, all above 0.02. Predators at end are positive 1/16 versus 3/16; prey 16/16 both; basin_lineage_effective >=3 on 1/16 versus 3/16. Generic population gate is 0/16 both arms. T24 adopts herdWary 1 based on the confirmed behavioral benefit; herdCount 6 and herdSize 8 remain unchanged. None of the survival, family or population gates is claimed passed; these remain balancing follow-ups. The separate 20,000-tick input check and T23 benchmark are recorded in docs/designs/sim-notes.md."
+}

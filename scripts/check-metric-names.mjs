@@ -9,7 +9,7 @@
 //
 // Not read: js/evo/metric-registry/ (it defines the names), test/fixtures/, the tests of this check, of the
 // designs-index Targets check and of the metrics doc (their made-up repos and registries name made-up metrics),
-// evals/experiments.json and evals/experiments/ (history: a record names a metric as it was called when the run was
+// evals/ledger/ and evals/experiments/ (history: a record names a metric as it was called when the run was
 // made, and a rename keeps the old name there), evals/results/, evals/power/, evals/baselines/, evals/ladder/ and
 // evals/screens/results/ (reports), and the Targets of built phases (they describe what shipped). A made-up name that a
 // test needs is listed in `LET_THROUGH` with its reason.
@@ -59,7 +59,7 @@ export function filesToRead(root) {
         .filter((path) => SOURCE_FILE.test(path))
         .map((path) => relative(root, path));
     const configs = readdirSync(join(root, 'evals'))
-        .filter((name) => name.endsWith('.json') && name !== 'experiments.json')
+        .filter((name) => name.endsWith('.json'))
         .map((name) => join('evals', name));
     const docs = readdirSync(join(root, 'docs/designs'))
         .filter((name) => name.endsWith('.md'))

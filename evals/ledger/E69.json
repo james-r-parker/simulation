@@ -1,0 +1,25 @@
+{
+  "id": "E69",
+  "date": "2026-11-01",
+  "branch": "main",
+  "hypothesis": "The balanced Phase 4 defaults before Flora provide the reference for measuring Flora effects on survival, genetic families, seasonal food access and the food economy.",
+  "prediction": "Reference only (16 seeds x 200000 ticks, policy map-elites-v6, source commit f649cd8); no comparison verdicts. Records the baseline for E70-E74. Flora-specific metrics are not present in this pre-Flora report.",
+  "targets": [
+    "eval.predators_at_end",
+    "eval.prey_types_at_end",
+    "eval.basin_family_effective",
+    "eval.food_energy_per_1k",
+    "eval.fed_median_lifespan",
+    "eval.deliberate_food_share",
+    "eval.patch_leave_depleted",
+    "eval.carcass_meal_share",
+    "eval.winter_basin_density"
+  ],
+  "beforePolicy": "map-elites-v6",
+  "afterPolicy": "map-elites-v6",
+  "before": "Phase 4 balanced defaults at main commit f649cd8 (before Flora T1)",
+  "after": "evals/screens/results/flora/E69-reference.report.json",
+  "verdicts": {},
+  "effect": "no-difference",
+  "note": "Recorded reference-only run from f649cd8; 16 seeds x 200000 ticks; configHash ce9f2df038b71536; report SHA256 04123cfc642c4d2bad10ec2b57e47de26ed87cec9eee26a9c54d77a14a230132. Predators at end: 0/16 seeds; at least one prey type: 16/16; basin_family_effective >= 3: 0/16 (mean 1.0208459). Means: food_energy_per_1k 420.5615653, fed_median_lifespan 7007, deliberate_food_share 0.5281707, patch_leave_depleted 0.3242030, carcass_meal_share 0.8990197, winter_basin_density 0.9458033. Flora-specific metrics are absent from this pre-T1 report. E69 is recorded; E70-E74 remain owed."
+}

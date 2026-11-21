@@ -1,0 +1,35 @@
+{
+  "id": "E130",
+  "date": "2026-11-06",
+  "branch": "eval/refuge-t5",
+  "hypothesis": "refuge.md T5: diagnose why the Refuge scene is absent on the default world with the eight Phase 1 detectors: do bodies fit, do prey meet cover and threat together, does cover help when used, is the detector sound.",
+  "prediction": "From the code (refuge.md Context): the ring gaps admit few bodies (T3 later showed they admit up to radius 32), cover gives no protection, and prey do not seek it; so eligible share low, bite deficit near 1, episode entry near 0.",
+  "targets": [
+    "eval.refuge_use_under_threat",
+    "eval.refuge_prey_use_under_threat",
+    "eval.refuge_episode_entry",
+    "eval.refuge_bite_deficit",
+    "eval.refuge_eligible_share",
+    "eval.refuge_exit_fed",
+    "eval.refuge_crowding",
+    "eval.refuge_dwell_ticks",
+    "eval.cold_margin_use_under_threat"
+  ],
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "before": "-",
+  "after": "evals/results/refuge-t5-32.json (not committed; 32 seeds x 200000 ticks, floor on, defaults at 62a6758)",
+  "verdicts": {
+    "eval.refuge_use_under_threat": "-",
+    "eval.refuge_prey_use_under_threat": "-",
+    "eval.refuge_episode_entry": "-",
+    "eval.refuge_bite_deficit": "-",
+    "eval.refuge_eligible_share": "-",
+    "eval.refuge_exit_fed": "-",
+    "eval.refuge_crowding": "-",
+    "eval.refuge_dwell_ticks": "-",
+    "eval.cold_margin_use_under_threat": "-"
+  },
+  "effect": "no-difference",
+  "note": "Ran 2026-11-06, 32 seeds floor on. Means: refuge_use_under_threat -0.0024 (sd 0.0015, negative on all 32 seeds), refuge_prey_use_under_threat -0.0025, refuge_episode_entry -0.0004 (2 of 32 positive), refuge_bite_deficit 0.12 (median 0.10, max 0.31), refuge_eligible_share 0.64, refuge_exit_fed 0.64, refuge_crowding 1.28, refuge_dwell_ticks 178, cold_margin_use_under_threat -0.013. Answers: (1) the geometry is usable - 64% of prey ticks are at an eligible size and T3 showed radius 20 to 32 enter from every angle; (2) prey do not meet cover and threat together - a threatened prey is no likelier to be or get inside than a calm one; (3) cover already protects - bites per prey-tick inside a ring are 12% of the outside rate; (4) the detector is sound (prey-only and all-agent forms agree). The prediction was wrong on (1) and (3): cover works and fits, prey just do not reach it under threat, and the rings are 0.94% of the map. eval:power (splits of 16): false positives 7 to 14%; use under threat and bite deficit detect a 75% change, dwell, exit-fed and crowding 30%, eligible share 10%; episode entry and the cold-margin form have no power. Side finding: seeds 17 to 32 end under 80 agents on 8 of 16 (seeds 1 to 16: 2 of 16, as in E126), so 10 of 32 floor-on worlds end under 80 and the 16-seed default picture is optimistic; comparisons on matched seeds stand. Hunters alive at the end on 28 of 32."
+}

@@ -1,0 +1,15 @@
+{
+  "id": "E85",
+  "date": "2026-10-31",
+  "branch": "evals/balance-screen",
+  "hypothesis": "Capping asexual lines (splitClonalMax, splitMaxPerLife, the predator split above one meal) lowers the split share and keeps hunters and families to the end.",
+  "prediction": "Clonal 2 and 3 cut the split share from about 40% to 15-25% and keep predators to the end on more seeds; clonal 1 cuts most but risks hunters; per-life caps do less; families stay near 1.",
+  "targets": ["eval.predators_at_end", "eval.prey_types_at_end", "eval.basin_lineage_effective", "eval.mating_share"],
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "before": "evals/screens/results/clonal/defaults.report.json",
+  "after": "evals/screens/results/clonal/ (8 arms x 8 seeds x 200000 ticks)",
+  "verdicts": {},
+  "effect": "no-difference",
+  "note": "A screen, not a verdict. Every limit cuts the split share (52.2% to 11.1-42.7%) but predators at the end fall from 3/8 to 0-1/8: hunters breed by splitting because they are too few to find mates. Per-life 1 and combined crash the population to about 140 and refill from the floor. The clonal cap at 3 was later adopted on the user's call."
+}

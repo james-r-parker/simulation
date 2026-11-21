@@ -1,0 +1,24 @@
+{
+  "id": "E175",
+  "hypothesis": "honest-budgets Phase 2: a kill that takes the victim's body (killShare, killGorgeCap, no kill payment) and a carcass that holds what the body held and fades make hunter income come from the bodies they eat, so zero-kill lives stop living on carcasses.",
+  "prediction": "On the 16-seed screen (honest-kill.grid.json, 400000 ticks), the finalist reads eval.hunter_zero_kill_carcass_share lower than control, and the 64-seed keep rule reads no guard WORSE, eval.hunter_catches_per_1k included. Falsified when every arm reads hunter catches WORSE.",
+  "targets": ["eval.hunter_zero_kill_carcass_share", "eval.hunter_catches_per_1k", "eval.hunter_income_share.carcass"],
+  "before": "control arm of evals/screens/honest-kill.grid.json (season 10 defaults), seeds 1 to 16, 400000 ticks, floor on, policy live",
+  "after": "the carcassBody arms of the same screen",
+  "verdicts": {
+    "eval.hunter_zero_kill_carcass_share": "-",
+    "eval.hunter_catches_per_1k": "better",
+    "eval.hunter_income_share.carcass": "-"
+  },
+  "note": "Screen: every body arm moves hunter income onto kills; finalist body-k25r. Keep rule on 64 seeds against E174 y1-b2: no harm (alive 12 harmed vs 5 recovered, p 0.143), catches 0.39 to 1.35 better, carcass income share 0.48 to 0.008, zero-kill carcass share 0.108 to 0.084 (interval includes 0). Hunters alive 46/64 against 53, adoption bar not met; juvenile hunter deaths worse. Adopted at the switch (T13).",
+  "reports": [
+    "evals/decisions/E175/results.md",
+    "evals/decisions/E175/screen-table.md",
+    "evals/decisions/E175/body-k25r.report.json"
+  ],
+  "date": "2026-11-15",
+  "branch": "season/next",
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "effect": "better"
+}

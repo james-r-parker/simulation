@@ -1,0 +1,33 @@
+{
+  "id": "E137",
+  "date": "2026-11-07",
+  "branch": "feat/realistic-keepers-finish",
+  "hypothesis": "realistic-keepers T12/T16/T17 under the paired-interval rule (principles.md, user 2026-11-07): predatorRestTicks 60, rewardedHebb and coverConceals do no harm on 32 matched floor-on seeds; their E134/E135 count failures were chance.",
+  "prediction": "E137 prediction, written 2026-11-07 before the runs (main 450d6b8; floor on, seeds 17 to 32 via --seed-offset 16, 200000 ticks; joined with the seeds 1 to 16 runs of E133-off, E134-rest, E135-reward, E135-conceal for 32 matched seeds).\nHypothesis: under the user's paired-interval rule (2026-11-07), predatorRestTicks 60, rewardedHebb and coverConceals do no harm - their E134/E135 count failures were chance.\nPrediction: on 32 seeds no paired interval shows harm for coverConceals (near inert) or rewardedHebb (guards all no-difference on 16 seeds); predatorRestTicks is the most likely to show a worse hunters-alive share (it lowered predators at end -18% and population -10% on 16 seeds, both no-difference) - perhaps an interval touching 0. If an interval excludes 0 on the worse side, that mechanism is deleted.",
+  "targets": [
+    "eval.population_mean",
+    "eval.predators_at_end",
+    "eval.prey_types_at_end",
+    "eval.spec_effective",
+    "eval.hunter_kill_conversion_by_age.1k-2k",
+    "eval.prey_extinctions",
+    "share.hunters_alive",
+    "share.under_80"
+  ],
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "before": "off-a.json + off-b.json (defaults, seeds 1-32 as two 16-seed halves, floor on, 200000 ticks, main f5c7880)",
+  "after": "rest-*.json (predatorRestTicks 60), reward-*.json (rewardedHebb), conceal-*.json (coverConceals), same seeds",
+  "verdicts": {
+    "eval.population_mean": "no-difference",
+    "eval.predators_at_end": "no-difference",
+    "eval.prey_types_at_end": "no-difference",
+    "eval.spec_effective": "no-difference",
+    "eval.hunter_kill_conversion_by_age.1k-2k": "no-difference",
+    "eval.prey_extinctions": "no-difference",
+    "share.hunters_alive": "no-difference",
+    "share.under_80": "no-difference"
+  },
+  "effect": "no-difference",
+  "note": "No arm harmful: no guard and no share interval excludes 0 on the worse side, so all three kept and adopted at T22. Hunters alive of 32: defaults 27, rest 23, reward 20, conceal 24. Closest call rewardedHebb: hunters-alive share diff -0.219 [-0.438, 0.000], upper bound exactly 0 (10 seeds lost, 3 gained, sign-test p 0.092). Verdicts listed are the same for all three arms. Non-guard readings flagged worse (rest: coverage -11%, qd_score -12%; conceal: basin_lineage_effective -12%) are not on the keep rule's guard list. Full table in docs/designs/realistic-keepers.md (Results)."
+}

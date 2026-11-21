@@ -1,0 +1,21 @@
+{
+  "id": "E75",
+  "date": "2026-11-01",
+  "branch": "feat/megafauna-p1-stampede",
+  "hypothesis": "The Phase 1 reference with herds disabled records the flora-final world before herds compete for food or add carcasses.",
+  "prediction": "Reference only (16 seeds x 200000 ticks, policy live, herdCount 0); no comparison verdicts. Records the baseline for E76 and later Phase 1 comparisons.",
+  "targets": [
+    "eval.predators_at_end",
+    "eval.food_energy_per_1k",
+    "eval.fed_median_lifespan",
+    "eval.patch_leave_depleted",
+    "eval.gap_crossers"
+  ],
+  "beforePolicy": "live",
+  "afterPolicy": "live",
+  "before": "flora-final defaults with herdCount 0 (reference configuration)",
+  "after": "Recorded: 16 seeds x 200000 ticks, policy live, herdCount 0; evals/screens/results/herds/E75-herd-free.report.json",
+  "verdicts": {},
+  "effect": "no-difference",
+  "note": "Completed for Megafauna Phase 1 T14 after the user released the CPU for these runs. Config is recorded in evals/experiments/E75-herd-free.json; report SHA256 71ee453f68a6fb53d5e6594585b3eb92eb48f1de65a6205854594b330016f839. Herd-specific metrics are all zero as expected; flora-final baseline metrics are preserved in the report."
+}
