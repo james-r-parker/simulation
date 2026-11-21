@@ -16,6 +16,7 @@ const BREAK = 'eval.defender_bite_break_share';
  */
 function makeWorld(config = {}) {
     const n = 4;
+    /** @type {Record<string, any>} */
     const cfg = { defenderRepelEnergy: 40, defenderRepelImpulse: 4, biteArc: Math.PI, huntSizeRatio: 0.8, ...config };
     const lanes = Object.fromEntries(
         ['biteArc', 'huntSizeRatio', 'defenderRepelEnergy', 'defenderRepelCost', 'defenderRepelImpulse'].map((key) => [
