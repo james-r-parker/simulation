@@ -46,6 +46,8 @@ still in the record for the observer and the effects.
 | 34   | `COVER_TOTALS`         | `CoverTotals`        | debug | 2 agentsInRings, 3 agentTicksInRings, 4 concealedHits, 5 foodRejected                                                                                 |
 | 35   | `HUNTER_RECOIL_LIFE`   | `HunterRecoilLife`   | debug | 2 slot, 3 energy                                                                                                                                      |
 | 36   | `SPRINT_SPENT`         | `SprintSpent`        | debug | 2 slot, 3 genomeId, 4 spec                                                                                                                            |
+| 37   | `EFFECT_APPLIED`       | `EffectApplied`      | debug | 2 slot, 3 effect, 4 stacks, 5 source                                                                                                                  |
+| 38   | `EFFECT_CAPPED`        | `EffectCapped`       | debug | 2 slot, 3 effect                                                                                                                                      |
 
 ## Birth causes
 

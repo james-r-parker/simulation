@@ -2,8 +2,8 @@
 // formulas read, resolved from the lane bases of body-genes.md (`laneBases`) so it follows whatever the config and the
 // spec's `body` overrides say. Plain numbers only; no function, no world, no RNG.
 
-import { laneBases } from '../sim/body-lanes.js';
-import { passiveMultiplier, thrustEfficiency } from '../sim/temperature.js';
+import { LANES, laneBases } from '../sim/body-lanes.js';
+import { EFFECT, effectFactor } from '../sim/effects.js';
 
 /** The share of its store a body holds at the start of a scene: the arena's `STORE_SHARE` of `chase-body.js`. */
 export const STORE_SHARE = 0.5;
@@ -45,15 +45,41 @@ export const STORE_SHARE = 0.5;
  */
 
 /**
- * The one-slot world the temperature functions of `js/sim/temperature.js` read: the spec's lane bases as lane arrays of one
- * slot, at the start temperature, so the budget calls the sim's own `thrustEfficiency` and `passiveMultiplier`.
+ * The one-slot world the temperature effects of `js/sim/effects.js` read: the spec's lane bases as lane arrays of one
+ * slot, at the start temperature, so the budget reads the sim's own effect factors (the cold and heat bands on `maxThrust`,
+ * the cold and hot ramps on the standing cost).
  * @param {Readonly<Record<string, any>>} config the validated config
  * @param {Record<string, number>} lane the spec's lane bases
  * @returns {import('../sim/world.js').World} the world, as far as those functions read it
  */
 export function startWorld(config, lane) {
     const lanes = Object.fromEntries(Object.entries(lane).map(([name, value]) => [name, [value]]));
-    return /** @type {any} */ ({ config, lanes, temperature: [config.temperatureStart] });
+    const laneArrays = LANES.map((l) => lanes[l.name]);
+    return /** @type {any} */ ({ config, lanes, laneArrays, temperature: [config.temperatureStart] });
+}
+
+/**
+ * @param {Readonly<Record<string, any>>} config the validated config
+ * @param {Record<string, number>} lane the spec's lane bases
+ * @returns {number} what `thrustEfficiency` was: the cold and heat bands' factor on `maxThrust` at the start temperature
+ */
+function thrustEfficiency(config, lane) {
+    const world = startWorld(config, lane);
+    return (
+        effectFactor(world, 0, EFFECT.COLD_BAND, 'maxThrust') * effectFactor(world, 0, EFFECT.HEAT_BAND, 'maxThrust')
+    );
+}
+
+/**
+ * @param {Readonly<Record<string, any>>} config the validated config
+ * @param {Record<string, number>} lane the spec's lane bases
+ * @returns {number} what `passiveMultiplier` was: the cold and hot ramps' factor on the standing cost at the start temperature
+ */
+function passiveMultiplier(config, lane) {
+    const world = startWorld(config, lane);
+    return (
+        effectFactor(world, 0, EFFECT.COLD_RAMP, 'passiveLoss') * effectFactor(world, 0, EFFECT.HOT_RAMP, 'passiveLoss')
+    );
 }
 
 /**
@@ -63,7 +89,7 @@ export function startWorld(config, lane) {
  * @returns {RoleParams['thrust']} the thrust numbers
  */
 function thrustOf(config, lane, fat) {
-    const base = lane.maxThrust * thrustEfficiency(startWorld(config, lane), 0);
+    const base = lane.maxThrust * thrustEfficiency(config, lane);
     const gain = config.sprintMultiplier * lane.sprintBoost;
     const cruise = base * fat;
     return {
@@ -95,7 +121,7 @@ function costOf(config, lane, { entry, burn }) {
         juvenile: burn,
         standingMult: entry.passiveLossMultiplier,
         drain: config.seasons[0].energyDrain,
-        heat: passiveMultiplier(startWorld(config, lane), 0),
+        heat: passiveMultiplier(config, lane),
     };
 }
 
@@ -192,7 +218,7 @@ function lifeNumbers(config, lane) {
             lossPassive: lane.temperatureLossPassive,
             optimalMax: lane.temperatureOptimalMax,
             start: config.temperatureStart,
-            efficiency: thrustEfficiency(startWorld(config, lane), 0),
+            efficiency: thrustEfficiency(config, lane),
             optimalMin: lane.temperatureOptimalMin,
             max: config.temperatureMax,
             passiveFactor: config.temperaturePassiveLossFactor,

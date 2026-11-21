@@ -6,25 +6,9 @@ import { createConfig } from '../sim/config.js';
 import { FLORA_DEFAULTS } from '../sim/config-flora.js';
 import { nextFloat } from '../sim/rng.js';
 import { CENTRE_Y, HUNTER_ENERGY, heading } from './memory-probe-scenarios.js';
+import { defaultBars } from './reflex-bars.js';
 import { DEG, SEQUENCE_TICKS, bearingPoint, signedBearing, subjectAgent, withMirrors } from './reflex-stage.js';
 import { SPEC } from '../sim/specs.js';
-
-/** The thresholds, as shares of the output range (starting values of the doc, calibrated by T4). */
-export const FORAGER_BARS = Object.freeze({
-    fleeThrust: 0.3,
-    fleeBehindThrust: 0.5,
-    behindDeg: 160,
-    turn: 0.15,
-    approachThrust: 0.1,
-    aheadThrust: 0.3,
-    aheadTurn: 0.5,
-    avoidTurn: 0.2,
-    stopThrust: 0.1,
-    passThrust: 0.3,
-    passTurn: 0.4,
-    deadAheadDeg: 5,
-});
-const BAR = FORAGER_BARS;
 
 /** Where the things sit, as shares of the subject's view. */
 const HUNTER_FROM = 0.5;
@@ -86,7 +70,8 @@ const FLEE_THREAT = {
             return [{ kind: 'threat', bearing, mirror, ticks }];
         });
     },
-    check(outputs, { bearing }) {
+    check(outputs, { bearing }, bars = defaultBars()) {
+        const BAR = bars.forager;
         if (Math.abs(bearing) > BAR.behindDeg * DEG) {
             return outputs.thrust >= BAR.fleeBehindThrust;
         }
@@ -114,7 +99,8 @@ const APPROACH_FOOD = {
             return [{ kind: d.ahead ? 'ahead' : 'wide', bearing, mirror, ticks: [stage] }];
         });
     },
-    check(outputs, staging) {
+    check(outputs, staging, bars = defaultBars()) {
+        const BAR = bars.forager;
         if (staging.kind === 'ahead') {
             return outputs.thrust >= BAR.aheadThrust && Math.abs(outputs.turn) <= BAR.aheadTurn;
         }
@@ -155,8 +141,8 @@ const PICK_SAFE_FOOD = {
             return [{ kind: 'safe', bearing: safe, mirror, ticks: [{ foods, rocks: [], agents: [forager(d.angle)] }] }];
         });
     },
-    check(outputs, { bearing }) {
-        return turnToward(outputs, bearing) >= BAR.turn && outputs.thrust > BAR.approachThrust;
+    check(outputs, { bearing }, bars = defaultBars()) {
+        return turnToward(outputs, bearing) >= bars.forager.turn && outputs.thrust > bars.forager.approachThrust;
     },
 };
 
@@ -211,7 +197,8 @@ const AVOID_OBSTACLE = {
         };
         return withMirrors(draw, obstacleStagings);
     },
-    check(outputs, { kind, bearing }) {
+    check(outputs, { kind, bearing }, bars = defaultBars()) {
+        const BAR = bars.forager;
         if (kind === 'rock-beside') {
             return outputs.thrust >= BAR.passThrust && Math.abs(outputs.turn) <= BAR.passTurn;
         }

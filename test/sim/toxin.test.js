@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { DEATH_CAUSE, EVENT_STRIDE, EVENT_TYPE } from '../../js/sim/events.js';
 import { createConfig } from '../../js/sim/config.js';
-import { ingestToxin, isSick, stepToxin } from '../../js/sim/toxin.js';
+import { ingestToxin, stepToxin } from '../../js/sim/toxin.js';
+import { isSick } from './helpers/legacy-rules.js';
 import { canEatNow, feed } from '../../js/sim/feeding.js';
 import { actAll } from '../../js/sim/physics.js';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
