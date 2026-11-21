@@ -24,6 +24,7 @@ import { WORLD_4 } from './world-4.js';
 import { LIVENESS } from './liveness.js';
 import { POWER } from './power.js';
 import { minSeedsFromPower } from './status.js';
+import { withRoles } from './roles.js';
 
 /**
  * @template {Record<string, import('./entry.js').MetricEntry>} T
@@ -65,7 +66,7 @@ export function withPower(entries, readings = POWER) {
 }
 
 /** Every eval metric by full name; each key is a literal in a family file, so `MetricName` is a union. */
-export const METRICS = Object.freeze({
+export const METRICS = withRoles({
     ...withPower(withLiveness(CORE)),
     ...withPower(withLiveness(CORE_2)),
     ...withPower(withLiveness(HUNTERS)),
