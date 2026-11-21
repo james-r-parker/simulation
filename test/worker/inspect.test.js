@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { TRAITS, traitRatio } from '../../js/sim/body-traits.js';
 import { createObserver } from '../../js/evo/observer.js';
-import { EXTRA_INPUTS, OUTPUT_COUNT, RAY_CHANNELS } from '../../js/sim/brain-layout.js';
+import { EXTRA_INPUTS, inputOffsets, OUTPUT_COUNT, RAY_CHANNELS, TRAIT_SLOTS } from '../../js/sim/brain-layout.js';
 import { BORN_CAUSE } from '../../js/sim/events.js';
 import { createRng } from '../../js/sim/rng.js';
 import { snapshotLayout } from '../../js/sim/snapshot.js';
@@ -38,6 +39,16 @@ describe('inspectLabels', () => {
         ]);
     });
 
+    it('names every trait of the registry and the thirteen body sense values', () => {
+        const labels = inspectLabels();
+        expect(labels.traits.map((trait) => trait.name)).toEqual(TRAITS.map((trait) => trait.name));
+        expect(labels.traits.every((trait) => trait.describe !== '' && trait.kind !== '')).toBe(true);
+        expect(labels.bodySense).toHaveLength(13);
+        expect(labels.bodySense[0]).toBe('prey.size0');
+        expect(labels.bodySense.at(-1)).toBe('share.kin');
+        expect(new Set(labels.bodySense).size).toBe(13);
+    });
+
     it('groups the body inputs as the inspector shows them', () => {
         const groups = inspectLabels().bodyInputs.map((input) => input.group);
         expect(groups.filter((g) => g === 'Body')).toHaveLength(10);
@@ -68,7 +79,10 @@ describe('workerLayout', () => {
         expect(layout.effectsWords).toBe(2 + EFFECT_CAPACITY * EFFECT_WORDS);
         expect(layout.inspectOffset).toBe(layout.effectsOffset + layout.effectsWords);
         const inputs = config.rayCount * RAY_CHANNELS + EXTRA_INPUTS;
-        expect(layout.inspectWords).toBe(INSPECT_HEADER_WORDS + inputs + config.brainHidden + OUTPUT_COUNT + 18);
+        expect(layout.inspectWords).toBe(
+            INSPECT_HEADER_WORDS + inputs + config.brainHidden + OUTPUT_COUNT + 18 + TRAITS.length + 13,
+        );
+        expect([layout.traitCount, layout.senseCount]).toEqual([TRAITS.length, 13]);
         expect(layout.bytes).toBe((layout.inspectOffset + layout.inspectWords) * 4);
     });
 
@@ -160,6 +174,42 @@ describe('writeInspect', () => {
             2,
         ]);
         expect(INSPECT_COUNTERS).toHaveLength(18);
+    });
+
+    it('writes each trait ratio and the body sense values after the counters', () => {
+        const { world, source, layout, views } = setup();
+        const slot = 0;
+        const genes = slot * world.layout.weightCount + world.layout.traitStart;
+        TRAITS.forEach((trait) => {
+            world.weights[genes + trait.index] = 0.5;
+            world.traitSpans[world.spec[slot] * TRAIT_SLOTS + trait.index] = 0.2;
+        });
+        const sense = inputOffsets(world.config).senseStart;
+        for (let i = 0; i < 13; i++) {
+            world.pooled[slot * world.layout.inputCount + sense + i] = i / 20;
+        }
+        writeInspect(views, layout, source, { genomeId: world.genomeId[slot], slot });
+        const at =
+            layout.inspectOffset +
+            INSPECT_HEADER_WORDS +
+            layout.inputCount +
+            layout.hidden +
+            layout.outputCount +
+            INSPECT_COUNTERS.length;
+        TRAITS.forEach((trait, t) => {
+            const expected = trait.kind === 'raw' ? 0.5 : traitRatio(trait, 0.5, 0.2);
+            expect(views.f32[at + t]).toBeCloseTo(expected, 6);
+        });
+        expect(views.f32[at + TRAITS.length]).toBe(0);
+        expect(views.f32[at + TRAITS.length + 12]).toBeCloseTo(0.6, 6);
+    });
+
+    it('writes 0 for the sense values in a world with no pooled row', () => {
+        const { world, source, layout, views } = setup();
+        world.pooled = undefined;
+        writeInspect(views, layout, source, { genomeId: world.genomeId[0], slot: 0 });
+        const end = layout.inspectOffset + layout.inspectWords;
+        expect(Array.from(views.f32.subarray(end - 13, end))).toEqual(new Array(13).fill(0));
     });
 
     it('writes only the header, with valid 0, once the agent has died', () => {

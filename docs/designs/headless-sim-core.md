@@ -239,7 +239,7 @@ The always-active flora pool and pollen keys are defined in [flora.md](flora.md)
 
 ### Sensing
 
-`brainLayout(config).inputCount` is `POOLED_VALUES + EXTRA_INPUTS` = 89: 54 pooled ray values, two matching food hues and 33 body values. The raw row is `rayCount x RAY_CHANNELS + EXTRA_INPUTS` = `rayCount x 10 + 33` (193 at 16 rays); `rayHue` carries the food hue separately. Rays are evenly spaced over 360 degrees
+`brainLayout(config).inputCount` is `POOLED_VALUES + EXTRA_INPUTS` = 106: 54 pooled ray values, 13 body sense values (size, speed and closing of the prey and threat hits, and the view shares; [body-genes.md](body-genes.md), "Pooled values"), two matching food hues and 37 body values. The raw row is `rayCount x RAY_CHANNELS + EXTRA_INPUTS` = `rayCount x 10 + 37` (197 at 16 rays); `rayHue` carries the food hue separately. Rays are evenly spaced over 360 degrees
 from the heading. A ray walks the cells it crosses (DDA), tests every circle in a cell, and stops at the first cell
 whose nearest hit lies inside that cell's stretch of the ray; the obstacles and the walls are tested directly.
 
@@ -272,8 +272,8 @@ whose nearest hit lies inside that cell's stretch of the ray; the obstacles and 
 
 `brainLayout(config)` returns `inputCount` and the offsets into one agent's weight row: `wIn`
 (`inputCount x brainHidden`), `wRec` (`brainHidden x brainHidden`), `bHidden`, `wOut` (`brainHidden x OUTPUT_COUNT`),
-`bOut`, `traitStart` (`TRAIT_GENES` 4 trait genes), `leakStart` (one leak gene per hidden unit) and
-`weightCount` (4830 at the defaults). For each alive slot `forwardAll` computes into the scratch row, then
+`bOut`, `traitStart` (`TRAIT_GENES` 24 trait slots), `leakStart` (one leak gene per hidden unit) and
+`weightCount` (5524 at the defaults). For each alive slot `forwardAll` computes into the scratch row, then
 copies it over the slot's `hidden` row:
 
 - `h' = detTanh(wIn x + wRec h + bHidden)`;
