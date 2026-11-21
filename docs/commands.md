@@ -284,6 +284,24 @@ Edit `wasm/src`, run `scripts/build-wasm.sh`, then `flock /tmp/claude-1000/cpu.l
 
 `node scripts/metrics-doc.mjs --write` (writes `docs/designs/metrics.md` from the registry in `js/evo/metric-registry/`; `--check` fails when it is stale, and the `conventions` gate runs it; a new metric is registered in the same commit)
 
+### Read or regenerate the trait table
+
+`npm run traits` (`--config <file.json>` for a JSON object of config overrides, `--set <a.b.c=value>` for one override with the value read as JSON, repeatable; prints, for each spec, every trait it varies and each lane the trait or its paired cost moves, at the gene's minimum, at 0 and at its maximum, as `applyTraits` writes them; read it before any run that tweaks a span or a cost). `npm run traits -- --write` writes `docs/trait-table.md` from the default config; `--check` fails when it is stale, and the `conventions` gate runs it. `--write` and `--check` refuse `--config` and `--set`
+
+### Adding a trait
+
+1. Add the registry entry in `js/sim/body-traits.js` (the next free index, its effects, its costs).
+2. Its lanes are already in the catalogue (`js/sim/body-lanes.js`). If a lane's family has not moved yet, move that lane's readers from the config key to the lane in the same change.
+3. Add its span to each spec's menu (0 where the spec does not vary) and its cost exponent key.
+4. Bump `BRAIN_LAYOUT_NAME`, add the `library/seasons.json` entry, re-pin the goldens in their own commit, and run `node scripts/record-brain-reference.mjs --note "<why>"` when the digests of the brain fixture move.
+5. Run `npx vitest run test/sim/body-traits.contract.test.js` and `npm run traits -- --write`.
+
+The inspector, the detectors and the calculator read the registry, so none is edited ([body-genes.md](designs/body-genes.md), "The trait system").
+
+### Check the body sense inputs
+
+`npm run audit:signals` lists the thirteen body sense inputs (`prey size0` to `share kin` in its rows) beside the rays and the body inputs: each is kept when it reads `alive`. `node scripts/record-brain-reference.mjs --note "<why the digests moved>"` re-records `test/sim/fixtures/wasm-brain-reference.json` from the brain kernel; run it only for a layout or pooling change, after the naive pooling reference of `test/sim/ray-pool.test.js` agrees with the kernel. The three hunter choice metrics (`eval.hunter_size_choice`, `eval.hunter_slow_choice`, `eval.hunter_defender_bite_ratio`) are in every `npm run eval` report
+
 ### Regenerate the log event table
 
 `node scripts/events-doc.mjs --write` (writes `docs/log-events.md` from `EVENTS` in `js/sim/events.js`: every event's code, log event, level and numbered fields, and the cause lists; `--check` fails when it is stale, and the `conventions` gate runs it; a new event or field is one entry in `EVENTS`)
