@@ -72,13 +72,13 @@ function countWarmth(world, hash, slot) {
 }
 
 /**
- * Recounts the `huddled` stacks of every alive body, on the ticks that are a multiple of `HUDDLE_EVERY`.
+ * Recounts the `huddled` stacks of every alive body, on the ticks that are a multiple of `HUDDLE_EVERY`, and not at all while `huddleWarmth` is 0: the stack warms nothing then, so a neutral world pays no search.
  * @param {any} world the world
  * @param {import('./spatial-hash.js').SpatialHash} hash the hash built this tick
  * @returns {void}
  */
 export function huddlePass(world, hash) {
-    if (world.tick % HUDDLE_EVERY !== 0) {
+    if (world.tick % HUDDLE_EVERY !== 0 || !(world.config.huddleWarmth > 0)) {
         return;
     }
     const { alive } = world;

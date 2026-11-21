@@ -33,10 +33,16 @@ function pass(w) {
 }
 
 describe('huddlePass', () => {
-    it('gives each body one stack for each fed kin inside huddleRange x its size, with warmth at 0 too', () => {
-        const w = huddle([500, 530, 560, 900], { huddleWarmth: 0 });
+    it('gives each body one stack for each fed kin inside huddleRange x its size', () => {
+        const w = huddle([500, 530, 560, 900]);
         // reach 40: 500 and 530 are neighbours, 530 and 560 too, 500 and 560 are 60 apart; 900 is alone.
         expect(pass(w)).toEqual([1, 2, 1, 0]);
+    });
+
+    it('searches nothing and holds no stack while huddleWarmth is 0', () => {
+        const w = huddle([500, 520, 540], { huddleWarmth: 0 });
+        expect(pass(w)).toEqual([0, 0, 0]);
+        expect(w.events.count).toBe(0);
     });
 
     it('counts a body once however many cells its box covers', () => {

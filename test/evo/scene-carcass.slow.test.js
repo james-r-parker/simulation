@@ -6,7 +6,8 @@
 // and again for the effect registry (status-effects T2: the factors multiply on the lane in registry order, so thrust and
 // cost round differently; carcass meal share 0.148 and scavenge events 0.378 per 1k as before), and for the 13 effect
 // metrics of status-effects T12 and main's defender_bite_break_share (two causes: with the 13 removed the digest is main's
-// pin, e37bdd9b; the world hash is unchanged).
+// pin, e37bdd9b; the world hash is unchanged), and again when the huddle pass stopped counting at huddleWarmth 0 (the
+// huddled share reads 0).
 
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
@@ -15,7 +16,7 @@ import { runSeed } from '../../scripts/eval-worker.mjs';
 import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 
 const RECORDED_WORLD_HASH = 'af220e7209361ae7';
-const RECORDED_METRICS_SHA256 = 'cda5fdb5d5353349531b5369876731771e2d7223a5e3a81de656b1a415af470c';
+const RECORDED_METRICS_SHA256 = '238920cba09b091dc0015db12592fcddb2e8441dbe4c43bba1f5a7a8f4c01d46';
 
 describe('trackCarcasses skipping empty slots', () => {
     it(
