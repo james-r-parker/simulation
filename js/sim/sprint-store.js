@@ -6,7 +6,12 @@
 // `sprintStoreEnabled` off there is no store and the lane holds 1 for every slot. No RNG, no clock, no allocation per tick.
 
 import { OUTPUT_COUNT, OUTPUT_INDEX } from './brain-layout.js';
+import { LANE_ID, RESULT, computeFactor } from './effects.js';
 import { EVENT_TYPE, pushEvent, EVENT } from './events.js';
+
+// The lanes this module reads, as constants: a property load from `LANE_ID` (a large object) in the loop boxes its number
+// when the compiler does not inline it.
+const SPRINT_BOOST_LANE = LANE_ID.sprintBoost;
 
 /**
  * @typedef {object} SprintStore
@@ -42,16 +47,6 @@ export function allocSprintState(world) {
         world.sprintStore = createSprintStore(world.config, n);
         world.agentRows.push({ array: world.sprintStore.level, stride: 1, name: 'sprintLevel' });
     }
-}
-
-/**
- * @param {SprintStore} store the store
- * @param {number} slot the agent slot
- * @returns {number} the factor on the sprint: 1 at or above the floor, else the store over the floor (0 when empty)
- */
-export function storeFactor(store, slot) {
-    const level = store.level[slot];
-    return level >= store.floor ? 1 : level / store.floor;
 }
 
 /**
@@ -106,7 +101,7 @@ export function sprintEffort(world, slot) {
 
 /**
  * For every live slot, the sprint graded by its effort `e` (`effortOf`, fair-chase.md "Graded sprint"): writes the
- * factor of the store as the tick begins times `e` into `sprintFactor`, then drains the store by its `sprintDrain`
+ * factor of the store as the tick begins (the `spent` effect's factor on `sprintBoost`) times `e` into `sprintFactor`, then drains the store by its `sprintDrain`
  * lane times `e` while `e` is above 0, or refills it by its `sprintRefill` lane while `e` is 0 and `THRUST` is under
  * `sprintRestThrust`, clamped to 0 to 1. A store that falls under the floor in a sprint pushes one `SPRINT_SPENT`
  * event.
@@ -124,16 +119,20 @@ export function stepSprintStore(store, world) {
             continue;
         }
         const o = i * OUTPUT_COUNT;
-        const effort = effortOf(outputs[o + OUTPUT_INDEX.SPRINT]);
-        sprintFactor[i] = storeFactor(store, i) * effort;
+        const sprint = outputs[o + OUTPUT_INDEX.SPRINT];
+        const effort = sprint < SPRINT_REST_EFFORT ? 0 : sprint; // `effortOf` inline: a call that returns a double boxes it when not inlined
+        computeFactor(world, i, SPRINT_BOOST_LANE);
+        sprintFactor[i] = RESULT[0] * effort;
         if (effort > 0) {
             const before = level[i];
-            level[i] = Math.max(0, before - sprintDrain[i] * effort);
+            const drained = before - sprintDrain[i] * effort; // a comparison, not Math.max: a builtin call boxes its doubles when it is not inlined
+            level[i] = drained > 0 ? drained : 0;
             if (before >= store.floor && level[i] < store.floor) {
                 noteSpent(world, i);
             }
         } else if (outputs[o + OUTPUT_INDEX.THRUST] < restThrust) {
-            level[i] = Math.min(1, level[i] + sprintRefill[i]);
+            const refilled = level[i] + sprintRefill[i];
+            level[i] = refilled < 1 ? refilled : 1;
         }
     }
 }

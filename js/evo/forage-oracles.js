@@ -4,7 +4,7 @@
 // chase-oracles.js, so the same inputs give the same outputs everywhere.
 
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../sim/brain-layout.js';
-import { thrustEfficiency } from '../sim/temperature.js';
+import { EFFECT, effectFactor } from '../sim/effects.js';
 import { steer } from './chase-oracles.js';
 
 /** How far inside the touching distance a body holds `BITE` while it closes on food, so it bites on the tick it can eat. */
@@ -31,7 +31,10 @@ function clearRow(world, slot) {
 export function walkThrust(world, slot, speed) {
     const { lanes, config } = world;
     const fat = 1 - (lanes.fatSlowShare[slot] * world.energy[slot]) / lanes.maxEnergy[slot];
-    const per = (lanes.maxThrust[slot] * thrustEfficiency(world, slot) * fat * config.damping) / (1 - config.damping);
+    const efficiency =
+        effectFactor(world, slot, EFFECT.COLD_BAND, 'maxThrust') *
+        effectFactor(world, slot, EFFECT.HEAT_BAND, 'maxThrust');
+    const per = (lanes.maxThrust[slot] * efficiency * fat * config.damping) / (1 - config.damping);
     return Math.min(1, speed / per);
 }
 

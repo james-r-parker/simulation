@@ -1,17 +1,12 @@
-// The juvenile burn (realistic-keepers.md T4): a `canHunt` body below `juvenileTicks` pays `juvenileBurn`
-// of its standing, movement, turn and sprint cost, so a young hunter lasts longer between meals while it learns (a cub rests
-// and is carried; it does not run the pack's miles). The flat `huntUpkeep` is not scaled. `tickCost` in energy.js multiplies by
-// the factor, so at 1 (an adult, a non-hunter) the cost is bit-identical. No RNG, no allocation.
+// The juvenile test (realistic-keepers.md T4): a `canHunt` body below `juvenileTicks` is a juvenile. The `juvenile` effect
+// (effect-list.js) reads it: the burn it puts on the cost lanes and the plant meal `shareOf` in feeding.js allows.
+// No RNG, no allocation.
 
 /**
  * @param {Record<string, any>} world the world
  * @param {number} slot the agent slot
- * @returns {number} `juvenileBurn` for a `canHunt` body below `juvenileTicks` else 1
+ * @returns {boolean} whether the body hunts and is younger than `juvenileTicks`
  */
-export function juvenileBurnOf(world, slot) {
-    const { config } = world;
-    if (world.huntBySpec[world.spec[slot]] !== 1) {
-        return 1;
-    }
-    return world.ageTicks[slot] < config.juvenileTicks ? config.juvenileBurn : 1;
+export function isJuvenile(world, slot) {
+    return world.huntBySpec[world.spec[slot]] === 1 && world.ageTicks[slot] < world.config.juvenileTicks;
 }

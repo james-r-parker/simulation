@@ -15,6 +15,7 @@ const NAMES = [
     'field',
     'merit',
     'invariants',
+    'effects',
 ];
 
 /**

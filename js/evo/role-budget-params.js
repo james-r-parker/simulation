@@ -2,8 +2,9 @@
 // formulas read, resolved from the lane bases of body-genes.md (`laneBases`) so it follows whatever the config and the
 // spec's `body` overrides say. Plain numbers only; no function, no world, no RNG.
 
-import { laneBases } from '../sim/body-lanes.js';
-import { passiveMultiplier, thrustEfficiency } from '../sim/temperature.js';
+import { LANES, laneBases } from '../sim/body-lanes.js';
+import { checkTraits, lanesAt } from './role-budget-genes.js';
+import { EFFECT, effectFactor } from '../sim/effects.js';
 
 /** The share of its store a body holds at the start of a scene: the arena's `STORE_SHARE` of `chase-body.js`. */
 export const STORE_SHARE = 0.5;
@@ -45,15 +46,48 @@ export const STORE_SHARE = 0.5;
  */
 
 /**
- * The one-slot world the temperature functions of `js/sim/temperature.js` read: the spec's lane bases as lane arrays of one
- * slot, at the start temperature, so the budget calls the sim's own `thrustEfficiency` and `passiveMultiplier`.
+ * The one-slot world the temperature effects of `js/sim/effects.js` read: the spec's lane bases as lane arrays of one
+ * slot, at the start temperature, so the budget reads the sim's own effect factors (the cold and heat bands on `maxThrust`,
+ * the cold and hot ramps on the standing cost).
  * @param {Readonly<Record<string, any>>} config the validated config
  * @param {Record<string, number>} lane the spec's lane bases
  * @returns {import('../sim/world.js').World} the world, as far as those functions read it
  */
 export function startWorld(config, lane) {
     const lanes = Object.fromEntries(Object.entries(lane).map(([name, value]) => [name, [value]]));
-    return /** @type {any} */ ({ config, lanes, temperature: [config.temperatureStart] });
+    const laneArrays = LANES.map((l) => lanes[l.name]);
+    return /** @type {any} */ ({ config, lanes, laneArrays, temperature: [config.temperatureStart] });
+}
+
+/**
+ * @param {Readonly<Record<string, any>>} config the validated config
+ * @param {Record<string, number>} lane the spec's lane bases
+ * @returns {number} what `thrustEfficiency` was: the cold and heat bands' factor on `maxThrust` at the start temperature
+ */
+function thrustEfficiency(config, lane) {
+    const world = startWorld(config, lane);
+    return (
+        effectFactor(world, 0, EFFECT.COLD_BAND, 'maxThrust') * effectFactor(world, 0, EFFECT.HEAT_BAND, 'maxThrust')
+    );
+}
+
+/**
+ * @param {import('../sim/world.js').World} world a one-slot world at the temperature wanted
+ * @returns {number} what `passiveMultiplier` was: the cold and hot ramps' factor on the standing cost
+ */
+export function passiveFactorAt(world) {
+    return (
+        effectFactor(world, 0, EFFECT.COLD_RAMP, 'passiveLoss') * effectFactor(world, 0, EFFECT.HOT_RAMP, 'passiveLoss')
+    );
+}
+
+/**
+ * @param {Readonly<Record<string, any>>} config the validated config
+ * @param {Record<string, number>} lane the spec's lane bases
+ * @returns {number} the passive factor at the start temperature
+ */
+function passiveMultiplier(config, lane) {
+    return passiveFactorAt(startWorld(config, lane));
 }
 
 /**
@@ -63,7 +97,7 @@ export function startWorld(config, lane) {
  * @returns {RoleParams['thrust']} the thrust numbers
  */
 function thrustOf(config, lane, fat) {
-    const base = lane.maxThrust * thrustEfficiency(startWorld(config, lane), 0);
+    const base = lane.maxThrust * thrustEfficiency(config, lane);
     const gain = config.sprintMultiplier * lane.sprintBoost;
     const cruise = base * fat;
     return {
@@ -95,41 +129,25 @@ function costOf(config, lane, { entry, burn }) {
         juvenile: burn,
         standingMult: entry.passiveLossMultiplier,
         drain: config.seasons[0].energyDrain,
-        heat: passiveMultiplier(startWorld(config, lane), 0),
+        heat: passiveMultiplier(config, lane),
     };
-}
-
-/**
- * @param {Readonly<Record<string, any>>} config the validated config
- * @param {string} specName a specialisation name
- * @param {Record<string, number>} traits the trait ratios asked for
- * @returns {void}
- * @throws {Error} on an unknown specialisation or a non-empty `traits`
- */
-function refuse(config, specName, traits) {
-    if (!Object.hasOwn(config.specialisations, specName)) {
-        throw new Error(`roleParams: unknown specialisation "${specName}"`);
-    }
-    if (Object.keys(traits).length > 0) {
-        throw new Error('roleParams: trait ratios are not read until body-genes.md T10');
-    }
 }
 
 /**
  * Resolves one specialisation's numbers.
  * @param {Readonly<Record<string, any>>} config the validated config
  * @param {string} specName a specialisation name
- * @param {Record<string, number>} [traits] a ratio per trait (none are read until body-genes.md T10 builds the gene
- *   values; a non-empty map is refused rather than ignored)
+ * @param {Record<string, number>} [traits] a ratio per trait, composed as `applyTraits` composes it (a trait left out is at
+ *   1; `heatBand` is a shift in degrees); with every ratio 1 the lanes are `laneBases`
  * @param {{age?: 'adult' | 'juvenile', storeShare?: number}} [options] the age and the store share the body starts at
  * @returns {Readonly<RoleParams>} the record
- * @throws {Error} on an unknown specialisation or a non-empty `traits`
+ * @throws {Error} on an unknown specialisation or a name in `traits` that is not a trait
  */
 export function roleParams(config, specName, traits = {}, options = {}) {
-    refuse(config, specName, traits);
+    checkTraits(config, specName, traits);
     const { age = 'adult', storeShare = STORE_SHARE } = options;
     const entry = config.specialisations[specName];
-    const lane = laneBases(config, specName);
+    const lane = lanesAt(config, laneBases(config, specName), traits);
     const energy = storeShare * lane.maxEnergy;
     const size = Math.max(lane.minSize, lane.baseSize + energy / lane.energyToSize);
     const fat = 1 - (lane.fatSlowShare * energy) / lane.maxEnergy;
@@ -192,7 +210,7 @@ function lifeNumbers(config, lane) {
             lossPassive: lane.temperatureLossPassive,
             optimalMax: lane.temperatureOptimalMax,
             start: config.temperatureStart,
-            efficiency: thrustEfficiency(startWorld(config, lane), 0),
+            efficiency: thrustEfficiency(config, lane),
             optimalMin: lane.temperatureOptimalMin,
             max: config.temperatureMax,
             passiveFactor: config.temperaturePassiveLossFactor,
