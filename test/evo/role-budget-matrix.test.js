@@ -32,14 +32,15 @@ describe('matrix', () => {
     it('builds every row of the built phases by default, with the model and the rules hash of the config', () => {
         const m = matrix(courser, model);
         expect(m.rows.map((/** @type {any} */ r) => r.name)).toEqual(BUILT_ROWS);
-        expect(BUILT_ROWS).toEqual([...PHASE1_ROWS, 'defender:predator']);
+        expect(BUILT_ROWS).toEqual([...PHASE1_ROWS, 'defender:predator', 'scout:predator']);
         expect(m.model).toBe(model);
         expect(m.rulesHash).toBe(rulesHash(courser));
         for (const row of m.rows) {
             expect(['ok', 'tight', 'impossible', 'n/a']).toContain(row.status);
-            const steps = row.name.startsWith('defender:')
-                ? ['hear', 'turn', 'run', 'intercept', 'smoke']
-                : ['see', 'turn', 'run', 'bite'];
+            const steps = /** @type {Record<string, string[]>} */ ({
+                'defender:predator': ['hear', 'turn', 'run', 'intercept', 'smoke'],
+                'scout:predator': ['see', 'hear', 'warn', 'turn', 'run'],
+            })[row.name] ?? ['see', 'turn', 'run', 'bite'];
             expect(Object.keys(row.cells)).toEqual(steps);
         }
     });
@@ -70,8 +71,8 @@ describe('matrix', () => {
     });
 
     it('refuses a row that is not built, naming the built ones', () => {
-        expect(() => matrix(courser, model, ['scout:predator'])).toThrow(
-            /unknown row "scout:predator"; built: predator:forager/,
+        expect(() => matrix(courser, model, ['forager:predator'])).toThrow(
+            /unknown row "forager:predator"; built: predator:forager/,
         );
     });
 

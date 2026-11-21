@@ -192,28 +192,63 @@ export function callerBrain({ caller, hunter, seeGap, reaction }) {
 }
 
 /**
- * The defender's brain: it stands until its `heard` alarm loudness is above `threshold`, then, `reaction` ticks later, runs
- * at the hunter as the pursuer does and holds `BITE` (the shove needs it). It records the tick it heard and the tick it moved.
- * @param {{defender: number, hunter: number, reaction: number, threshold: number}} slots the defender, the hunter, the ticks
- *   from hearing to moving and the loudness it acts on
+ * A body that stands until its `heard` alarm loudness is above `threshold`, then, `reaction` ticks later, does `act`. It
+ * records the tick it heard and the tick it moved.
+ * @param {{slot: number, reaction: number, threshold: number, act: (world: Record<string, any>) => void}} body the body,
+ *   the ticks from hearing to moving, the loudness it acts on and what it does once it moves
  * @returns {((world: Record<string, any>) => void) & {state: {heardTick: number, startTick: number}}} a `brain` phase body
  *   and its readings
  */
-export function defenderBrain({ defender, hunter, reaction, threshold }) {
+function hearerBrain({ slot, reaction, threshold, act }) {
     const state = { heardTick: -1, startTick: -1 };
-    const chase = pursuerBrain({ pursuer: defender, evader: hunter, sprint: true });
     const brain = (/** @type {Record<string, any>} */ world) => {
-        if (state.heardTick < 0 && world.heard[defender * HEARD_STRIDE + HEARD_ALARM] > threshold) {
+        if (state.heardTick < 0 && world.heard[slot * HEARD_STRIDE + HEARD_ALARM] > threshold) {
             state.heardTick = world.tick;
             state.startTick = world.tick + reaction;
         }
         if (state.startTick >= 0 && world.tick >= state.startTick) {
-            chase(world);
+            act(world);
         } else {
-            stand(world, defender);
+            stand(world, slot);
         }
     };
     return Object.assign(brain, { state });
+}
+
+/**
+ * The defender's brain: it stands until it hears the alarm, then runs at the hunter as the pursuer does and holds `BITE` (the
+ * shove needs it).
+ * @param {{defender: number, hunter: number, reaction: number, threshold: number}} slots the defender, the hunter, the ticks
+ *   from hearing to moving and the loudness it acts on
+ * @returns {ReturnType<typeof hearerBrain>} a `brain` phase body and its readings
+ */
+export function defenderBrain({ defender, hunter, reaction, threshold }) {
+    const act = pursuerBrain({ pursuer: defender, evader: hunter, sprint: true });
+    return hearerBrain({ slot: defender, reaction, threshold, act });
+}
+
+/**
+ * The warned forager's brain (docs/designs/role-budget.md, Phase 3): it grazes in place until it hears the scout's alarm, then
+ * runs from the hunter as the evader does (it turns away, sprints inside the hunter's range and breaks across its path).
+ * @param {{forager: number, hunter: number, reaction: number, threshold: number}} slots the forager, the hunter, the ticks
+ *   from hearing to moving and the loudness it acts on
+ * @returns {ReturnType<typeof hearerBrain>} a `brain` phase body and its readings
+ */
+export function fleerBrain({ forager, hunter, reaction, threshold }) {
+    const act = evaderBrain({ pursuer: hunter, evader: forager, sprint: true });
+    return hearerBrain({ slot: forager, reaction, threshold, act });
+}
+
+/**
+ * The hunter that creeps up on the herd: it steers at the prey at its cruise speed, holding its sprint, until tick `goAt`, and
+ * from then on pursues as the pursuer does.
+ * @param {{hunter: number, prey: number, goAt: number}} slots the hunter, its prey and the tick it starts to sprint
+ * @returns {(world: Record<string, any>) => void} a `brain` phase body
+ */
+export function stalkerBrain({ hunter, prey, goAt }) {
+    const creep = pursuerBrain({ pursuer: hunter, evader: prey, sprint: false });
+    const chase = pursuerBrain({ pursuer: hunter, evader: prey, sprint: true });
+    return (world) => (world.tick >= goAt ? chase(world) : creep(world));
 }
 
 /**

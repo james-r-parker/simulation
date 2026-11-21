@@ -1,0 +1,19 @@
+{
+  "id": "E260",
+  "kind": "characterisation",
+  "outcome": "finding",
+  "plan": "role-budget.md",
+  "task": "T15",
+  "stream": "role-budget",
+  "date": "2026-11-21",
+  "branch": "feat/role-budget-p3",
+  "hypothesis": "E-RB-3 (role-budget T15): the role budget calculator, read on the scout row at the defaults and on each arm of evals/fair-chase/, says whether a scout that sees a creeping hunter first can warn a forager in time for it to escape, with every effect off.",
+  "prediction": "The scout row is green at the defaults: the scout sees the hunter 100 px (12 ticks) before the forager does and the warning reaches the forager 7 ticks before its own sight would, but it is not what saves the forager, since at the defaults the hunter cannot close on a forager that sees it at 345 px (the predator:forager row is already red); on the arms where the hunter closes (courser, even, long) the row is red on the run step whatever the scout does.",
+  "targets": [],
+  "before": "defaults: scout:predator ok, binding warn (see 12, hear 9, warn 7, turn 9, run 9)",
+  "after": "control as the defaults; courser, even and long impossible on run (the hunter closes on the warned forager from 953, 481 and 633 px, the warned forager is at 317 px); stalker tight (closes from 311 px, run 0) (first reading, hunter sprinting from the forager's run)",
+  "verdicts": {},
+  "effect": "no-difference",
+  "note": "A tool reading, not a run: npm run role:budget with --check on six configs, seconds. Check: no RoleBudgetDrift on any arm. Finding: at the defaults the warning is not needed, and where the hunter is strong enough to need it (courser) the scout's lead of 100 px (about 12 ticks of the hunter's creep) and the 11 ticks the forager needs to turn cannot buy a gap of 953 px. The scout's lead is set by the two view ranges alone (400 against 300), so it is the number to move, together with the forager's turn. Review revision (same day): with the hunter sprinting from the tick the forager is aware (Phase 1's convention), the defaults and control read tight, binding turn (see 12, hear 5, warn 7, turn 3, run 3; the forager runs from 289 px, not 317), stalker reads impossible, and courser, even and long stay impossible on run. A second, two-sided reading at effort 1 agrees with the sim on the defaults, control, courser and long and drifts on even (the formula closes from 427 px, the forager runs from 313) and stalker (311 against 305); the drift is a recorded gap (the forager's turn gain and flying start are not modelled).",
+  "reports": ["evals/decisions/E-RB-3/results.md"]
+}

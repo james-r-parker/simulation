@@ -105,6 +105,21 @@ function defendLines(budget) {
 }
 
 /**
+ * @param {import('../../js/evo/role-budget-warn.js').WarnBudget} budget the scout's budget
+ * @returns {string[]} the lines that go under its row: the chain's ticks and gaps, the gaps it is read against, the bites
+ */
+function warnLines(budget) {
+    const { chain, gaps, bites } = budget;
+    const at = (/** @type {number} */ t) => (t < 0 ? 'never' : `tick ${t}`);
+    const gap = (/** @type {number} */ g) => (g > 0 ? g.toFixed(0) : 'never');
+    return [
+        `  scout sees the hunter at ${chain.gapSee.toFixed(0)} px  alarm ${at(chain.alarmTick)}  forager hears ${at(chain.heardTick)}  starts to turn ${at(chain.startTick)} at ${gap(chain.gapAtStart)} px  runs ${at(chain.runTick)} at ${gap(chain.gapAtRun)} px`,
+        `  forager sees the hunter itself at ${gaps.own.toFixed(0)} px; the hunter closes on it from ${gaps.catchable.toFixed(0)} px or less; it creeps at ${gaps.speed} px a tick`,
+        `  bites to kill a forager ${bites.plain}, with its alarm seen ${bites.alarmed}`,
+    ];
+}
+
+/**
  * @param {import('../../js/evo/role-budget-matrix.js').Row[]} rows the matrix rows
  * @returns {string} the detail of each row: its bounds, tiers, energy and heat, or the average and best row's choice
  */
@@ -119,6 +134,9 @@ export function formatDetail(rows) {
                 const picks = row.name === 'predator:best' ? `  picks ${d.best.picks}` : '';
                 const share = `catchable share ${d.catchableShare.toFixed(2)}  choice gain ${d.choiceGain.toFixed(1)} ticks`;
                 return [row.name, `  ${share}${picks}`];
+            }
+            if (d.chain !== undefined) {
+                return [row.name, ...warnLines(d)];
             }
             return [row.name, ...(d.repel === undefined ? budgetLines(d) : defendLines(d))];
         })

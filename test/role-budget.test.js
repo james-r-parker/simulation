@@ -181,7 +181,7 @@ describe('runBudget', () => {
     });
 
     it('refuses a row that is not built', async () => {
-        await expect(run(['--rows', 'scout:predator'])).rejects.toThrow(/unknown row/);
+        await expect(run(['--rows', 'forager:predator'])).rejects.toThrow(/unknown row/);
     });
 
     it('finishes the matrix of the built phases in under 2 s without --check', async () => {
@@ -267,6 +267,15 @@ describe('the report', () => {
         expect(check.defence.map((/** @type {any} */ r) => r.what)).toContain('heard tick');
         expect(text).toMatch(/defender:predator\s+heard tick\s+3\s+3\s+0 ticks\s+ok/);
         expect(text).toMatch(/smoke:prey\s+cloud life\s+179\s+179/);
+    });
+
+    it('prints the scout row in a table of its own, with its chain, and --check plays the warning beside it', async () => {
+        const { text, check } = await run(['--rows', 'scout:predator', '--check']);
+        expect(text).toMatch(/row\s+see\s+hear\s+warn\s+turn\s+run/);
+        expect(text).toMatch(/scout:predator\s+12\s+5\s+7\s+3!\s+3!\s+tight\s+turn/);
+        expect(text).toMatch(/scout sees the hunter at 445 px {2}alarm tick 2/);
+        expect(check.drift).toBe(0);
+        expect(check.defence.map((/** @type {any} */ r) => r.what)).toContain('forager moves');
     });
 
     it('--check reads no defence for a run of hunter rows alone', async () => {

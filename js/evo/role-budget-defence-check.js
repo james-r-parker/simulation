@@ -30,7 +30,7 @@ const STANDING = -Math.PI / 2;
  *   value, at least 2 ticks
  * @returns {DefenceReading} the reading
  */
-function ticksReading(row, what, [formula, scene], exact) {
+export function ticksReading(row, what, [formula, scene], exact) {
     const allowed = exact === undefined ? Math.max(2, 0.1 * Math.abs(scene ?? 0)) : exact.within;
     const drift = formula === null || scene === null ? formula !== scene : Math.abs(formula - scene) > allowed;
     const tolerance = exact === undefined ? '10% or 2 ticks' : `${exact.within} ${exact.unit}`;
@@ -38,7 +38,7 @@ function ticksReading(row, what, [formula, scene], exact) {
 }
 
 /** @param {number} within the ticks @returns {{within: number, unit: string}} a fixed tolerance in ticks */
-const inTicks = (within) => ({ within, unit: 'ticks' });
+export const inTicks = (within) => ({ within, unit: 'ticks' });
 
 /**
  * @param {string} row the row
@@ -46,7 +46,7 @@ const inTicks = (within) => ({ within, unit: 'ticks' });
  * @param {[boolean, boolean]} values the formula's and the scene's answers
  * @returns {DefenceReading} the reading: the two must agree
  */
-function signReading(row, what, [formula, scene]) {
+export function signReading(row, what, [formula, scene]) {
     return { row, what, formula, scene, tolerance: 'agree', drift: formula !== scene };
 }
 
@@ -131,7 +131,7 @@ function preyReadings(config, model) {
 }
 
 /** The tolerance of a cloud's position, in px. */
-const PX = { within: 1, unit: 'px' };
+export const PX = { within: 1, unit: 'px' };
 
 /**
  * @param {Readonly<Record<string, any>>} config an `arenaConfig`

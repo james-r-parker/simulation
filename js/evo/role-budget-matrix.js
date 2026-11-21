@@ -5,6 +5,7 @@ import { rulesHash } from '../sim/config.js';
 import { PREY_SPECS, budgetChase } from './role-budget-chase.js';
 import { normaliseMix, targetChoice } from './role-budget-choice.js';
 import { budgetDefend } from './role-budget-defend.js';
+import { budgetWarn } from './role-budget-warn.js';
 import { roleParams } from './role-budget-params.js';
 
 export { cell, rowOf } from './role-budget-cell.js';
@@ -19,10 +20,27 @@ export const PHASE1_ROWS = Object.freeze([
 /** The rows Phase 2 builds: the defender against the hunter, the forager standing as the caller. */
 export const PHASE2_ROWS = Object.freeze(['defender:predator']);
 
+/** The rows Phase 3 builds: the scout warning a forager of a hunter creeping up on it. */
+export const PHASE3_ROWS = Object.freeze(['scout:predator']);
+
 /** Every row built, in the order of the matrix. */
-export const BUILT_ROWS = Object.freeze([...PHASE1_ROWS, ...PHASE2_ROWS]);
+export const BUILT_ROWS = Object.freeze([...PHASE1_ROWS, ...PHASE2_ROWS, ...PHASE3_ROWS]);
 
 /** @typedef {ReturnType<typeof import('./role-budget-cell.js').rowOf> & {detail?: any, picks?: string}} Row */
+
+/**
+ * @param {'defender:predator' | 'scout:predator'} name the row
+ * @param {{config: Readonly<Record<string, any>>, hunter: import('./role-budget-params.js').RoleParams,
+ *   model: import('./role-budget-model.js').RoleModel}} from the config, the hunter and the model
+ * @returns {{row: Row} & Record<string, any>} the budget of the guild member against the hunter, the forager standing as
+ *   the one it protects or warns
+ */
+function guildBudget(name, { config, hunter, model }) {
+    const forager = roleParams(config, 'forager');
+    return name === 'scout:predator'
+        ? budgetWarn(roleParams(config, 'scout'), forager, hunter, model)
+        : budgetDefend(roleParams(config, 'defender'), hunter, forager, model);
+}
 
 /**
  * @param {Readonly<Record<string, any>>} config the validated config
@@ -52,8 +70,8 @@ export function matrix(config, model, rows = BUILT_ROWS, { mix } = {}) {
         detail: choice,
     });
     const built = rows.map((name) => {
-        if (name === 'defender:predator') {
-            const budget = budgetDefend(roleParams(config, 'defender'), hunter, roleParams(config, 'forager'), model);
+        if (name === 'defender:predator' || name === 'scout:predator') {
+            const budget = guildBudget(name, { config, hunter, model });
             return { ...budget.row, detail: budget };
         }
         if (name === 'predator:average' || name === 'predator:best') {
