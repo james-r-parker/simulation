@@ -2,7 +2,7 @@
 // lane, written once per birth by `applyGenes`: its base, times the ratios of the traits that name it. A lane a kernel
 // reads is also a world field (`KERNEL_LANES`), so the arena takes it over like any other kernel array.
 
-import { LANES, LANE_COUNT, laneRowName, laneTable } from './body-lanes.js';
+import { LANES, LANE_COUNT, laneOnForAnySpec, laneRowName, laneTable } from './body-lanes.js';
 import { spanTable } from './body-traits.js';
 
 /**
@@ -20,6 +20,7 @@ export const KERNEL_LANES = Object.freeze({ maxVelocity: 'laneMaxVelocity' });
 export function allocLanes(world) {
     const n = world.config.maxAgents;
     world.laneBases = laneTable(world.config);
+    world.strikesOn = laneOnForAnySpec(world.config, 'strikeMissCost');
     world.traitSpans = spanTable(world.config);
     world.laneArrays = LANES.map(() => new Float64Array(n));
     world.lanes = Object.fromEntries(LANES.map((lane, i) => [lane.name, world.laneArrays[i]]));
