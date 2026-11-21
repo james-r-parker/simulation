@@ -233,12 +233,12 @@
       "name": "predator:living",
       "cells": {
         "eat": {
-          "margin": null,
+          "margin": 0,
           "unit": "energy per chase",
           "distance": null,
-          "status": "impossible",
+          "status": "tight",
           "capped": false,
-          "binding": true
+          "binding": false
         },
         "breed": {
           "margin": null,
@@ -246,22 +246,22 @@
           "distance": null,
           "status": "impossible",
           "capped": false,
-          "binding": false
+          "binding": true
         }
       },
       "status": "impossible",
-      "binding": "eat",
+      "binding": "breed",
       "detail": {
         "row": {
           "name": "predator:living",
           "cells": {
             "eat": {
-              "margin": null,
+              "margin": 0,
               "unit": "energy per chase",
               "distance": null,
-              "status": "impossible",
+              "status": "tight",
               "capped": false,
-              "binding": true
+              "binding": false
             },
             "breed": {
               "margin": null,
@@ -269,20 +269,20 @@
               "distance": null,
               "status": "impossible",
               "capped": false,
-              "binding": false
+              "binding": true
             }
           },
           "status": "impossible",
-          "binding": "eat"
+          "binding": "breed"
         },
         "cells": {
           "eat": {
-            "margin": null,
+            "margin": 0,
             "unit": "energy per chase",
             "distance": null,
-            "status": "impossible",
+            "status": "tight",
             "capped": false,
-            "binding": true
+            "binding": false
           },
           "breed": {
             "margin": null,
@@ -290,15 +290,17 @@
             "distance": null,
             "status": "impossible",
             "capped": false,
-            "binding": false
+            "binding": true
           }
         },
         "chase": {
           "income": 715,
-          "cost": 979.2718785856915,
-          "chaseTicks": 250,
-          "net": -764.7718785856915,
-          "netAtFull": -264.2718785856915
+          "cost": 796.443774949606,
+          "killCost": 369.84486646540637,
+          "failCost": 979.2718785856915,
+          "chaseTicks": 203.87499999999997,
+          "net": -581.943774949606,
+          "netAtFull": 345.15513353459363
         },
         "split": {
           "gate": 600,
@@ -312,7 +314,7 @@
           "rest": 0.01529,
           "storeTicks": 654022.2367560497
         },
-        "binding": "eat"
+        "binding": "breed"
       }
     },
     {
@@ -767,7 +769,7 @@
           "strip": 280,
           "area": 116640000,
           "meal": {
-            "perMeal": -764.7718785856915,
+            "perMeal": -581.943774949606,
             "ticks": 57.857142857142854
           },
           "holds": 450
@@ -1820,5 +1822,450 @@
   "searched": [],
   "defenderSearch": [],
   "birthSearch": [],
-  "check": null
+  "check": {
+    "kinematics": [
+      {
+        "spec": "forager",
+        "what": "energy per 100 ticks",
+        "formula": 102.725,
+        "sim": 102.72489728927212,
+        "difference": 9.998620644768863e-7,
+        "tolerance": 0.001,
+        "drift": false
+      },
+      {
+        "spec": "forager",
+        "what": "sprint energy per 100 ticks",
+        "formula": 227.725,
+        "sim": 227.72477226257024,
+        "difference": 0.0000010000555823452828,
+        "tolerance": 0.001,
+        "drift": false
+      },
+      {
+        "spec": "forager",
+        "what": "cruise speed",
+        "formula": 8,
+        "sim": 8,
+        "difference": 0,
+        "tolerance": 0.0001,
+        "drift": false
+      },
+      {
+        "spec": "forager",
+        "what": "sprint speed",
+        "formula": 12,
+        "sim": 12,
+        "difference": 0,
+        "tolerance": 0.0001,
+        "drift": false
+      },
+      {
+        "spec": "forager",
+        "what": "turn radius",
+        "formula": 21.536965359442533,
+        "sim": 21.508851624429518,
+        "difference": 0.001307077453688077,
+        "tolerance": 0.005,
+        "drift": false
+      },
+      {
+        "spec": "forager",
+        "what": "sprint turn radius",
+        "formula": 32.3054480391638,
+        "sim": 32.263275735049035,
+        "difference": 0.0013071302635569992,
+        "tolerance": 0.005,
+        "drift": false
+      },
+      {
+        "spec": "predator",
+        "what": "energy per 100 ticks",
+        "formula": 58.65499999999999,
+        "sim": 58.654992961874086,
+        "difference": 1.1999193150202814e-7,
+        "tolerance": 0.001,
+        "drift": false
+      },
+      {
+        "spec": "predator",
+        "what": "sprint energy per 100 ticks",
+        "formula": 190.679,
+        "sim": 190.6789672355444,
+        "difference": 1.7183046496782595e-7,
+        "tolerance": 0.001,
+        "drift": false
+      },
+      {
+        "spec": "predator",
+        "what": "cruise speed",
+        "formula": 8,
+        "sim": 8,
+        "difference": 0,
+        "tolerance": 0.0001,
+        "drift": false
+      },
+      {
+        "spec": "predator",
+        "what": "sprint speed",
+        "formula": 14.4,
+        "sim": 14.399999618530273,
+        "difference": 2.6490953874969136e-8,
+        "tolerance": 0.0001,
+        "drift": false
+      },
+      {
+        "spec": "predator",
+        "what": "turn radius",
+        "formula": 41.71784901003581,
+        "sim": 41.808606111386936,
+        "difference": 0.0021707755840825183,
+        "tolerance": 0.005,
+        "drift": false
+      },
+      {
+        "spec": "predator",
+        "what": "sprint turn radius",
+        "formula": 75.09212821806446,
+        "sim": 75.25548668463908,
+        "difference": 0.002170718359170043,
+        "tolerance": 0.005,
+        "drift": false
+      },
+      {
+        "spec": "reproducer",
+        "what": "energy per 100 ticks",
+        "formula": 102.725,
+        "sim": 102.72489728927212,
+        "difference": 9.998620644768863e-7,
+        "tolerance": 0.001,
+        "drift": false
+      },
+      {
+        "spec": "reproducer",
+        "what": "sprint energy per 100 ticks",
+        "formula": 227.725,
+        "sim": 227.72477226257024,
+        "difference": 0.0000010000555823452828,
+        "tolerance": 0.001,
+        "drift": false
+      },
+      {
+        "spec": "reproducer",
+        "what": "cruise speed",
+        "formula": 8,
+        "sim": 8,
+        "difference": 0,
+        "tolerance": 0.0001,
+        "drift": false
+      },
+      {
+        "spec": "reproducer",
+        "what": "sprint speed",
+        "formula": 12,
+        "sim": 12,
+        "difference": 0,
+        "tolerance": 0.0001,
+        "drift": false
+      },
+      {
+        "spec": "reproducer",
+        "what": "turn radius",
+        "formula": 21.536965359442533,
+        "sim": 21.508851624429518,
+        "difference": 0.001307077453688077,
+        "tolerance": 0.005,
+        "drift": false
+      },
+      {
+        "spec": "reproducer",
+        "what": "sprint turn radius",
+        "formula": 32.3054480391638,
+        "sim": 32.263275735049035,
+        "difference": 0.0013071302635569992,
+        "tolerance": 0.005,
+        "drift": false
+      },
+      {
+        "spec": "scout",
+        "what": "energy per 100 ticks",
+        "formula": 104.7425,
+        "sim": 104.74236381054425,
+        "difference": 0.0000013002327883260278,
+        "tolerance": 0.001,
+        "drift": false
+      },
+      {
+        "spec": "scout",
+        "what": "sprint energy per 100 ticks",
+        "formula": 229.7425,
+        "sim": 229.74220133781955,
+        "difference": 0.000001299988329206414,
+        "tolerance": 0.001,
+        "drift": false
+      },
+      {
+        "spec": "scout",
+        "what": "cruise speed",
+        "formula": 8,
+        "sim": 8,
+        "difference": 0,
+        "tolerance": 0.0001,
+        "drift": false
+      },
+      {
+        "spec": "scout",
+        "what": "sprint speed",
+        "formula": 12,
+        "sim": 12,
+        "difference": 0,
+        "tolerance": 0.0001,
+        "drift": false
+      },
+      {
+        "spec": "scout",
+        "what": "turn radius",
+        "formula": 21.536965359442533,
+        "sim": 21.508851624429518,
+        "difference": 0.001307077453688077,
+        "tolerance": 0.005,
+        "drift": false
+      },
+      {
+        "spec": "scout",
+        "what": "sprint turn radius",
+        "formula": 32.3054480391638,
+        "sim": 32.263275735049035,
+        "difference": 0.0013071302635569992,
+        "tolerance": 0.005,
+        "drift": false
+      },
+      {
+        "spec": "defender",
+        "what": "energy per 100 ticks",
+        "formula": 121.925,
+        "sim": 121.9248780727412,
+        "difference": 0.0000010000195262982459,
+        "tolerance": 0.001,
+        "drift": false
+      },
+      {
+        "spec": "defender",
+        "what": "sprint energy per 100 ticks",
+        "formula": 270.92499999999995,
+        "sim": 270.92472906113017,
+        "difference": 0.0000010000521943887009,
+        "tolerance": 0.001,
+        "drift": false
+      },
+      {
+        "spec": "defender",
+        "what": "cruise speed",
+        "formula": 8,
+        "sim": 8,
+        "difference": 0,
+        "tolerance": 0.0001,
+        "drift": false
+      },
+      {
+        "spec": "defender",
+        "what": "sprint speed",
+        "formula": 12,
+        "sim": 12,
+        "difference": 0,
+        "tolerance": 0.0001,
+        "drift": false
+      },
+      {
+        "spec": "defender",
+        "what": "turn radius",
+        "formula": 21.536965359442533,
+        "sim": 21.508851624429518,
+        "difference": 0.001307077453688077,
+        "tolerance": 0.005,
+        "drift": false
+      },
+      {
+        "spec": "defender",
+        "what": "sprint turn radius",
+        "formula": 32.3054480391638,
+        "sim": 32.263275735049035,
+        "difference": 0.0013071302635569992,
+        "tolerance": 0.005,
+        "drift": false
+      }
+    ],
+    "pairs": [],
+    "defence": [
+      {
+        "row": "forager:idle",
+        "what": "founder sits",
+        "formula": 7741,
+        "scene": 7741,
+        "tolerance": "0.5%",
+        "drift": false
+      },
+      {
+        "row": "forager:idle",
+        "what": "founder searches",
+        "formula": 5452,
+        "scene": 5462,
+        "tolerance": "2%",
+        "drift": false
+      },
+      {
+        "row": "forager:idle",
+        "what": "entrant sits",
+        "formula": 2744,
+        "scene": 2744,
+        "tolerance": "0.5%",
+        "drift": false
+      },
+      {
+        "row": "forager:idle",
+        "what": "entrant searches",
+        "formula": 1507,
+        "scene": 1521,
+        "tolerance": "2%",
+        "drift": false
+      },
+      {
+        "row": "forager:idle",
+        "what": "child sits",
+        "formula": 5098,
+        "scene": 5098,
+        "tolerance": "0.5%",
+        "drift": false
+      },
+      {
+        "row": "forager:idle",
+        "what": "child searches",
+        "formula": 3282,
+        "scene": 3294,
+        "tolerance": "2%",
+        "drift": false
+      },
+      {
+        "row": "forager:predator",
+        "what": "net energy a tick from the fourth meal",
+        "formula": 4.868779927313921,
+        "scene": 5.672659638771767,
+        "tolerance": "30%",
+        "drift": false
+      },
+      {
+        "row": "predator:living",
+        "what": "forager: kill tick",
+        "formula": null,
+        "scene": null,
+        "tolerance": "2 ticks",
+        "drift": false
+      },
+      {
+        "row": "predator:living",
+        "what": "forager: a kill or none",
+        "formula": false,
+        "scene": false,
+        "tolerance": "agree",
+        "drift": false
+      },
+      {
+        "row": "predator:living",
+        "what": "reproducer: kill tick",
+        "formula": null,
+        "scene": null,
+        "tolerance": "2 ticks",
+        "drift": false
+      },
+      {
+        "row": "predator:living",
+        "what": "reproducer: a kill or none",
+        "formula": false,
+        "scene": false,
+        "tolerance": "agree",
+        "drift": false
+      },
+      {
+        "row": "predator:living",
+        "what": "scout: kill tick",
+        "formula": null,
+        "scene": null,
+        "tolerance": "2 ticks",
+        "drift": false
+      },
+      {
+        "row": "predator:living",
+        "what": "scout: a kill or none",
+        "formula": false,
+        "scene": false,
+        "tolerance": "agree",
+        "drift": false
+      },
+      {
+        "row": "predator:living",
+        "what": "defender: kill tick",
+        "formula": null,
+        "scene": null,
+        "tolerance": "2 ticks",
+        "drift": false
+      },
+      {
+        "row": "predator:living",
+        "what": "defender: a kill or none",
+        "formula": false,
+        "scene": false,
+        "tolerance": "agree",
+        "drift": false
+      },
+      {
+        "row": "forager:first-meal",
+        "what": "founder: reach share",
+        "formula": 1,
+        "scene": 0.9375,
+        "tolerance": "0.2 absolute",
+        "drift": false
+      },
+      {
+        "row": "forager:first-meal",
+        "what": "founder: find share (a free plane: rocks and walls only lower it)",
+        "formula": 0.8906996754657431,
+        "scene": 0.5234375,
+        "tolerance": "an upper bound, 0.15 absolute",
+        "drift": false
+      },
+      {
+        "row": "forager:first-meal",
+        "what": "entrant: reach share",
+        "formula": 0.9959054837559161,
+        "scene": 0.85546875,
+        "tolerance": "0.2 absolute",
+        "drift": false
+      },
+      {
+        "row": "forager:first-meal",
+        "what": "entrant: find share (a free plane: rocks and walls only lower it)",
+        "formula": 0.45618050696365875,
+        "scene": 0.42578125,
+        "tolerance": "an upper bound, 0.15 absolute",
+        "drift": false
+      },
+      {
+        "row": "forager:first-meal",
+        "what": "child: reach share",
+        "formula": 1,
+        "scene": 0.99609375,
+        "tolerance": "0.2 absolute",
+        "drift": false
+      },
+      {
+        "row": "forager:first-meal",
+        "what": "child: find share (a free plane: rocks and walls only lower it)",
+        "formula": 1,
+        "scene": 0.99609375,
+        "tolerance": "an upper bound, 0.15 absolute",
+        "drift": false
+      }
+    ],
+    "drift": 0
+  }
 }

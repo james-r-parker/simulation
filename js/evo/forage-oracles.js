@@ -31,10 +31,10 @@ function clearRow(world, slot) {
 export function walkThrust(world, slot, speed) {
     const { lanes, config } = world;
     const fat = 1 - (lanes.fatSlowShare[slot] * world.energy[slot]) / lanes.maxEnergy[slot];
-    const band =
+    const efficiency =
         effectFactor(world, slot, EFFECT.COLD_BAND, 'maxThrust') *
         effectFactor(world, slot, EFFECT.HEAT_BAND, 'maxThrust');
-    const per = (lanes.maxThrust[slot] * band * fat * config.damping) / (1 - config.damping);
+    const per = (lanes.maxThrust[slot] * efficiency * fat * config.damping) / (1 - config.damping);
     return Math.min(1, speed / per);
 }
 

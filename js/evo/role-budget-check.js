@@ -24,14 +24,14 @@ export const TOLERANCE = Object.freeze({
 });
 
 /**
- * Plays one scripted chase in the sim: the pursuer at the arena's centre heading +x, the prey `distance` away at
- * `bearing`, facing away, both at rest and at half a store, the oracle brains, no jitter.
+ * Stages one scripted chase in the sim: the pursuer at the arena's centre heading +x, the prey `distance` away at `bearing`,
+ * facing away, both at rest and at half a store, the oracle brains, no jitter.
  * @param {Readonly<Record<string, any>>} config an `arenaConfig`
  * @param {{hunter: string, prey: string, distance: number, bearing: number, straight: boolean}} scene the scene
- * @returns {{killTick: number | null, net: number | null}} the tick the prey died and the hunter's energy gained by then (the
- *   bites and the gorge less the kicks, the costs and the strike misses), null when it did not die inside `MAX_TICKS`
+ * @returns {{world: Record<string, any>, policy: any, brain: (world: Record<string, any>) => void}} the staged world, its policy and
+ *   the brain phase of both bodies
  */
-export function simChase(config, { hunter, prey, distance, bearing, straight }) {
+export function stageChase(config, { hunter, prey, distance, bearing, straight }) {
     const specs = /** @type {Record<string, any>} */ (config.specialisations);
     const bodies = [
         { spec: specs[hunter].index, ...ARENA_CENTRE, angle: 0 },
@@ -49,6 +49,18 @@ export function simChase(config, { hunter, prey, distance, bearing, straight }) 
         hunt(w);
         flee(w);
     };
+    return { world, policy, brain };
+}
+
+/**
+ * Plays one scripted chase in the sim (`stageChase`).
+ * @param {Readonly<Record<string, any>>} config an `arenaConfig`
+ * @param {{hunter: string, prey: string, distance: number, bearing: number, straight: boolean}} scene the scene
+ * @returns {{killTick: number | null, net: number | null}} the tick the prey died and the hunter's energy gained by then (the
+ *   bites and the gorge less the kicks, the costs and the strike misses), null when it did not die inside `MAX_TICKS`
+ */
+export function simChase(config, scene) {
+    const { world, policy, brain } = stageChase(config, scene);
     const start = world.energy[0];
     for (let tick = 1; tick <= MAX_TICKS; tick++) {
         step(world, policy, { brain });

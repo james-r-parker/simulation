@@ -74,3 +74,46 @@ export function playChase({ gap, ticks, bite = true, ageTicks = 0, before }) {
     }
     return { metrics: computeMetrics(observer, world, {}), hunterTicks, world, ...seen };
 }
+
+/**
+ * Starts the eval observer on a staged arena after burn-in, so every settled metric counts.
+ * @param {Readonly<Record<string, any>>} config the arena's config
+ * @param {Record<string, any>} world the staged world
+ * @param {number} ticks the ticks that will be played
+ * @returns {ReturnType<typeof createObserver>} the observer, which has seen the initial world
+ */
+export function startObserver(config, world, ticks) {
+    const observer = createObserver(config, fork(createRng(1), 'eval'), { runTicks: ticks + BURN_IN_TICKS });
+    world.tick = BURN_IN_TICKS;
+    observe(observer, world);
+    return observer;
+}
+
+/**
+ * Plays a staged arena through the sim's own step with the observer watching, the brains of `brains` run in order each tick.
+ * @param {{world: Record<string, any>, policy: any}} staged the staged arena
+ * @param {{config: Readonly<Record<string, any>>, ticks: number, brains: Array<(world: Record<string, any>) => void>,
+ *   before?: (world: Record<string, any>, tick: number) => void, after?: (world: Record<string, any>, tick: number) => boolean | void}} play
+ *   the config, the ticks, the oracle brains, a hook run before each step and one after it (true stops the scene)
+ * @returns {{metrics: Record<string, any>, world: Record<string, any>, ticks: number}} the readings and the ticks played
+ */
+export function playObserved({ world, policy }, { config, ticks, brains, before, after }) {
+    const observer = startObserver(config, world, ticks);
+    const phases = {
+        ...observerPhases(observer),
+        brain(/** @type {Record<string, any>} */ w) {
+            brains.forEach((b) => b(w));
+        },
+    };
+    let played = 0;
+    for (let t = 1; t <= ticks; t++) {
+        before?.(world, t);
+        step(world, policy, phases);
+        observe(observer, world);
+        played = t;
+        if (after?.(world, t) === true) {
+            break;
+        }
+    }
+    return { metrics: computeMetrics(observer, world, {}), world, ticks: played };
+}
