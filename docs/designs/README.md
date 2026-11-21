@@ -12,7 +12,7 @@ Lead docs in priority order - 1 is built next. Set in each doc's `**Priority:**`
     2. [Lean observer](lean-observer.md) - one task left (T6); the lean observer is what training episodes run on (training-loop.md T31)
     3. [Improvement loop](improvement-loop.md) - automates measuring and proposing once the headlines (Phase 5) say what a result is
 2. [Fair chase](fair-chase.md) - Hunting lead. The `hunt` rung passes on 0 of 16 offsets after twelve falsified trainer levers (E191 to E232), and the live world's hunters fail the same way; no trainer, recruitment or champion work can pass a chase the bodies do not allow
-    1. [Role budget](role-budget.md) - runs before fair-chase.md Phase 2: the rung screen needs a hunter that can reach its prey
+    1. [Role budget](role-budget.md) - Phase 1 (T7) runs before fair-chase.md T8: the rung screen needs a hunter that can reach its prey; Phases 2 to 4 block nothing and hold back no later step
     2. [Senses and motor](senses-and-motor.md) - the chase envelope runs (T10 to T12) and Phase 4 are read on the bodies the sprint store leaves
     3. [Chase physics and terrain](chase-physics.md) - heading inertia and terrain, screened on those bodies; `speedTurnDrag` widens the predator's sprint circle
     4. [Stillness](stillness.md) - the ambusher and the freezing prey; it changes the ray march every scene reads, so it follows the store and the turn
