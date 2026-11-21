@@ -184,6 +184,7 @@ describe('observeScenes', () => {
             'edge',
             'families',
             'flora',
+            'genes',
             'guards',
             'guilds',
             'herd',

@@ -3,6 +3,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { MIN_SEEDS, metricDirection } from '../../../js/evo/compare.js';
+import { TRAITS } from '../../../js/sim/body-traits.js';
 import {
     DEFAULT_MIN_SEEDS,
     METRICS,
@@ -18,7 +19,7 @@ const REPORT_NAMES = JSON.parse(readFileSync(new URL('../../fixtures/metric-name
 describe('METRICS', () => {
     it('is frozen and keyed by exactly the names of the live report', () => {
         expect(Object.isFrozen(METRICS)).toBe(true);
-        expect(REPORT_NAMES).toHaveLength(380);
+        expect(REPORT_NAMES).toHaveLength(399);
         expect(Object.keys(METRICS).sort()).toEqual(REPORT_NAMES);
     });
 
@@ -104,6 +105,8 @@ describe('withPower', () => {
  *   `DIRECTIONS` (js/evo/compare.js), `WATCH_INTENDED_LOWER` (scripts/lib/watch-intent.mjs) and `METRIC_MIN_SEEDS`
  *   (js/evo/compare-seeds.js) held when they were deleted for the registry (metric-trust T8)
  */
+/** The body-gene metrics of body-genes.md T9: a spread for each trait of the registry and the edge share. */
+const GENE_METRICS = [...TRAITS.map((trait) => `eval.gene_spread.${trait.name}`), 'eval.gene_edge_share'];
 /** Metrics registered after the snapshot was taken (T25 added the mean beside the renamed median). */
 const ADDED_AFTER_T8 = [
     'eval.hunter_catches_per_1k_settled',
@@ -220,6 +223,7 @@ const ADDED_AFTER_T8 = [
     'eval.hunter_defender_bite_ratio',
     'eval.hunter_size_choice',
     'eval.hunter_slow_choice',
+    ...GENE_METRICS,
 ];
 /** Watch metrics registered after the snapshot whose intended direction is lower. */
 const ADDED_INTENDED_LOWER = [
@@ -249,6 +253,7 @@ const ADDED_INTENDED_LOWER = [
     'eval.sprint_share.hunter',
     'eval.sprint_share.prey',
     'eval.hunter_defender_bite_ratio',
+    'eval.gene_edge_share',
 ];
 const SNAPSHOT = JSON.parse(readFileSync(new URL('../../fixtures/metric-directions.json', import.meta.url), 'utf8'));
 

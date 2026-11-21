@@ -40,6 +40,8 @@ const MOVED = new Set([
     'visionRange',
     'maxEnergy',
     'passiveLoss',
+    'baseSize',
+    'childEnergyShare',
     'temperatureGainMove',
     'temperatureLossPassive',
     'heatSpeedCap',
