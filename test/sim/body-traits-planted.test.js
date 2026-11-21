@@ -7,7 +7,7 @@ import { TRAITS, traitRatio } from '../../js/sim/body-traits.js';
 import { OUTPUT_COUNT, OUTPUT_INDEX, TRAIT_INDEX } from '../../js/sim/brain-layout.js';
 import { actAll } from '../../js/sim/physics.js';
 import { applyGenes } from '../../js/sim/traits.js';
-import { thrustEfficiency } from '../../js/sim/temperature.js';
+import { thrustEfficiency } from './helpers/legacy-rules.js';
 import { setGene, setSpan, traitWorld } from './helpers/trait-world.js';
 
 const trait = (/** @type {string} */ name) => /** @type {any} */ (TRAITS.find((candidate) => candidate.name === name));

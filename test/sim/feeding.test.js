@@ -1,4 +1,4 @@
-import { allocBody } from './helpers/body.js';
+import { allocBody, setSpec } from './helpers/body.js';
 import { describe, expect, it } from 'vitest';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
 import { feed } from '../../js/sim/feeding.js';
@@ -266,13 +266,14 @@ describe('feed: biting', () => {
         });
         agent(w, { x: 100, y: 100, energy: 2000, spec: PREDATOR, bite: true });
         agent(w, { x: 110, y: 100, energy: 50, spec: DEFENDER });
+        setSpec(w, 1, DEFENDER); // the victim's biteTakenMultiplier is its lane
         run(w, pair);
         expect(w.energy[1]).toBe(50 - 4 * w.config.biteEnergy * 0.5);
     });
 
     it('takes biteTakenMultiplier of the bite from a defender', () => {
         const w = duel();
-        w.spec[1] = DEFENDER;
+        setSpec(w, 1, DEFENDER);
         run(w, pair);
         expect(w.energy[1]).toBe(50 - w.config.biteEnergy * 0.5);
     });

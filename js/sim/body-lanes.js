@@ -50,6 +50,28 @@ const MOVED = new Set([
     'refugeSenseRange',
     'hearing',
     'smokeSight',
+    // status-effects T2: the cost lanes and the numbers of the body effects, read through `liveOf` and the effect table.
+    'sizeEnergyLoss',
+    'visionCost',
+    'movementCost',
+    'turnCost',
+    'juvenileBurn',
+    // status-effects T3: the feeding effects' numbers.
+    'grazeThrust',
+    'handlingThrust',
+    'handlingTicks',
+    'digestTicks',
+    'sickThrust',
+    'sickDrain',
+    'diseaseDrain',
+    // status-effects T4: the seen alarm's bite share.
+    'alarmBiteShare',
+    'biteTakenMultiplier',
+    'temperaturePassiveLossFactor',
+    'temperatureEfficiencyColdSevere',
+    'temperatureEfficiencyColdModerate',
+    'temperatureEfficiencyHeatModerate',
+    'temperatureEfficiencyHeatSevere',
     ...THRESHOLDS,
 ]);
 

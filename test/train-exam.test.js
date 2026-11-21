@@ -73,12 +73,12 @@ describe('formatRows', () => {
 });
 
 describe('reflexScores', () => {
-    it('gives a champion of a specialisation with no reflex case a null score and edge, not a crash', async () => {
+    it('gives a champion whose specialisation has no reflex case a null score and edge, not a crash (every real specialisation has one since T22, so this one is out of range)', async () => {
         const weights = new Float32Array(brainLayout(createConfig({})).weightCount);
-        const reproducer = { name: 'reproducer', id: 3, spec: 2, weights, act: null };
-        const table = /** @type {any} */ ({ subjects: [reproducer] });
+        const stranger = { name: 'stranger', id: 3, spec: 9, weights, act: null };
+        const table = /** @type {any} */ ({ subjects: [stranger] });
         const log = createSimLog(() => {}, { level: 'error' });
         const { genomes } = await reflexScores(table, { workers: 1, trials: 1, log });
-        expect(genomes).toEqual([{ name: 'reproducer', score: null, edge: null }]);
+        expect(genomes).toEqual([{ name: 'stranger', score: null, edge: null }]);
     });
 });

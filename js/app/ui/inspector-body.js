@@ -32,6 +32,23 @@ export function geneRows(values, traits) {
 }
 
 /**
+ * @param {ArrayLike<number>} values each effect's level, in registry order
+ * @param {{name: string, visible: boolean}[]} effects `ready.labels.effects`
+ * @returns {{label: string, text: string}[]} a row for each visible effect, labelled `effect <name>`: `-` while it is off,
+ *   `on` for a whole level and the share otherwise
+ */
+export function effectRows(values, effects) {
+    return effects.flatMap((effect, i) => {
+        if (!effect.visible) {
+            return [];
+        }
+        const level = values[i];
+        const text = level <= 0 ? '-' : Number.isInteger(level) ? (level === 1 ? 'on' : `x${level}`) : level.toFixed(2);
+        return [{ label: `effect ${effect.name}`, text }];
+    });
+}
+
+/**
  * @param {ArrayLike<number>} values the thirteen sense values
  * @param {string[]} names `ready.labels.bodySense`
  * @returns {{name: string, bars: {label: string, value: number}[]}} the group, each value clamped to -1..1

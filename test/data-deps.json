@@ -318,6 +318,9 @@
     "test/evo/role-budget-kinematics.test.js": [
         "evals/fair-chase/courser.json"
     ],
+    "test/evo/role-budget-lapse-check.slow.test.js": [
+        "evals/fair-chase/courser.json"
+    ],
     "test/evo/role-budget-living.test.js": [
         "evals/fair-chase/courser.json"
     ],
@@ -550,6 +553,9 @@
     ],
     "test/sim/body-lanes.test.js": [
         "evals/decisions/body-genes/settings-inventory.md"
+    ],
+    "test/sim/effects-complete.test.js": [
+        "js/sim/*.js"
     ],
     "test/sim/event-offsets.test.js": [
         "js"

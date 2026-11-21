@@ -6,7 +6,7 @@ forager:predator     >487  >200   14   ok      run
 reproducer:predator  >487  >200   8    ok      run
 
 row              eat  breed  status      binding
-predator:living  X    X      impossible  eat
+predator:living  0!   X      impossible  breed
 
 row                    reach  find  eat   status      binding
 forager:first-meal     >200   X     >200  impossible  find
@@ -31,7 +31,7 @@ reproducer:predator
   split: gate 900 from 200 takes 144 ticks of an adult life of 71400; slack 71256
   hunters met in a life 138; flight slack 16 px
 predator:living
-  per chase: kill income 715.0, chase cost 979.3 over 250 ticks; net -764.8 at the catch share, -264.3 at 1
+  per chase: kill income 715.0, chase cost 796.4 over 204 ticks; net -581.9 at the catch share, 345.2 at 1
   split: gate 600 from 200 takes inf chases; a life holds 1244 (one per 58 ticks), spare inf
   at rest: 0.0153 a tick; a full store lasts 654022 ticks with no kill
 forager:first-meal
@@ -40,7 +40,7 @@ forager:first-meal
   entrant: 200 energy walks 2.10 a tick for 3172 px; nearest edge 959 px (p90 1912), reach share 1.00; blind path 5207 px, find share 0.46; eat 0.6 of 221 meals
   child: 450 energy walks 2.11 a tick for 6921 px; nearest edge 0 px (p90 0), reach share 1.00; blind path 0 px, find share 1.00; eat 0.0 of 221 meals
 predator:first-meal
-  source: 450 of radius 29, view strip 280, holds 450 meals of -764.8 net
+  source: 450 of radius 29, view strip 280, holds 450 meals of -581.9 net
   founder: 800 energy walks 1.06 a tick for 31382 px; nearest edge 226 px (p90 407), reach share 1.00; blind path 419 px, find share 1.00; eat inf of 450 meals
   entrant: 200 energy walks 1.05 a tick for 8781 px; nearest edge 226 px (p90 407), reach share 1.00; blind path 419 px, find share 1.00; eat inf of 450 meals
   child: 300 energy walks 1.05 a tick for 12553 px; nearest edge 0 px (p90 0), reach share 1.00; blind path 0 px, find share 1.00; eat inf of 450 meals

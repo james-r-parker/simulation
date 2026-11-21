@@ -26,6 +26,7 @@ import { stepCover } from './cover.js';
 import { ageSmoke } from './smoke.js';
 import { buildHash } from './spatial-hash.js';
 import { stepSprintStore } from './sprint-store.js';
+import { fadeEffects } from './effects.js';
 import { stepHerds } from './herd-motion.js';
 import { grazeHerds } from './herd-graze.js';
 import { ageAndReproduceHerds } from './herd-life.js';
@@ -149,6 +150,14 @@ function invariants(world) {
 }
 
 /**
+ * @param {World} world the world
+ * @returns {void}
+ */
+function effects(world) {
+    fadeEffects(world);
+}
+
+/**
  * @param {string} name the phase name
  * @param {PhaseRun} run the phase body
  * @returns {Readonly<{name: string, run: PhaseRun}>}
@@ -169,6 +178,7 @@ export const STEP_PHASES = Object.freeze([
     phase('field', field),
     phase('merit', merit),
     phase('invariants', invariants),
+    phase('effects', effects),
 ]);
 
 /**

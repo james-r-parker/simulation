@@ -14,6 +14,7 @@ import { findMale } from './mate-search.js';
 import { creditMating, meritPeek } from './merit.js';
 import { SEX, drawSex } from './sex.js';
 import { nextFloat } from './rng.js';
+import { GATE, gateOpen } from './effects.js';
 import { specParams } from './spec-params.js';
 import { applyGenes, childShareOf } from './traits.js';
 import { slotOfGenome } from './merit-state.js';
@@ -317,16 +318,13 @@ export function splitGateOpen(world, slot) {
 /**
  * @param {World} world the world
  * @param {number} slot an alive agent
- * @returns {boolean} true when mature, rested, not pregnant, above `splitMinEnergy` and inside its birth budget:
+ * @returns {boolean} true when the `split` gate is open (mature, rested and not pregnant), above `splitMinEnergy` and inside its birth budget:
  *   every term of `readyToSplit` but the merit split gate
  */
 export function readyBeforeGate(world, slot) {
-    const { maturityTicks } = world.config;
     return (
-        world.ageTicks[slot] >= maturityTicks &&
-        world.pregnancy[slot] === 0 &&
-        world.cooldown[slot] === 0 &&
         world.energy[slot] > world.splitMinBySpec[world.spec[slot]] &&
+        gateOpen(world, slot, GATE.SPLIT) &&
         !birthBudgetSpent(world, slot) &&
         territoryAllows(world, slot)
     );

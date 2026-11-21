@@ -8,7 +8,7 @@ import { canMatePair, isReadyToMate, readyToMate } from '../../js/sim/mate-eligi
 import { isPossibleMate } from '../../js/sim/mate-scarcity.js';
 import { SEX } from '../../js/sim/sex.js';
 import { territoryAllows } from '../../js/sim/territory.js';
-import { blocksMating } from '../../js/sim/temperature.js';
+import { EFFECT, levelOf } from '../../js/sim/effects.js';
 
 /** The classes, in the order a mature female is tested; `mates` is the one where a pair could mate this tick. */
 export const CLASSES = Object.freeze([
@@ -59,7 +59,7 @@ function femaleClass(world, slot) {
     if (world.energy[slot] <= c.mateMinEnergy) {
         return 'energy';
     }
-    if (blocksMating(world, slot)) {
+    if (levelOf(world, slot, EFFECT.OUT_OF_BAND) > 0) {
         return world.temperature[slot] < world.lanes.temperatureColdStress[slot] ? 'cold' : 'heat';
     }
     if (!territoryAllows(world, slot)) {
