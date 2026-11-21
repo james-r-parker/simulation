@@ -134,8 +134,7 @@ change.
 checks `check` and `browser-smoke`, branches strictly up to date, force-push and deletion blocked, no bypass actors.
 Auto-merge is enabled, and a PR is merged with `gh pr merge --auto --rebase`, so it merges only after both checks have
 reported and passed. An empty check list is not a pass. [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md)
-Phase 3 adds `perf` as a required check, and [deployment-and-community.md](deployment-and-community.md) gives a
-`season/next` branch the same ruleset.
+Phase 3 adds `perf` as a required check.
 
 `.github/dependabot.yml` groups weekly updates: one PR for GitHub Actions and one for npm.
 

@@ -20,7 +20,7 @@ describe('preview.yml', () => {
         expect(source).not.toMatch(/--branch main\b(?!-)/);
         expect(source).not.toMatch(/environment:\s*production|name:\s*production/);
         expect(source).toMatch(/environment:\s*preview/);
-        expect(source).toContain('^(pr-[0-9]+|next|main-latest)$');
+        expect(source).toContain('^(pr-[0-9]+|next)$');
     });
 
     it('migrates only the preview database', () => {

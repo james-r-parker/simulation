@@ -5,8 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { buildRelease, cliDeps as buildDeps } from '../scripts/build-release.mjs';
-import { cliDeps as planDeps, runDeployPlan, seasonNextOf, spawnStatus } from '../scripts/deploy-plan.mjs';
-import { currentBranch } from '../scripts/lib/release-check.mjs';
+import { cliDeps as planDeps, runDeployPlan } from '../scripts/deploy-plan.mjs';
 import { commentFromEnv } from '../scripts/preview-comment.mjs';
 import {
     cliDeps as releaseCheckDeps,
@@ -51,16 +50,24 @@ describe('runReleaseCheck', () => {
         expect(calls[0]).toEqual(['merge-base', 'HEAD', 'origin/main']);
     });
 
-    it('fails a rules change without a breaking commit, and passes it with a breaking PR title', () => {
-        const deps = { git: fakeGit().git, rulesHashAt: () => 'h1', headHash: 'h2', headSeasons: '[]' };
-        const bad = runReleaseCheck({ ...deps, env: { GITHUB_BASE_REF: 'season/next' } });
+    it('fails a rules change on main without a breaking PR title, though its commits are breaking', () => {
+        const git = fakeGit({ log: 'feat(sim)!: new rules\0', seasons: '[]' }).git;
+        const deps = { git, rulesHashAt: () => 'h1', headHash: 'h2', headSeasons: '[{"season":1}]' };
+        const bad = runReleaseCheck({ ...deps, env: { GITHUB_BASE_REF: 'main', PR_TITLE: 'feat(sim): new rules' } });
         expect(bad.ok).toBe(false);
         expect(JSON.parse(bad.line)).toMatchObject({
             event: 'ReleaseCheckFailed',
             reason: 'rules-change-not-breaking',
         });
-        const good = runReleaseCheck({ ...deps, env: { BASE_REF: 'season/next', PR_TITLE: 'feat(sim)!: new rules' } });
-        expect(good).toEqual({ ok: true, line: 'release-check ok (base season/next, rulesHash changed)' });
+    });
+
+    it('fails a breaking rules change on main with no new season, and passes it with one', () => {
+        const deps = { git: fakeGit().git, rulesHashAt: () => 'h1', headHash: 'h2' };
+        const env = { BASE_REF: 'main', PR_TITLE: 'feat(sim)!: new rules' };
+        const bad = runReleaseCheck({ ...deps, env, headSeasons: '[]' });
+        expect(JSON.parse(bad.line)).toMatchObject({ reason: 'rules-change-without-season' });
+        const good = runReleaseCheck({ ...deps, env, headSeasons: '[{"season":1}]' });
+        expect(good).toEqual({ ok: true, line: 'release-check ok (base main, rulesHash changed)' });
     });
 });
 
@@ -129,7 +136,6 @@ describe('runDeployPlan', () => {
             env,
             readFile: reader({}),
             appendFile: (_f, t) => appended.push(t),
-            seasonNext: false,
         });
         expect(lines).toContain('action=next');
         expect(appended.join('')).toBe(`${lines.join('\n')}\n`);
@@ -140,11 +146,10 @@ describe('runDeployPlan', () => {
             env: { GITHUB_EVENT_PATH: 'event.json', GITHUB_REPOSITORY: 'o/r' },
             readFile: reader({ conclusion: 'failure' }),
             appendFile: () => {},
-            seasonNext: false,
         });
         expect(lines).toContain('action=skip');
         expect(JSON.parse(/** @type {string} */ (lines.at(-1)))).toMatchObject({ event: 'DeploySkipped' });
-        expect(() => runDeployPlan({ env: {}, readFile: reader({}), appendFile: () => {}, seasonNext: false })).toThrow(
+        expect(() => runDeployPlan({ env: {}, readFile: reader({}), appendFile: () => {} })).toThrow(
             'GITHUB_EVENT_PATH and GITHUB_REPOSITORY are required',
         );
     });
@@ -265,17 +270,14 @@ describe('the real dependencies of each shell', () => {
         expect(deps.rules).toMatch(/^[0-9a-f]+$/);
     });
 
-    it('deploy-plan reads and appends real files and asks git for season/next', () => {
+    it('deploy-plan reads and appends real files', () => {
         const dir = mkdtempSync(join(tmpdir(), 'plan-deps-'));
         const file = join(dir, 'out.txt');
-        const deps = planDeps({ GITHUB_REPOSITORY: 'o/r' }, true);
+        const deps = planDeps({ GITHUB_REPOSITORY: 'o/r' });
         deps.appendFile(file, 'a=1\n');
         deps.appendFile(file, 'b=2\n');
         expect(deps.readFile(file)).toBe('a=1\nb=2\n');
-        expect(deps.seasonNext).toBe(true);
         rmSync(dir, { recursive: true });
-        expect(seasonNextOf((cmd, args) => (cmd === 'git' && args.includes('season/next') ? 0 : 2))).toBe(true);
-        expect(seasonNextOf(() => 2)).toBe(false);
     });
 
     it('release-upload reads files, runs the named wrangler and has a clock', () => {
@@ -300,16 +302,6 @@ describe('the small real helpers', () => {
         writeFileSync(join(dir, 'f'), 'x');
         removeDir(dir);
         expect(existsSync(dir)).toBe(false);
-    });
-
-    it('spawnStatus returns a command exit status', () => {
-        expect(spawnStatus('node', ['-e', 'process.exit(0)'])).toBe(0);
-        expect(spawnStatus('node', ['-e', 'process.exit(4)'])).toBe(4);
-    });
-
-    it('currentBranch asks git outside CI and returns a string', () => {
-        expect(typeof currentBranch({ env: {} })).toBe('string');
-        expect(currentBranch({ env: { GITHUB_BASE_REF: 'season/next' } })).toBe('season/next');
     });
 });
 

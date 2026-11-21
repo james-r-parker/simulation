@@ -1,5 +1,6 @@
-// The `release-check` gate: fails a pull request that changes `rulesHash` without a breaking commit, or whose base is
-// `main` and which adds no season (docs/designs/deployment-and-community.md, "Release check").
+// The `release-check` gate: fails a pull request that changes `rulesHash` without a breaking title (a breaking commit
+// when no title is given), or whose base is `main` and which adds no `library/seasons.json` entry
+// (docs/designs/deployment-and-community.md, "Release check").
 //   BASE_REF=main PR_TITLE='feat(sim)!: ...' node scripts/release-check.mjs
 // BASE_REF defaults to GITHUB_BASE_REF, then `main`; the merge base is taken against origin/<BASE_REF>.
 import { spawnSync } from 'node:child_process';
@@ -72,9 +73,6 @@ export function runReleaseCheck({ env, git: run, rulesHashAt: hashAt, headHash, 
         .split('\0')
         .map((m) => m.trim())
         .filter((m) => m !== '');
-    if (env.PR_TITLE) {
-        messages.push(env.PR_TITLE);
-    }
     const baseHash = hashAt(mergeBase);
     const baseSeasons = run(['show', `${mergeBase}:library/seasons.json`]);
     const addsSeason = seasonAdded(baseSeasons, headSeasons);
@@ -82,7 +80,15 @@ export function runReleaseCheck({ env, git: run, rulesHashAt: hashAt, headHash, 
         .split('\n')
         .filter((t) => t !== '');
     const movesUnreleased = movesUnreleasedSeason(baseSeasons, headSeasons, tags);
-    const verdict = releaseCheck({ baseHash, headHash, messages, base, addsSeason, movesUnreleased });
+    const verdict = releaseCheck({
+        baseHash,
+        headHash,
+        messages,
+        title: env.PR_TITLE,
+        base,
+        addsSeason,
+        movesUnreleased,
+    });
     if (verdict.ok) {
         const rules = baseHash === headHash ? 'unchanged' : 'changed';
         return { ok: true, line: `release-check ok (base ${base}, rulesHash ${rules})` };

@@ -20,20 +20,11 @@ const run = (/** @type {Record<string, any>} */ over = {}) => ({
     pull_requests: [],
     ...over,
 });
-const plan = (/** @type {Record<string, any>} */ over = {}, extra = {}) =>
-    deployPlan({ event: run(over), repo: 'o/r', bindings, seasonNext: false, ...extra });
+const plan = (/** @type {Record<string, any>} */ over = {}) => deployPlan({ event: run(over), repo: 'o/r', bindings });
 
 describe('deployPlan', () => {
-    it('deploys main to /next/ and to main-latest while season/next exists', () => {
+    it('deploys main to /next/', () => {
         expect(plan()).toMatchObject({ action: 'next', branch: 'next', sha: 'abc1234def' });
-        expect(plan({}, { seasonNext: true })).toMatchObject({ action: 'next', branch: 'main-latest' });
-    });
-
-    it('deploys season/next to /next/', () => {
-        expect(plan({ head_branch: 'season/next' }, { seasonNext: true })).toMatchObject({
-            action: 'next',
-            branch: 'next',
-        });
     });
 
     it('deploys a same-repo pull request to a preview branch', () => {
@@ -50,16 +41,13 @@ describe('deployPlan', () => {
         [{ head_repository: { full_name: 'evil/r' }, event: 'pull_request', pull_requests: [{ number: 1 }] }, 'fork'],
         [{ event: 'pull_request', pull_requests: [] }, 'no-pr'],
         [{ head_branch: 'feat/y' }, 'branch'],
+        [{ head_branch: 'season/next' }, 'branch'],
     ])('skips %j with reason %s', (over, reason) => {
         expect(plan(over)).toMatchObject({ action: 'skip', reason });
     });
 
     it('never plans a production deploy', () => {
-        for (const over of [
-            {},
-            { head_branch: 'season/next' },
-            { event: 'pull_request', pull_requests: [{ number: 3 }] },
-        ]) {
+        for (const over of [{}, { event: 'pull_request', pull_requests: [{ number: 3 }] }]) {
             expect(plan(over).branch).not.toBe('production');
             expect(plan(over).branch).not.toBe('main');
         }
@@ -76,7 +64,7 @@ describe('deployPlan', () => {
         };
         const missing = { ...bindings, preview: { d1: [] } };
         for (const b of [badName, sameId, missing]) {
-            expect(deployPlan({ event: run(), repo: 'o/r', bindings: b, seasonNext: false })).toMatchObject({
+            expect(deployPlan({ event: run(), repo: 'o/r', bindings: b })).toMatchObject({
                 reason: 'preview-bindings',
             });
         }
@@ -88,13 +76,9 @@ describe('deployPlan', () => {
             production: { ...bindings.production, d1: [{ binding: 'DB', name: 'blob-library', id: zero }] },
             preview: { ...bindings.preview, d1: [{ binding: 'DB', name: 'blob-library-preview', id: zero }] },
         };
-        expect(deployPlan({ event: run(), repo: 'o/r', bindings: placeholder, seasonNext: false }).reason).toBe(
-            'placeholder-ids',
-        );
+        expect(deployPlan({ event: run(), repo: 'o/r', bindings: placeholder }).reason).toBe('placeholder-ids');
         const half = { ...placeholder, production: bindings.production };
-        expect(deployPlan({ event: run(), repo: 'o/r', bindings: half, seasonNext: false }).reason).toBe(
-            'placeholder-ids',
-        );
+        expect(deployPlan({ event: run(), repo: 'o/r', bindings: half }).reason).toBe('placeholder-ids');
     });
 });
 

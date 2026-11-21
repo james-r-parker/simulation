@@ -1,11 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-    currentBranch,
-    isBreaking,
-    movesUnreleasedSeason,
-    releaseCheck,
-    seasonAdded,
-} from '../scripts/lib/release-check.mjs';
+import { isBreaking, movesUnreleasedSeason, releaseCheck, seasonAdded } from '../scripts/lib/release-check.mjs';
 
 describe('isBreaking', () => {
     it('is true for a bang after the type or scope, and for a BREAKING CHANGE footer', () => {
@@ -25,40 +19,64 @@ describe('releaseCheck', () => {
     const same = { baseHash: 'a', headHash: 'a', messages: ['feat: x'], base: 'main', addsSeason: false };
     const changed = { ...same, headHash: 'b' };
 
-    it('passes a change that leaves rulesHash alone, whatever its commits', () => {
+    it('passes a change that leaves rulesHash alone, whatever its commits and title', () => {
         expect(releaseCheck(same)).toEqual({ ok: true });
-        expect(releaseCheck({ ...same, base: 'season/next' })).toEqual({ ok: true });
+        expect(releaseCheck({ ...same, title: 'fix: x' })).toEqual({ ok: true });
     });
 
-    it('fails a rules change without a breaking commit', () => {
-        expect(releaseCheck({ ...changed, base: 'season/next' })).toEqual({
+    it('fails a rules change on main without a breaking title, even when it adds a season', () => {
+        const input = { ...changed, addsSeason: true, title: 'feat(sim): new rules' };
+        expect(releaseCheck(input)).toEqual({ ok: false, reason: 'rules-change-not-breaking' });
+        expect(releaseCheck({ ...input, messages: ['feat(sim)!: new rules'] })).toEqual({
             ok: false,
             reason: 'rules-change-not-breaking',
         });
     });
 
-    it('passes a breaking rules change on season/next', () => {
-        const input = { ...changed, base: 'season/next', messages: ['chore: x', 'feat(sim)!: new rules'] };
-        expect(releaseCheck(input)).toEqual({ ok: true });
+    it('fails a breaking rules change on main that adds no season', () => {
+        const input = { ...changed, title: 'feat(sim)!: new rules' };
+        expect(releaseCheck(input)).toEqual({ ok: false, reason: 'rules-change-without-season' });
     });
 
-    it('fails a breaking rules change on main unless it adds a season', () => {
-        const input = { ...changed, messages: ['feat(sim)!: new rules'] };
-        expect(releaseCheck(input)).toEqual({ ok: false, reason: 'rules-change-on-main' });
-        expect(releaseCheck({ ...input, addsSeason: true })).toEqual({ ok: true });
+    it('passes a rules change on main with a breaking title and a new season, as PR 574 opened season 11', () => {
+        const input = {
+            ...changed,
+            messages: ['feat(library)!: open season 11 for the sprint store and leak-gene rules'],
+            title: 'feat!: merge season/next into main and open season 11',
+            addsSeason: true,
+        };
+        expect(releaseCheck(input)).toEqual({ ok: true });
     });
 
     it('passes a breaking rules change on main that moves an unreleased season in place', () => {
-        const input = { ...changed, messages: ['feat(sim)!: new rules'], movesUnreleased: true };
+        const input = { ...changed, title: 'feat(sim)!: new rules', movesUnreleased: true };
         expect(releaseCheck(input)).toEqual({ ok: true });
-        expect(releaseCheck({ ...input, messages: ['feat(sim): new rules'] })).toEqual({
+        expect(releaseCheck({ ...input, title: 'feat(sim): new rules' })).toEqual({
             ok: false,
             reason: 'rules-change-not-breaking',
         });
     });
 
-    it('reports the missing breaking commit before the wrong base', () => {
-        expect(releaseCheck(changed)).toEqual({ ok: false, reason: 'rules-change-not-breaking' });
+    it('reads the commits when no title is given, as a local run does', () => {
+        expect(releaseCheck({ ...changed, addsSeason: true })).toEqual({
+            ok: false,
+            reason: 'rules-change-not-breaking',
+        });
+        const input = { ...changed, addsSeason: true, messages: ['chore: x', 'feat(sim)!: new rules'] };
+        expect(releaseCheck(input)).toEqual({ ok: true });
+    });
+
+    it('asks only for a breaking change on a base other than main, such as a stacked branch', () => {
+        const input = { ...changed, base: 'feat/stacked', title: 'feat(sim)!: new rules' };
+        expect(releaseCheck(input)).toEqual({ ok: true });
+        expect(releaseCheck({ ...input, title: 'feat(sim): new rules' }).ok).toBe(false);
+    });
+
+    it('reports the missing breaking title before the missing season', () => {
+        expect(releaseCheck({ ...changed, title: 'feat: x' })).toEqual({
+            ok: false,
+            reason: 'rules-change-not-breaking',
+        });
     });
 });
 
@@ -90,17 +108,5 @@ describe('movesUnreleasedSeason', () => {
     it('does not take v1. for v10.', () => {
         const after = file(season('x', 9), season('b'));
         expect(movesUnreleasedSeason(before, after, ['v1.0.0', 'v100.0.0'])).toBe(true);
-    });
-});
-
-describe('currentBranch', () => {
-    const run = () => 'local-branch\n';
-
-    it('prefers the pull request base, then the pushed ref, then the checked-out branch', () => {
-        expect(currentBranch({ env: { GITHUB_BASE_REF: 'season/next', GITHUB_REF_NAME: '12/merge' }, run })).toBe(
-            'season/next',
-        );
-        expect(currentBranch({ env: { GITHUB_BASE_REF: '', GITHUB_REF_NAME: 'main' }, run })).toBe('main');
-        expect(currentBranch({ env: {}, run })).toBe('local-branch');
     });
 });

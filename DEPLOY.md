@@ -9,7 +9,7 @@ operator's view. Cloudflare's own Git integration is switched off, so nothing de
 | Event                                         | Workflow                           | Result                                                                                    |
 | --------------------------------------------- | ---------------------------------- | ----------------------------------------------------------------------------------------- |
 | Merge of the Release Please PR                | `release-please.yml`, `deploy.yml` | Production: `/` serves the new release, `/v/<version>/` serves it forever                 |
-| Push to `main` (or `season/next`), check green | `preview.yml`                      | `/next/` (Pages branch `next`; `main-latest` while `season/next` exists)                  |
+| Push to `main`, check green                   | `preview.yml`                      | `/next/` (Pages branch `next`)                                                            |
 | Pull request from this repo, check green      | `preview.yml`                      | A preview URL, commented on the PR; it reads the `-preview` database                      |
 | Pull request from a fork                      | none                               | Skipped (`DeploySkipped`, reason `fork`)                                                  |
 | `gh workflow run deploy.yml -f tag=v<x.y.z>`  | `deploy.yml`                       | Rebuilds that tag and redeploys it to `/` (rollback); the version and `releases` row are no-ops |
@@ -40,8 +40,8 @@ A job that finds its environment missing a secret fails at its first step and na
    tarball and `release-entry.json`); `deploy` applies the D1 migrations, deploys the version to its own Pages branch
    `v<major>-<minor>-<patch>`, registers the release in the D1 `releases` table, then deploys `/`.
 
-A change to the game rules (`rulesHash`) is a breaking commit (`feat(sim)!: ...`) that targets `season/next`;
-`node scripts/release-check.mjs` fails a pull request that breaks this rule.
+A change to the game rules (`rulesHash`) is a pull request to `main` with a breaking title (`feat(sim)!: ...`) that adds
+the next `library/seasons.json` entry; `node scripts/release-check.mjs` fails a pull request that breaks this rule.
 
 ## Rollback
 

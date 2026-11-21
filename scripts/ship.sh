@@ -10,7 +10,8 @@
 #   3 the gate the change scope needs, then commit what --fix wrote          exit 4 and the failed gates
 #   4 check the body file against the create-pr template                     exit 5 and the missing section
 #   5 push, open the PR (or find it), turn on auto-merge (merge commit)      exit 6 and the gh error
-#   6 gh pr checks --watch --fail-fast                                       exit 1, failed jobs and log tails
+#   6 wait up to 120 s for the checks to register, then                    exit 1 no-checks when none register
+#     gh pr checks --watch --fail-fast                                       exit 1, failed jobs and log tails
 #   7 confirm MERGED, print the link and minutes from push to merge          exit 7 when not merged after 10 minutes
 # A rerun after a fix commit resumes at step 2 on the same PR. --no-merge leaves auto-merge off and stops after step 6.
 # Each run appends a line to .checklogs/ship.jsonl. Run it from the branch's worktree.

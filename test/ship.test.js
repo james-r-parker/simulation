@@ -34,6 +34,7 @@ case "$1 $2" in
   "pr merge") exit 0 ;;
   "pr checks")
     if [[ "$*" == *--watch* ]]; then exit "\${GH_CHECKS_STATUS:-0}"; fi
+    if [[ -n "\${GH_NO_CHECKS:-}" ]]; then echo "no checks reported on the 'feat/x' branch" >&2; exit 1; fi
     echo '[{"name":"test shard-1","bucket":"fail","link":"https://github.com/o/r/actions/runs/777/job/1"}]' ;;
   "pr view") echo "{\\"state\\":\\"\${GH_PR_STATE:-MERGED}\\",\\"mergeStateStatus\\":\\"BLOCKED\\",\\"url\\":\\"https://github.com/o/r/pull/42\\"}" ;;
   "run view") echo "log line"; exit 0 ;;
@@ -99,7 +100,7 @@ beforeEach(() => {
     git(dir, ['clone', origin, work]);
     mkdirSync(join(work, 'scripts/lib'), { recursive: true });
     cpSync(resolve('scripts/ship.sh'), join(work, 'scripts/ship.sh'));
-    for (const f of ['ship-main.mjs', 'ship-steps.mjs', 'ship-body.mjs']) {
+    for (const f of ['ship-main.mjs', 'ship-steps.mjs', 'ship-body.mjs', 'ship-wait.mjs']) {
         cpSync(resolve('scripts/lib', f), join(work, 'scripts/lib', f));
     }
     // Stub gates: change-scope prints $SCOPE; check.sh records its flags, optionally writes a file or fails.
@@ -236,6 +237,14 @@ describe('ship.sh', { timeout: scaleTimeout(60_000) }, () => {
         expect(r.stderr).toContain('test shard-1');
         expect(r.stderr).toContain('log line');
         expect(logLines()[0].result).toBe('red');
+    });
+
+    it('exit 1 no-checks, and never watches, when no check registers within the grace period', () => {
+        const r = ship(ARGS, { GH_NO_CHECKS: '1', SHIP_CHECKS_GRACE_S: '0.2', SHIP_CHECKS_POLL_S: '0.1' });
+        expect(r.status).toBe(1);
+        expect(r.stderr).toContain('no checks registered on PR #42 after 0.2 s');
+        expect(ghCalls()).not.toContain('pr checks 42 --watch --fail-fast');
+        expect(logLines()[0].result).toBe('no-checks');
     });
 
     it('exit 7 with the merge state when green but not merged after the wait', () => {

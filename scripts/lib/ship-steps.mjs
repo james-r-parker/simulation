@@ -6,6 +6,7 @@
 import { spawnSync } from 'node:child_process';
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { bodyProblems } from './ship-body.mjs';
+import { CHECKS_GRACE_S, sleep, waitForChecks } from './ship-wait.mjs';
 
 export class ShipError extends Error {
     /**
@@ -224,11 +225,17 @@ function failureReport({ sh, state }) {
 }
 
 /**
- * Step 6: waits for the checks with gh's own watch.
+ * Step 6: waits for the checks to register, then watches them with gh's own watch.
  * @param {Ctx} ctx the context
+ * @param {{graceS?: number, pollS?: number, pause?: (seconds: number) => void}} [wait] how long to wait for the checks
+ *   to register (`waitForChecks`)
  */
-export function stepWatch(ctx) {
+export function stepWatch(ctx, wait = {}) {
     const { sh, state } = ctx;
+    if (!waitForChecks(sh, state.pr, wait)) {
+        const graceS = wait.graceS ?? CHECKS_GRACE_S;
+        throw new ShipError(1, 'no-checks', `ship: no checks registered on PR #${state.pr} after ${graceS} s`);
+    }
     const r = sh('gh', ['pr', 'checks', String(state.pr), '--watch', '--fail-fast'], { inherit: true });
     const runs = sh('gh', [
         'run',
@@ -246,11 +253,6 @@ export function stepWatch(ctx) {
     if (r.status !== 0) {
         throw new ShipError(1, 'red', failureReport(ctx));
     }
-}
-
-/** @param {number} seconds how long to block */
-function sleep(seconds) {
-    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, seconds * 1000);
 }
 
 /**
@@ -322,6 +324,22 @@ function exitFor(error, state) {
 }
 
 /**
+ * @param {Record<string, string | undefined>} env the environment
+ * @returns {{wait: {waitS: number, pollS: number}, checks: {graceS: number, pollS: number}}} the merge wait
+ *   (SHIP_MERGE_WAIT_S, SHIP_MERGE_POLL_S) and the wait for the checks to register (SHIP_CHECKS_GRACE_S,
+ *   SHIP_CHECKS_POLL_S), in seconds
+ */
+function waitsFrom(env) {
+    return {
+        wait: { waitS: Number(env.SHIP_MERGE_WAIT_S ?? 600), pollS: Number(env.SHIP_MERGE_POLL_S ?? 10) },
+        checks: {
+            graceS: Number(env.SHIP_CHECKS_GRACE_S ?? CHECKS_GRACE_S),
+            pollS: Number(env.SHIP_CHECKS_POLL_S ?? 5),
+        },
+    };
+}
+
+/**
  * @param {string[]} argv arguments after the script name
  * @param {{sh?: Sh, env?: Record<string, string | undefined>}} [deps] test seams
  * @returns {number} the exit code
@@ -330,10 +348,11 @@ export function runShip(argv, { sh = realSh, env = process.env } = {}) {
     const state = {};
     try {
         const ctx = { opts: parseShipArgs(argv), sh, state };
-        const wait = { waitS: Number(env.SHIP_MERGE_WAIT_S ?? 600), pollS: Number(env.SHIP_MERGE_POLL_S ?? 10) };
-        for (const step of [stepGuard, stepMergeBase, stepGate, stepBody, stepPush, stepWatch]) {
+        const { wait, checks } = waitsFrom(env);
+        for (const step of [stepGuard, stepMergeBase, stepGate, stepBody, stepPush]) {
             step(ctx);
         }
+        stepWatch(ctx, checks);
         stepConfirm(ctx, wait);
         appendLog(state, ctx.opts.noMerge ? 'green' : 'merged');
         return 0;
