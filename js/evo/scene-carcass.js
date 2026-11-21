@@ -113,7 +113,13 @@ export function trackCarcasses(scene, observer, world, scent = undefined) {
         tickScent(scent, world);
     }
     noteLossBase(scene.loss, world);
-    for (let food = 0; food < world.foodAlive.length; food++) {
+    const { foodAlive, foodKind } = world;
+    const last = scene.value;
+    for (let food = 0; food < foodAlive.length; food++) {
+        // A slot that held no tracked meat last tick and holds no meat now has nothing to compare or to store.
+        if (last[food] === 0 && (foodAlive[food] !== 1 || foodKind[food] !== FOOD_KIND.MEAT)) {
+            continue;
+        }
         updateCarcassSlot(scene, observer, world, food);
     }
     scene.mark.set(world.foodEnergy);
