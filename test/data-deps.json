@@ -361,6 +361,9 @@
         "js/evo/scene-edge-gates.js",
         "js/evo/scene-edge.js"
     ],
+    "test/evo/scene-genes.test.js": [
+        "js/evo/scene-genes.js"
+    ],
     "test/evo/scene-graze.test.js": [
         "js/evo/scene-graze.js"
     ],

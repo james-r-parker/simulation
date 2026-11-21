@@ -2,7 +2,7 @@
 // below were recorded from the loop over every slot (origin/main before the skip), live policy, seed 1, 20000 ticks,
 // and re-pinned when pooled-v6 and its pooled body sense (body-genes T7, T31) changed every world, then moved to seed 2
 // when the trait genes' inheritance (body-genes T33) left seed 1 with no carcass meal (its precondition read null), and
-// re-pinned for the herd centroid fix, the body lanes (body-genes T3 to T13a) and the hunter-choice metrics (T22).
+// re-pinned for the herd centroid fix, the body lanes (body-genes T3 to T13a) the hunter-choice metrics (T22) and the gene metrics (T9).
 
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
@@ -11,7 +11,7 @@ import { runSeed } from '../../scripts/eval-worker.mjs';
 import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 
 const RECORDED_WORLD_HASH = 'd83803177df45443';
-const RECORDED_METRICS_SHA256 = '43ba2601f30608b53e695fe2c5f643d177a60e8ad0866089b6f43b486f79204e';
+const RECORDED_METRICS_SHA256 = 'f2c2b2d57685e66c6c27da0fbbcd081ba73b886b7e3916aa43a1c93c3990fe38';
 
 describe('trackCarcasses skipping empty slots', () => {
     it(
