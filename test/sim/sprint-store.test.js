@@ -8,7 +8,14 @@ import { SPEC_NAMES } from '../../js/sim/specs.js';
 import { EVENT_TYPE, createEventRing } from '../../js/sim/events.js';
 import { createSimLog, drainEvents } from '../../js/sim/log.js';
 import { createRng, nextFloat } from '../../js/sim/rng.js';
-import { createSprintStore, resetSprintSlot, stepSprintStore, storeFactor } from '../../js/sim/sprint-store.js';
+import {
+    SPRINT_REST_EFFORT,
+    createSprintStore,
+    resetSprintSlot,
+    sprintEffort,
+    stepSprintStore,
+    storeFactor,
+} from '../../js/sim/sprint-store.js';
 
 const FORAGER = 0;
 const PREDATOR = 1;
@@ -160,7 +167,7 @@ describe('stepSprintStore', () => {
         expect([store.level[1], w.sprintFactor[1]]).toEqual([1, 7]);
     });
 
-    it('matches a naive reference over 1000 random ticks', () => {
+    it('matches a naive reference of the graded sprint over 1000 random ticks', () => {
         const config = storeConfig({ specialisations: { predator: { sprintDrainMultiplier: 2 } } });
         const n = 6;
         const store = createSprintStore(config, n);
@@ -173,13 +180,14 @@ describe('stepSprintStore', () => {
         for (let t = 0; t < 1000; t++) {
             const expected = [];
             for (let slot = 0; slot < n; slot++) {
-                const sprint = nextFloat(rng) < 0.6 ? 1 : -1;
+                const sprint = Math.fround(2 * nextFloat(rng) - 1);
                 const thrust = nextFloat(rng);
                 drive(w, slot, { sprint, thrust });
-                expected.push(ref[slot] >= config.sprintFloor ? 1 : ref[slot] / config.sprintFloor);
+                const effort = sprint < 0.05 ? 0 : sprint;
+                expected.push((ref[slot] >= config.sprintFloor ? 1 : ref[slot] / config.sprintFloor) * effort);
                 const drain = config.sprintDrain * (slot % 2 === 1 ? 2 : 1);
-                if (sprint > 0) {
-                    ref[slot] = Math.max(0, ref[slot] - drain);
+                if (effort > 0) {
+                    ref[slot] = Math.max(0, ref[slot] - drain * effort);
                 } else if (Math.fround(thrust) < config.sprintRestThrust) {
                     ref[slot] = Math.min(1, ref[slot] + config.sprintRefill);
                 }
@@ -188,6 +196,36 @@ describe('stepSprintStore', () => {
             expect([...w.sprintFactor]).toEqual(expected);
             expect([...store.level]).toEqual(ref);
         }
+    });
+
+    it.each([
+        [0, 0, 1],
+        [0.5, 0.5, 1 - 0.1 * 0.5],
+        [1, 1, 0.9],
+        [0.04, 0, 1],
+    ])(
+        'at SPRINT %f writes the factor %f and drains the store to %f (effort 0, 0.5 and 1, and a trace)',
+        (sprint, factor, left) => {
+            const config = storeConfig({ sprintDrain: 0.1, sprintRestThrust: 0.2 });
+            const store = createSprintStore(config, 1);
+            const w = bodies(1, config);
+            drive(w, 0, { sprint, thrust: 0.5 });
+            stepSprintStore(store, w);
+            expect(w.sprintFactor[0]).toBeCloseTo(factor, 6);
+            expect(store.level[0]).toBeCloseTo(left, 6);
+        },
+    );
+
+    it('refills only at effort 0: a trace of effort under SPRINT_REST_EFFORT does not block it', () => {
+        const config = storeConfig({ sprintRefill: 0.1, sprintRestThrust: 0.2 });
+        const store = createSprintStore(config, 2);
+        const w = bodies(2, config);
+        store.level.set([0.5, 0.5]);
+        drive(w, 0, { sprint: SPRINT_REST_EFFORT / 2, thrust: 0 });
+        drive(w, 1, { sprint: 0.3, thrust: 0 });
+        stepSprintStore(store, w);
+        expect(store.level[0]).toBeCloseTo(0.6, 9);
+        expect(store.level[1]).toBeLessThan(0.5);
     });
 
     it('allocates nothing', () => {
@@ -265,5 +303,24 @@ describe('the sprint store keys', () => {
         expect(() => createConfig({ specialisations: { scout: { sprintDrainMultiplier: 0 } } })).toThrow(
             /sprintDrainMultiplier/,
         );
+    });
+});
+
+describe('sprintEffort', () => {
+    it('is the graded effort with the store on and the all-or-nothing sprint with it off', () => {
+        const on = bodies(1, storeConfig());
+        on.sprintStore = createSprintStore(storeConfig(), 1);
+        const off = bodies(1, createConfig({}));
+        for (const [sprint, graded, whole] of [
+            [-0.5, 0, 0],
+            [0.03, 0, 1],
+            [0.5, 0.5, 1],
+            [1, 1, 1],
+        ]) {
+            drive(on, 0, { sprint, thrust: 0 });
+            drive(off, 0, { sprint, thrust: 0 });
+            expect(sprintEffort(on, 0)).toBeCloseTo(graded, 6);
+            expect(sprintEffort(off, 0)).toBe(whole);
+        }
     });
 });

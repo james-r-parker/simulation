@@ -1,6 +1,6 @@
 // Sprint detectors (sprint-burst.md, Phase 1). Observer-only counters; no sim state or per-tick allocations.
 
-import { OUTPUT_COUNT, OUTPUT_INDEX } from '../sim/brain-layout.js';
+import { sprintEffort } from '../sim/sprint-store.js';
 import { BURN_IN_TICKS } from './burn-in.js';
 import { SCAN, SCAN_SIZE } from './ray-summary.js';
 import { none, ok } from './metrics-stats.js';
@@ -34,51 +34,42 @@ export function createSprintScene(config) {
     };
 }
 
-/** @param {Record<string, any>} scene @param {Record<string, any>} approach @param {number} slot @param {boolean} sprinting */
-function tickHunter(scene, approach, slot, sprinting) {
+// A sprinting tick counts by its effort (`sprintEffort`, fair-chase T7a): 0 or 1 with the store off, as before, and the
+// graded effort with the store on, so a half sprint is half a sprinting tick.
+
+/** @param {Record<string, any>} scene @param {Record<string, any>} approach @param {number} slot @param {number} effort */
+function tickHunter(scene, approach, slot, effort) {
     scene.hunterTicks += 1;
-    if (sprinting) {
-        scene.hunterSprints += 1;
-    }
+    scene.hunterSprints += effort;
     if (approach.phase[slot] !== 0) {
         scene.chaseTicks += 1;
-        if (sprinting) {
-            scene.chaseSprints += 1;
-        }
+        scene.chaseSprints += effort;
         return;
     }
     scene.calmHunterTicks += 1;
-    if (sprinting) {
-        scene.calmHunterSprints += 1;
-    }
+    scene.calmHunterSprints += effort;
 }
 
-/** @param {Record<string, any>} scene @param {boolean} threatened @param {boolean} sprinting */
-function tickPrey(scene, threatened, sprinting) {
+/** @param {Record<string, any>} scene @param {boolean} threatened @param {number} effort */
+function tickPrey(scene, threatened, effort) {
     scene.preyTicks += 1;
-    if (sprinting) {
-        scene.preySprints += 1;
-    }
+    scene.preySprints += effort;
     if (threatened) {
         scene.threatPreyTicks += 1;
-        if (sprinting) {
-            scene.threatPreySprints += 1;
-        }
+        scene.threatPreySprints += effort;
         return;
     }
     scene.calmPreyTicks += 1;
-    if (sprinting) {
-        scene.calmPreySprints += 1;
-    }
+    scene.calmPreySprints += effort;
 }
 
-/** @param {Record<string, any>} scene @param {Record<string, any>} world @param {number} slot @param {{hunter: boolean, sprinting: boolean}} flags */
-function noteSprintEnergy(scene, world, slot, { hunter, sprinting }) {
-    if (!sprinting) {
+/** @param {Record<string, any>} scene @param {Record<string, any>} world @param {number} slot @param {{hunter: boolean, effort: number}} flags */
+function noteSprintEnergy(scene, world, slot, { hunter, effort }) {
+    if (effort === 0) {
         return;
     }
     const burn = hunter && world.ageTicks[slot] < scene.juvenileTicks ? scene.juvenileBurn : 1;
-    scene.nominalSprintCharge += scene.sprintCost * burn;
+    scene.nominalSprintCharge += scene.sprintCost * burn * effort;
 }
 
 /** @param {Record<string, any>} scene @param {Record<string, any>} observer @param {Record<string, any>} world */
@@ -90,21 +81,21 @@ export function tickSprint(scene, observer, world) {
         return;
     }
     scene.energyRemoved += lostThisTick;
-    const { alive, huntBySpec, outputs, spec } = world;
+    const { alive, huntBySpec, spec } = world;
     const { intent, scenes } = observer;
     for (let slot = 0; slot < alive.length; slot++) {
         if (alive[slot] !== 1) {
             continue;
         }
-        const sprinting = outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.SPRINT] > 0;
+        const effort = sprintEffort(world, slot);
         const hunter = huntBySpec[spec[slot]] === 1;
         const threatened = intent.scan[slot * SCAN_SIZE + SCAN.THREAT] >= 0;
         if (hunter) {
-            tickHunter(scene, scenes.approach, slot, sprinting);
+            tickHunter(scene, scenes.approach, slot, effort);
         } else {
-            tickPrey(scene, threatened, sprinting);
+            tickPrey(scene, threatened, effort);
         }
-        noteSprintEnergy(scene, world, slot, { hunter, sprinting });
+        noteSprintEnergy(scene, world, slot, { hunter, effort });
     }
 }
 
