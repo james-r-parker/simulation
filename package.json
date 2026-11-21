@@ -51,6 +51,7 @@
     "eval:compare": "node scripts/eval-compare.mjs",
     "eval:power": "node scripts/eval-power.mjs",
     "metric:liveness": "node scripts/metric-liveness.mjs",
+    "traits": "node scripts/traits.mjs",
     "league": "node scripts/league.mjs",
     "probe:memory": "node scripts/memory-probe.mjs",
     "ladder": "node scripts/ladder.mjs",
