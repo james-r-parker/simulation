@@ -259,3 +259,27 @@ describe('hashWorld disease', () => {
         expect(hashWorld(on)).not.toBe(base);
     });
 });
+
+describe('hashWorld rest timer', () => {
+    /** @param {number} ticks `predatorRestTicks` @returns {ReturnType<typeof allocateWorld>} a world with its streams */
+    function restWorld(ticks) {
+        const world = allocateWorld(createConfig({ ...SIMPLE_WORLD, ...SMALL, predatorRestTicks: ticks }));
+        const root = createRng(1);
+        world.rng = Object.fromEntries(STREAMS.map((name) => [name, fork(root, name)]));
+        return world;
+    }
+
+    it('covers the rest timer when hunters rest after a kill', () => {
+        const world = restWorld(60);
+        const base = hashWorld(world);
+        world.restTimer[0] = 5;
+        expect(hashWorld(world)).not.toBe(base);
+    });
+
+    it('hashes a world with no rest timer, which differs from one with an idle timer', () => {
+        const none = restWorld(0);
+        expect(none.restTimer).toBeUndefined();
+        expect(hashWorld(none)).toMatch(/^[0-9a-f]{16}$/);
+        expect(hashWorld(none)).not.toBe(hashWorld(restWorld(60)));
+    });
+});

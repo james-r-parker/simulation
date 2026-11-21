@@ -199,20 +199,11 @@ export const HIT_STRIDE = 3;
 /** Values per pooled channel: `POOLED_HITS x HIT_STRIDE`, the strongest hit first. */
 export const POOLED_STRIDE = POOLED_HITS * HIT_STRIDE;
 
-/**
- * @param {string} name a group name of `BRAIN_IO.sense`
- * @returns {readonly string[]} the group's labels
- */
-const senseGroup = (name) => {
-    const group = BRAIN_IO.sense.find((g) => g.name === name);
-    if (group === undefined) {
-        throw new Error(`BRAIN_IO.sense: no group ${name}`);
-    }
-    return group.labels;
-};
+/** The labels of each group of `BRAIN_IO.sense`, by its name. */
+const SENSE_GROUPS = Object.fromEntries(BRAIN_IO.sense.map((group) => [group.name, group.labels]));
 
 /** Hue values of the two pooled food hits. */
-export const FOOD_HUE_VALUES = senseGroup('food.hue').length;
+export const FOOD_HUE_VALUES = SENSE_GROUPS['food.hue'].length;
 
 /**
  * The body sense values between the channels and the food hues: size, speed and closing of two prey hits and one threat
@@ -380,7 +371,7 @@ export function inputOffsets(config) {
     return Object.freeze({
         pooled: Object.freeze(pooled),
         senseStart,
-        countStart: senseStart + senseGroup('prey').length + senseGroup('threat').length,
+        countStart: senseStart + SENSE_GROUPS.prey.length + SENSE_GROUPS.threat.length,
         foodHueStart: POOLED_VALUES - FOOD_HUE_VALUES,
         bodyStart: POOLED_VALUES,
         scentStart: at(BODY_INPUT.SCENT),
