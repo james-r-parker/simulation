@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Which check a change needs: prints "release" when the change is a Release Please version bump, "docs" when every
-# changed path is Markdown that no build or test reads beyond the design-doc tests, else "full". CI runs
-# `scripts/check.sh --docs` for "docs", nothing but the `scope` job for "release" (only on a release-please-- branch,
-# which check.yml tests) and the whole gate for "full".
+# changed path is Markdown that no build or test reads beyond the design-doc tests, "records" when the change is
+# experiment records, decision reports and docs, else "full". CI runs `scripts/check.sh --docs` for "docs", the docs
+# gate plus the two ledger checks for "records", nothing but the `scope` job for "release" (only on a release-please--
+# branch, which check.yml tests) and the whole gate for "full".
 #
 # Usage:
 #   scripts/change-scope.sh <base-ref>     # the paths changed on HEAD since it left <base-ref> (git diff <base-ref>...HEAD)
@@ -12,6 +13,10 @@
 # Release paths: CHANGELOG.md, package.json, package-lock.json and .release-please-manifest.json, and nothing else. A
 # dependency bump (package.json and package-lock.json alone) reads "release" here too, so the caller must also check
 # the branch (check.yml: release-please--*). Release is tested before docs, since CHANGELOG.md is Markdown.
+#
+# Records paths: anything under evals/ledger/ or evals/decisions/ (experiment records and decision reports; no test reads
+# them since test-data moved the fixtures), plus the docs-only paths above. A diff with no ledger or decision path is
+# "docs", not "records", and one path outside both lists makes it "full". Release is tested first, then docs, then records.
 #
 # <base-ref> is any ref or sha: `origin/main` on a pull request, the merge group's `base_sha` in the merge queue.
 #
@@ -33,7 +38,7 @@ if [[ "${1:-}" == --browser ]]; then
   shift
 fi
 case "${1:-}" in
-  -h | --help) sed -n '2,26p' "$0"; exit 0 ;;
+  -h | --help) sed -n '2,30p' "$0"; exit 0 ;;
 esac
 [[ $# -le 1 ]] || { echo "usage: scripts/change-scope.sh [--browser] [<base-ref>]" >&2; exit 2; }
 
@@ -101,20 +106,34 @@ docs_only() {
   esac
 }
 
+records_only() {
+  case "$1" in
+    evals/ledger/* | evals/decisions/*) return 0 ;;
+    *) docs_only "$1" ;;
+  esac
+}
+
 count=0
+docs=1
 while IFS= read -r path; do
   [[ -z "$path" ]] && continue
   count=$((count + 1))
-  if ! docs_only "$path"; then
+  if ! records_only "$path"; then
     echo "full: $path is not docs-only" >&2
     echo full
     exit 0
   fi
+  docs_only "$path" || docs=0
 done <<<"$paths"
 
 if [[ $count -eq 0 ]]; then
   echo "full: no changed paths" >&2
   echo full
+  exit 0
+fi
+if [[ $docs -eq 0 ]]; then
+  echo "records: $count path(s), all experiment records, decision reports or docs" >&2
+  echo records
   exit 0
 fi
 echo "docs: $count Markdown path(s), all docs-only" >&2
