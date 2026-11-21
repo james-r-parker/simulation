@@ -47,6 +47,7 @@ pub struct SenseParams {
     food_kind: u32,
     ray_reach_by_spec: u32,
     ray_reach: u32,
+    ray_smoke: u32,
     max_agents: u32,
     stamp_count: u32,
     obs_count: u32,
@@ -68,6 +69,7 @@ const D_HERD_RADIUS: usize = 1;
 const D_WIDTH: usize = 2;
 const D_HEIGHT: usize = 3;
 const D_CELL_SIZE: usize = 4;
+const D_SMOKE_PASS: usize = 5;
 
 /// Indices into `rayScratch` (`ray-gather.js` and `ray-march.js`).
 const OX: usize = 0;
@@ -126,6 +128,7 @@ struct Sense {
     best_key: *mut f64,
     dirs: *mut f64,
     reach: *mut f64,
+    smoke: *mut f64,
     d: *const f64,
     p: &'static SenseParams,
 }
@@ -142,6 +145,7 @@ impl Sense {
             best_key: at(p.best_key),
             dirs: at(p.ray_dirs),
             reach: at(p.ray_reach),
+            smoke: at(p.ray_smoke),
             d: at(p.sense_doubles),
             p,
         }
@@ -155,7 +159,7 @@ impl Sense {
 
     #[inline(always)]
     unsafe fn dbl(&self, i: usize) -> f64 {
-        // SAFETY: the doubles block holds five doubles.
+        // SAFETY: the doubles block holds six doubles.
         unsafe { *self.d.add(i) }
     }
 
@@ -536,8 +540,78 @@ unsafe fn nearest_covered(g: &Sense, count: usize, slot: usize) -> u32 {
     }
 }
 
-/// Gathers the caster's circles within the full range and finds every ray's nearest hit within its own reach. The
-/// origin, range and heading are in `rayScratch`; the caster's specialisation is in `spec`.
+/// Whether a hit key is a smoke cloud.
+#[inline(always)]
+fn is_smoke(key: f64) -> bool {
+    (SMOKE * KIND_STRIDE..HERD * KIND_STRIDE).contains(&key)
+}
+
+/// The next hit of ray `k` past a smoke cloud it met at `from`, out to `limit`: the nearest wall or row that is not a
+/// smoke cloud nor, when `caster_ring` is given (rings conceal), an agent concealed from the caster; ties to the lower
+/// key. `Infinity` for none.
+unsafe fn next_past_smoke(g: &Sense, count: usize, k: usize, span: (f64, f64), caster_ring: Option<u8>) -> (f64, f64) {
+    // SAFETY: as for `nearest_all`; `coverRing` holds `maxAgents` bytes.
+    unsafe {
+        let (from, limit) = span;
+        let rays = g.p.ray_count as usize;
+        let (dx, dy) = (*g.dirs.add(k), *g.dirs.add(rays + k));
+        let t_wall = js_min(
+            wall_distance(g.sc(OX), dx, g.dbl(D_WIDTH)),
+            wall_distance(g.sc(OY), dy, g.dbl(D_HEIGHT)),
+        );
+        let mut best = if t_wall >= from && t_wall <= limit { t_wall } else { f64::INFINITY };
+        let mut best_key = WALL * KIND_STRIDE;
+        let ring = at::<u8>(g.p.cover_ring);
+        for row in 0..count {
+            let r = g.local.add(row * LOCAL_STRIDE);
+            let key = *r.add(3);
+            if is_smoke(key) || caster_ring.is_some_and(|own| concealed(ring, key, own)) {
+                continue;
+            }
+            let t = circle_hit(dx * *r + dy * *r.add(1), *r.add(2));
+            if t >= from && t <= limit && (t < best || (t == best && key < best_key)) {
+                best = t;
+                best_key = key;
+            }
+        }
+        (best, best_key)
+    }
+}
+
+/// smokeSight (docs/designs/body-genes.md, T13a): a ray whose nearest hit is a smoke cloud keeps `smokePass` of its
+/// remaining reach and reports the next hit within it, its `raySmoke` entry set to 1 so the smoke channel still reads;
+/// a ray with no hit there keeps the cloud. Every entry of `raySmoke` is written; a pass of 0 changes no hit.
+unsafe fn pass_smoke(g: &Sense, count: usize, slot: usize) {
+    // SAFETY: the best arrays, `reach` and `raySmoke` hold `rayCount` doubles.
+    unsafe {
+        let rays = g.p.ray_count as usize;
+        for k in 0..rays {
+            *g.smoke.add(k) = 0.0;
+        }
+        let pass = g.dbl(D_SMOKE_PASS);
+        if pass <= 0.0 {
+            return;
+        }
+        let caster_ring = if g.p.conceals != 0 { Some(*at::<u8>(g.p.cover_ring).add(slot)) } else { None };
+        for k in 0..rays {
+            if !is_smoke(*g.best_key.add(k)) {
+                continue;
+            }
+            let from = *g.best_t.add(k);
+            let limit = from + pass * (*g.reach.add(k) - from);
+            let (t, key) = next_past_smoke(g, count, k, (from, limit), caster_ring);
+            if t != f64::INFINITY {
+                *g.best_t.add(k) = t;
+                *g.best_key.add(k) = key;
+                *g.smoke.add(k) = 1.0;
+            }
+        }
+    }
+}
+
+/// Gathers the caster's circles within the full range and finds every ray's nearest hit within its own reach, then
+/// lets the rays that met smoke see on through it by the caster's smoke pass. The origin, range and heading are in
+/// `rayScratch`; the caster's specialisation is in `spec` and its smoke pass in the doubles block.
 /// Returns the gathered row count; with `conceals` the skipped count goes to `concealed`.
 ///
 /// # Safety
@@ -553,6 +627,7 @@ pub unsafe fn sense_slot(params: u32, slot: usize) -> usize {
         } else {
             nearest_all(&g, count);
         }
+        pass_smoke(&g, count, slot);
         count
     }
 }

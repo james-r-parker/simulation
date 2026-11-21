@@ -49,7 +49,7 @@ describe('LANES', () => {
         expect(LANES.some((lane) => lane.field === 'canHunt')).toBe(false);
     });
 
-    it('names each lane once, after its key or else its field, with a family; the first lanes moved (T3)', () => {
+    it('names each lane once, after its key or else its field, with a family; the lanes moved in Phase 1 (T3, T13, T13a)', () => {
         expect(new Set(LANES.map((lane) => lane.name)).size).toBe(LANE_COUNT);
         for (const lane of LANES) {
             expect(lane.name).toBe(lane.key ?? lane.field ?? lane.name);
@@ -63,7 +63,11 @@ describe('LANES', () => {
             'sprintDrain',
             'sprintRefill',
             'fatSlowShare',
+            'antennaReach',
+            'refugeSenseRange',
             'visionRange',
+            'hearing',
+            'smokeSight',
             'maxEnergy',
             'passiveLoss',
             'temperatureGainMove',
@@ -84,12 +88,12 @@ describe('LANES', () => {
 });
 
 describe('the lanes a trait adds', () => {
-    it('are hearing and nerve at 1 and smokeSight at 0, for every spec, with no key and no field', () => {
+    it('are hearing, smokeSight and nerve at 1, for every spec, with no key and no field (smoke passes above 1)', () => {
         const added = LANES.filter((lane) => lane.key === null && lane.field === null);
         expect(added.map((lane) => lane.name)).toEqual(['hearing', 'smokeSight', 'nerve']);
         for (const specName of SPEC_NAMES) {
             const bases = laneBases(config, specName);
-            expect([bases.hearing, bases.smokeSight, bases.nerve]).toEqual([1, 0, 1]);
+            expect([bases.hearing, bases.smokeSight, bases.nerve]).toEqual([1, 1, 1]);
         }
     });
 });

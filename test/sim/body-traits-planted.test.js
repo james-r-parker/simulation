@@ -19,7 +19,7 @@ const trait = (/** @type {string} */ name) => /** @type {any} */ (TRAITS.find((c
  */
 const lanesOf = (world, slot) => Object.fromEntries(LANES.map((lane) => [lane.name, world.lanes[lane.name][slot]]));
 
-/** The new traits the first lanes' readers serve, each with a span inside its menu's bound. */
+/** The new traits (T8 the first five; T13a the senses, the four trades, gut and nerve), each with a span in bounds. */
 /** @type {Array<[string, number]>} */
 const PLANTED = [
     ['speed', 0.2],
@@ -27,6 +27,15 @@ const PLANTED = [
     ['fat', 0.3],
     ['heatBand', 8],
     ['burn', 0.2],
+    ['hearing', 0.2],
+    ['nose', 0.2],
+    ['smokeSight', 0.3],
+    ['eyesOrEars', 0.2],
+    ['clearOrSmoke', 0.2],
+    ['agileOrFast', 0.2],
+    ['wideOrFar', 0.2],
+    ['gut', 0.2],
+    ['nerve', 0.2],
 ];
 
 describe('a planted gene of a new trait', () => {

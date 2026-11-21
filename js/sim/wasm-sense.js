@@ -37,6 +37,7 @@ export const SENSE_ARRAYS = Object.freeze([
     'foodKind',
     'rayReachBySpec',
     'rayReach',
+    'raySmoke',
 ]);
 
 /**
@@ -90,6 +91,7 @@ const D_HERD_RADIUS = 1;
 const D_WIDTH = 2;
 const D_HEIGHT = 3;
 const D_CELL_SIZE = 4;
+const D_SMOKE_PASS = 5;
 
 /**
  * @param {Record<string, any>} world the world, its fields not yet in an arena
@@ -104,8 +106,9 @@ export function senseSpecs(world) {
         ['rayBestKey', Float64Array, config.rayCount],
         ['rayDirs', Float64Array, 2 * config.rayCount],
         ['rayReach', Float64Array, config.rayCount],
+        ['raySmoke', Float64Array, config.rayCount],
         ['senseParams', Int32Array, SENSE_ARRAYS.length + WORDS.length],
-        ['senseDoubles', Float64Array, 5],
+        ['senseDoubles', Float64Array, 6],
     ];
 }
 
@@ -151,8 +154,9 @@ export function beginSense(world, hash) {
 }
 
 /**
- * Gathers one caster's circles (the food among them only of a kind it can eat) and finds every ray's nearest hit into `rayBestT` and `rayBestKey`, each ray
- * reaching its specialisation's share of the range (`rayReachBySpec`). The caster's origin, range and heading must already be in `world.rayScratch`.
+ * Gathers one caster's circles (the food among them only of a kind it can eat) and finds every ray's nearest hit into
+ * `rayBestT` and `rayBestKey`, each ray reaching its specialisation's share of the range (`rayReachBySpec`); a ray that
+ * meets smoke sees on through it by the caster's smoke pass, marked in `raySmoke`. The caster's origin, range and heading must already be in `world.rayScratch`.
  * @param {Record<string, any>} world a world on the WASM kernels, begun by `beginSense` this tick
  * @param {number} slot the casting agent
  * @returns {number} the gathered row count in `world.rayLocal`
@@ -166,5 +170,8 @@ export function senseSlot(world, slot) {
     p[SENSE_WORD.seeMeat] = world.meatFoodBySpec[spec] > 0 ? 1 : 0;
     // senses-and-motor Phase 5: the caster's row of `rayReachBySpec` shapes each ray's reach.
     p[SENSE_WORD.spec] = spec;
+    // body-genes T13a: the share of a ray's remaining reach that passes on through smoke, the caster's `smokeSight` lane
+    // above 1 (0 at its base of 1, where smoke ends the ray).
+    arena.views.senseDoubles[D_SMOKE_PASS] = Math.min(1, Math.max(0, world.lanes.smokeSight[slot] - 1));
     return arena.exports.sense_slot(arena.offsets.senseParams, slot);
 }

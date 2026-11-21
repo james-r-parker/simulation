@@ -26,8 +26,8 @@ const THRESHOLDS = [
 ];
 
 /**
- * The lanes whose sim readers read the lane and no longer the config key (body-genes.md Phase 1, T3): the movement,
- * heat and energy lanes the first traits shift. The rest move family by family in Phase 5.
+ * The lanes whose sim readers read the lane and no longer the config key (body-genes.md Phase 1, T3, T13 and T13a):
+ * the movement, heat and energy lanes the first traits shift, the two cost lanes and the senses of the new traits. The rest move family by family in Phase 5.
  */
 const MOVED = new Set([
     'maxVelocity',
@@ -44,6 +44,10 @@ const MOVED = new Set([
     'temperatureLossPassive',
     'heatSpeedCap',
     'sprintHeat',
+    'antennaReach',
+    'refugeSenseRange',
+    'hearing',
+    'smokeSight',
     ...THRESHOLDS,
 ]);
 
@@ -72,7 +76,7 @@ const FAMILIES = {
     senses: {
         keys: 'antennaAngle antennaReach refugeSenseRange',
         fields: 'visionRange rearVisionShare',
-        added: { hearing: 1, smokeSight: 0, nerve: 1 },
+        added: { hearing: 1, smokeSight: 1, nerve: 1 },
     },
     energy: {
         keys: 'handlingTicks maxEnergy passiveLoss movementCost turnCost sizeEnergyLoss visionCost huntUpkeep baseSize minSize energyToSize satiationShare digestTicks juvenileBurn juvenilePlantShare sickDose sickDrain doseDecay lethalDose diseaseDrain diseaseTicks',
@@ -140,7 +144,7 @@ export const LANES = Object.freeze(
                 }),
             ),
         ...Object.entries(added).map(([name, base]) =>
-            Object.freeze({ name, family, key: null, field: null, base, kind: 'ratio', moved: false }),
+            Object.freeze({ name, family, key: null, field: null, base, kind: 'ratio', moved: MOVED.has(name) }),
         ),
     ]),
 );
