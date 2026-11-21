@@ -49,7 +49,10 @@ function world(bodies, { bitten, tick = TICK, bite = 1, contact = bitten } = {})
         vx: new Float32Array(8),
         vy: new Float32Array(8),
         size: new Float32Array(8),
-        lanes: { visionRange: new Float64Array(8).fill(200) },
+        lanes: {
+            visionRange: new Float64Array(8).fill(200),
+            huntSizeRatio: new Float64Array(8).fill(config.huntSizeRatio),
+        },
         genomeId: Uint32Array.from([100, 101, 102, 103, 104, 105, 106, 107]),
         parentA: new Uint32Array(8),
         parentB: new Uint32Array(8),

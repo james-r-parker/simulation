@@ -16,7 +16,7 @@ const PI = 3.141592653589793;
  * @returns {boolean}
  */
 export function inJaws(world, biter, victim) {
-    if (world.config.biteArc >= PI) {
+    if (world.lanes.biteArc[biter] >= PI) {
         return true;
     }
     const dx = world.x[victim] - world.x[biter];
@@ -38,7 +38,7 @@ export function couldBite(world, biter, victim) {
     return (
         specParams(world.config, world.spec[biter]).canHunt &&
         !isKin(world, biter, victim) &&
-        world.size[biter] > world.config.huntSizeRatio * world.size[victim]
+        world.size[biter] > world.lanes.huntSizeRatio[biter] * world.size[victim]
     );
 }
 
