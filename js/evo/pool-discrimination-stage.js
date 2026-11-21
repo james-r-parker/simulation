@@ -53,6 +53,8 @@ const STAGE_CONFIG = Object.freeze({
  * @property {Float32Array} [weights] the brain row the agent is born with (default: all zero)
  * @property {[number, number]} [parents] the agent's `parentA` and `parentB` ids (default `[0, 0]`; a shared nonzero
  *   id makes two agents kin)
+ * @property {number} [vx] the agent's starting velocity x (default 0); what a ray's speed and closing lanes read
+ * @property {number} [vy] the agent's starting velocity y (default 0)
  */
 
 /**

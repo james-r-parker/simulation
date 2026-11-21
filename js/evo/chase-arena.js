@@ -48,6 +48,8 @@ const EMPTY = Object.freeze({
  * @property {Float32Array} [weights] the brain row it is born with (default: all zero)
  * @property {[number, number]} [parents] its `parentA` and `parentB` ids (default `[0, 0]`; a shared nonzero id makes two
  *   agents kin)
+ * @property {number} [vx] its starting velocity x (default 0); wins over `atRest`, so a staged body can be closing or leaving
+ * @property {number} [vy] its starting velocity y (default 0)
  */
 
 /**
@@ -109,6 +111,21 @@ function placeFoods(world, foods) {
 /**
  * @param {Record<string, any>} world the world
  * @param {number} slot the freshly spawned agent
+ * @param {{atRest: boolean, vx?: number, vy?: number}} start whether to stop it, and the velocity it is given (which wins)
+ * @returns {void}
+ */
+function startVelocity(world, slot, { atRest, vx, vy }) {
+    if (atRest) {
+        world.vx[slot] = 0;
+        world.vy[slot] = 0;
+    }
+    world.vx[slot] = vx ?? world.vx[slot];
+    world.vy[slot] = vy ?? world.vy[slot];
+}
+
+/**
+ * @param {Record<string, any>} world the world
+ * @param {number} slot the freshly spawned agent
  * @param {Body} body where and how to stage it
  * @param {boolean} atRest whether to stop it
  * @returns {void}
@@ -119,10 +136,7 @@ function placeBody(world, slot, body, atRest) {
     world.x[slot] = body.x;
     world.y[slot] = body.y;
     world.angle[slot] = body.angle;
-    if (atRest) {
-        world.vx[slot] = 0;
-        world.vy[slot] = 0;
-    }
+    startVelocity(world, slot, { atRest, vx: body.vx, vy: body.vy });
     if (body.baseSize !== undefined) {
         world.lanes.baseSize[slot] = body.baseSize;
         updateSize(world, slot);

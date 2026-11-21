@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { REFLEX_CASES, caseNamed, casesFor } from '../../js/evo/reflex-cases.js';
 
 describe('REFLEX_CASES', () => {
-    it('lists the seventeen cases, the foragers, predators and roles in turn, frozen', () => {
+    it('lists the twenty-three cases, the foragers, predators and roles in turn, frozen', () => {
         expect(REFLEX_CASES.map((c) => c.name)).toEqual([
             'flee-threat',
             'approach-food',
@@ -21,6 +21,12 @@ describe('REFLEX_CASES', () => {
             'clear-the-herd:reproducer',
             'clear-the-herd:scout',
             'clear-the-herd:defender',
+            'pick-the-weak',
+            'flee-what-closes',
+            'flee-what-closes:reproducer',
+            'flee-what-closes:scout',
+            'mind-the-numbers',
+            'answer-the-call',
         ]);
         expect(Object.isFrozen(REFLEX_CASES)).toBe(true);
     });
@@ -36,11 +42,11 @@ describe('REFLEX_CASES', () => {
 });
 
 describe('casesFor', () => {
-    it('gives foragers six cases, predators five, the reproducer two, the scout two and the defender two', () => {
-        expect(casesFor(0)).toHaveLength(6);
-        expect(casesFor(1)).toHaveLength(5);
-        expect(casesFor(2)).toHaveLength(2);
-        expect(casesFor(3)).toHaveLength(2);
+    it('gives foragers seven cases, predators eight, the reproducer three, the scout three and the defender two', () => {
+        expect(casesFor(0)).toHaveLength(7);
+        expect(casesFor(1)).toHaveLength(8);
+        expect(casesFor(2)).toHaveLength(3);
+        expect(casesFor(3)).toHaveLength(3);
         expect(casesFor(4)).toHaveLength(2);
     });
 });

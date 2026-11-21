@@ -69,6 +69,7 @@ describe('parseArgs', () => {
         expect(parseArgs(['--champions', 'd', '--role', 'reproducer']).cases).toEqual([
             'flee-on-alarm:reproducer',
             'clear-the-herd:reproducer',
+            'flee-what-closes:reproducer',
         ]);
         expect(
             parseArgs(['--champions', 'd', '--role', 'forager', '--cases', 'flee-threat,sprint-on-prey']).cases,
@@ -205,6 +206,7 @@ describe('runReflex', () => {
             'avoid-obstacle',
             'flee-on-alarm',
             'clear-the-herd',
+            'flee-what-closes',
         ]);
         expect(Object.keys(rows[1].row?.cases ?? {})).toEqual([
             'approach-prey',
@@ -212,6 +214,9 @@ describe('runReflex', () => {
             'sprint-on-prey',
             'hold-the-bite',
             'clear-the-herd:predator',
+            'pick-the-weak',
+            'mind-the-numbers',
+            'answer-the-call',
         ]);
         expect(Object.keys(bars)).toHaveLength(REFLEX_CASES.length);
         expect(lines.join('\n')).toContain('reference');
@@ -219,7 +224,7 @@ describe('runReflex', () => {
             .split('\n')
             .filter(Boolean)
             .map((l) => JSON.parse(l));
-        expect(log.filter((l) => l.event === 'ReflexResult')).toHaveLength(11);
+        expect(log.filter((l) => l.event === 'ReflexResult')).toHaveLength(15);
         expect(log.filter((l) => l.event === 'ReflexCase').length).toBeGreaterThan(0);
     });
 

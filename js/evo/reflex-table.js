@@ -18,6 +18,9 @@ import { REFLEX_TRIALS, SEQUENCE_TICKS } from './reflex-stage.js';
  */
 export const RAY_LANES = Object.freeze(['rayHue', 'raySize', 'raySpeed', 'rayClosing']);
 
+/** Offset of the hunt half of a `heard` row (`HEARD_STRIDE` of js/sim/agent-arrays.js: alarm, then hunt). */
+const HUNT_HALF = 3;
+
 /**
  * @typedef {object} CaseTable
  * @property {string} name the case's name
@@ -65,16 +68,17 @@ function placeHerd(world, herd) {
 }
 
 /**
- * Writes a heard alarm into the subject's `heard` row, where the signal phase leaves it for `senseAll` to read.
+ * Writes a heard call into the subject's `heard` row, where the signal phase leaves it for `senseAll` to read.
  * @param {Record<string, any>} world the staged world
  * @param {import('./reflex-stage.js').Heard | undefined} heard the call, if one is heard
  * @returns {void}
  */
-function hearAlarm(world, heard) {
+function hearCall(world, heard) {
     if (heard !== undefined) {
-        world.heard[0] = heard.loudness;
-        world.heard[1] = heard.ux;
-        world.heard[2] = heard.uy;
+        const row = heard.call === 'hunt' ? HUNT_HALF : 0;
+        world.heard[row] = heard.loudness;
+        world.heard[row + 1] = heard.ux;
+        world.heard[row + 2] = heard.uy;
     }
 }
 
@@ -89,7 +93,7 @@ function senseTick(stage, config) {
     const herd = stage.herd === undefined ? {} : { herdCount: 1, herdSize: 1, herdDungZoneMax: 0 };
     const { world } = stageWorld({ ...stage, agents, config: arenaConfig({ ...config, ...herd }) });
     placeHerd(world, stage.herd);
-    hearAlarm(world, stage.heard);
+    hearCall(world, stage.heard);
     buildHash(world.hash, world);
     senseAll(world, world.hash);
     const { rayCount } = world.config;
