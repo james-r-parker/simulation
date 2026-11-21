@@ -1,6 +1,6 @@
 # Status effects
 
-**Status:** In progress - Phase 1 is built: the registry and every modifier of today (body, feeding, life and signal families) read through `liveOf` and `gateOpen`, with the effect rows in the inspector. Next: Phase 2, the social effects with their numbers at 0 (T9 to T12, T14).
+**Status:** In progress - Phases 1 and 2 are built: every modifier of today reads through `liveOf` and `gateOpen`, and the ten social effects exist with their numbers at 0 (T14, the Phase 2 review, and the 16-seed share run are open). Next: Phase 3, the numbers (T13, T15 to T19).
 **Validated:** 23e8cc66 (2026-11-21)
 **Scheduled by:** [fair-chase.md](fair-chase.md) step 2 - built straight after body-genes.md Phase 1 and before the calculator, which reads the effects; every large rules change lands before any training
 **Depends on:** [body-genes.md](body-genes.md)
@@ -161,7 +161,7 @@ Inside the `bench-check` margin; `fadeEffects` is a new phase row of `bench:part
 | ----- | -------- | ------- |
 | A     | T1 to T8 | Sonnet  |
 
-### Phase 2 - The social effects, neutral
+### Phase 2 - The social effects, neutral (built)
 
 **Targets:** none - every new number is 0; its readings are the effect shares of "Detectors" on the default world, which say how often each effect's trigger occurs
 
@@ -226,7 +226,7 @@ The numbers are chosen with the calculator and read on the default world with [b
 | T7  | (built) Add a test that fails a within-life rule left outside the registry: the functions the Phase 1 table deletes are gone, and `thrustOf`, `tickCost` and `canEatNow` hold no condition of their own beyond the rules of the "Not effects" table                                                                                 | [mechanical] | T2, T3, T4 |
 | T8  | (built) Conformance review of Phase 1 by a fresh agent, in parallel with `scripts/check.sh` (reviewed on PR 600: nothing blocking; it found the hot-path cost, the missing bound on the re-pin and the undeclared stored rows, all fixed in the PR)                                                                                 | [judgement]  | T5, T6, T7 |
 
-### Phase 2 - The social effects, neutral
+### Phase 2 - The social effects, neutral (built)
 
 | #   | Task                                                                                                                                                                                                                                                                                                                                     | Nature      | Depends on   |
 | --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ------------ |
