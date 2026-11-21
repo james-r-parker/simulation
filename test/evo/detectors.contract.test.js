@@ -2,8 +2,10 @@
 // registry entries that name its modules, `onSlotFree` clears its per-slot state, and every event it names exists in
 // `EVENTS`.
 
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { DETECTORS } from '../../js/evo/detectors.js';
+import { SOURCE_BY_MODULE } from '../../js/evo/metric-registry/entry.js';
 import { METRICS } from '../../js/evo/metric-registry/index.js';
 import { compileDetectors } from '../../js/evo/observer-detectors.js';
 import { EVENTS } from '../../js/sim/events.js';
@@ -79,5 +81,29 @@ describe('DETECTORS', () => {
     it('refuses a detector that names an event EVENTS does not hold', () => {
         const bad = { ...DETECTORS[0], name: 'bad', on: { NOT_AN_EVENT: () => {} } };
         expect(() => compileDetectors([bad])).toThrow(/bad names the event NOT_AN_EVENT/);
+    });
+
+    it('holds SOURCE_BY_MODULE to the source tests the detectors declare', () => {
+        // `entry.js` cannot import the detectors (`metrics-stats.js` imports the registry, which imports `entry.js`),
+        // so the table is a mirror that this test keeps equal to the detectors' `sourceTest`.
+        const declared = Object.fromEntries(
+            DETECTORS.filter((detector) => detector.sourceTest !== undefined).flatMap((detector) =>
+                detector.modules.map((module) => [module, detector.sourceTest]),
+            ),
+        );
+        const tableOnly = ['js/evo/metrics-combat.js'];
+        expect({ ...declared, ...Object.fromEntries(tableOnly.map((m) => [m, SOURCE_BY_MODULE[m]])) }).toEqual(
+            SOURCE_BY_MODULE,
+        );
+    });
+
+    it('lists every metric a detector returns in the committed report names', () => {
+        /** @type {string[]} */
+        const names = JSON.parse(readFileSync(new URL('../fixtures/metric-names.json', import.meta.url), 'utf8'));
+        for (const detector of DETECTORS) {
+            for (const metric of Object.keys(detector.metrics(r.observer.scenes[detector.name], r.world, r.observer))) {
+                expect(names, `${detector.name} returns ${metric}`).toContain(metric);
+            }
+        }
     });
 });

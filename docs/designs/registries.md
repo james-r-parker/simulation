@@ -1,6 +1,6 @@
 # Registries
 
-**Status:** In progress - Phase 1 is built: the events, the spec names and the per-slot state list are each one declared list, with contract tests; every golden `worldHash` is unchanged. Phase 2 (the brain schema) is built inside body-genes.md T6a, and Phase 3 (detectors) is next.
+**Status:** In progress - Phases 1 and 3 are built: the events, the spec names, the per-slot state and the 42 scene detectors are each one declared list, with contract tests, and every golden `worldHash` and a 2-seed eval report are unchanged. Phase 2 is built inside body-genes.md T6a. The bench reading and T12 are the coordinator's.
 **Validated:** 23e8cc66 (2026-11-21)
 **Scheduled by:** [metric-noise.md](metric-noise.md) step 1 - the detector interface is built before metric-noise.md Phase 6 adds the role metrics, since each detector added today touches 12 to 22 files
 
@@ -66,22 +66,29 @@ Where the code differs from the text above, and what the plan did not say:
 
 ## Detectors (Phase 3)
 
-A detector is a module with one shape, and the observer loops over a list of them.
+A detector is a module with one shape, and the observer loops over a list of them (`js/evo/observer-detectors.js`).
 
-| Field                     | Meaning                                                                                                                             |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `name`                    | the detector's name; the metric registry's entries name it as their source                                                          |
-| `create(config)`          | its state                                                                                                                           |
-| `every`                   | how often `onTick` runs, in ticks (1, or a sampling interval)                                                                       |
-| `onTick(state, world)`    | optional                                                                                                                            |
-| `on`                      | a map from an event name of `EVENTS` to `fn(state, world, event)`; the observer dispatches each event to the detectors that name it |
-| `onSlotFree(state, slot)` | optional; a detector with per-slot counters resets them here                                                                        |
-| `metrics(state)`          | an object from metric name to value                                                                                                 |
+| Field                             | Meaning                                                                                                                                                                                         |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`                            | the detector's name, and the key of its state in `observer.scenes`                                                                                                                              |
+| `modules`                         | the repo paths its metrics are registered under (`module` of a registry entry); the registry's entries name the detector through them                                                           |
+| `sourceTest`                      | optional; the one source test of every metric of those modules                                                                                                                                  |
+| `lean`, `atStart`                 | optional; `lean` builds and feeds it in a lean observer, `atStart` runs its `onTick` at tick 0 too                                                                                              |
+| `create(config, {runTicks})`      | its state                                                                                                                                                                                       |
+| `link(states)`                    | optional; wires the state to the other detectors' states once all exist (the chase detectors)                                                                                                   |
+| `every`                           | how often `onTick` runs, in ticks (1, or a sampling interval)                                                                                                                                   |
+| `onTick(state, world, observer)`  | optional                                                                                                                                                                                        |
+| `on`                              | a map from an event name of `EVENTS` to `fn(state, world, o, observer)`, `o` being the record's offset in `world.events.data`; the observer dispatches each event to the detectors that name it |
+| `onSlotFree(state, slot)`         | optional; a detector with per-slot counters resets them here                                                                                                                                    |
+| `metrics(state, world, observer)` | an object from metric name to value                                                                                                                                                             |
 
-- `DETECTORS` in `js/evo/detectors.js` lists every detector; `js/evo/observer-scenes.js` and the hand wiring go.
-- The contract test: the keys `metrics()` returns are exactly the registry entries that name the detector, so a metric cannot be registered and not computed, or computed and not registered. `SOURCE_BY_MODULE` and `test/fixtures/metric-names.json` are generated.
-- A lean run (training episodes) is the same loop over the detectors a caller asks for.
+- `DETECTORS` in `js/evo/detectors.js` lists every detector, in the order the observer runs them; `js/evo/observer-scenes.js` and the hand wiring are gone. The order is the old per-tick order, and it matters where a detector reads another's state (the approach detector before stillness, sprint and kinematics).
+- Dispatch: every death first (its handlers, then the slot resets), then the other records in order (a birth resets its slot before its handlers run), as `applyEvents` orders them. A handler that throws is reported with the detector and the event it was reading.
+- The contract test: the keys `metrics()` returns are exactly the registry entries whose `module` the detector names, so a metric cannot be registered and not computed, or computed and not registered. The rule scenes (proof, heritage, niche, mate) name no module: `ruleMetrics` in `js/evo/metrics-rules.js` still merges their metrics into the selection metrics.
+- `SOURCE_BY_MODULE` (`js/evo/metric-registry/entry.js`) and `test/fixtures/metric-names.json` stay committed, and the contract test holds them to the detectors: `entry.js` cannot import the detectors (`metrics-stats.js` imports the registry, which imports `entry.js`), so a generated table would be a cycle. The table must equal the detectors' `sourceTest` declarations, and every metric a detector returns must be in the fixture.
+- A lean run (training episodes) is the same loop over `LEAN_DETECTORS` (terrain and style).
 - The move is a refactor: an eval report is byte-identical before and after each family moves.
+- One stager: `stageArena` in `js/evo/chase-arena.js` places the rocks, the foods and the bodies for the chase arenas, the drills, the reflex cases and the role scenes; `stageWorld` (`js/evo/pool-discrimination-stage.js`) is its drill-shaped entry. The one scenario entry shape is not built: the drill, reflex-case and chase-envelope entries carry different run protocols, and [role-budget.md](role-budget.md) adds its scenes through `stageArena`; the shape is settled there once a second scene kind exists.
 
 ## Phases
 
@@ -101,7 +108,7 @@ A detector is a module with one shape, and the observer loops over a list of the
 | ----- | ------ | ------- |
 | B     | T6, T7 | Sonnet  |
 
-### Phase 3 - Detectors
+### Phase 3 - Detectors (built)
 
 **Targets:** bench.observe_ms@500
 
@@ -157,13 +164,13 @@ Inside the `bench-check` margin; an eval report is byte-identical before and aft
 
 ### Phase 3 - Detectors
 
-| #   | Task                                                                                                                                                                                                        | Nature       | Depends on |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T8  | Add `js/evo/detectors.js`, the detector shape and the observer's loop with event dispatch, with the contract test on three moved detectors; a byte-identical eval report                                    | [judgement]  | T2         |
-| T9  | Move the hunter and chase scene modules to the shape, a family to a commit, each with a byte-identical report                                                                                               | [mechanical] | T8         |
-| T10 | Move the ecology, social, brain and world scene modules the same way; delete `js/evo/observer-scenes.js` and the hand wiring                                                                                | [mechanical] | T9         |
-| T11 | Generate `SOURCE_BY_MODULE` and `test/fixtures/metric-names.json` from the detectors; give the role scenes of [role-budget.md](role-budget.md) and the drills one `stageArena` and one scenario entry shape | [judgement]  | T10        |
-| T12 | Conformance review of Phase 3 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                                         | [judgement]  | T11        |
+| #   | Task                                                                                                                                                                                                                                                                                | Nature       | Depends on |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T8  | (built) Add `js/evo/detectors.js`, the detector shape and the observer's loop with event dispatch, with the contract test on three moved detectors; a byte-identical eval report                                                                                                    | [judgement]  | T2         |
+| T9  | (built) Move the hunter and chase scene modules to the shape, a family to a commit, each with a byte-identical report                                                                                                                                                               | [mechanical] | T8         |
+| T10 | (built) Move the ecology, social, brain and world scene modules the same way; delete `js/evo/observer-scenes.js` and the hand wiring                                                                                                                                                | [mechanical] | T9         |
+| T11 | (built) Hold `SOURCE_BY_MODULE` and `test/fixtures/metric-names.json` to the detectors (a generated table is an import cycle); give the role scenes of [role-budget.md](role-budget.md) and the drills one `stageArena`. The one scenario entry shape is deferred to role-budget.md | [judgement]  | T10        |
+| T12 | Conformance review of Phase 3 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                                                                                                                 | [judgement]  | T11        |
 
 ## Verification
 

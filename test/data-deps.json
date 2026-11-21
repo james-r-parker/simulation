@@ -192,6 +192,10 @@
     "test/evo/curriculum.test.js": [
         "test/fixtures/train-curriculum.json"
     ],
+    "test/evo/detectors.contract.test.js": [
+        "js/evo/metrics-combat.js",
+        "test/fixtures/metric-names.json"
+    ],
     "test/evo/drill-adrift.test.js": [
         "test/fixtures/stages/hunt-weak.json"
     ],
