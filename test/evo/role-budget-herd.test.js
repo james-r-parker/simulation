@@ -114,13 +114,14 @@ describe('budgetHerd at the defaults', () => {
         expect(f.trample.walkSurvives).toBe(61);
     });
 
-    it('is impossible on run for a predator, which sees the herd 115 px off from behind and needs 36 ticks to clear', () => {
+    it('is n/a for a predator, which hunts: the herd turns from a hunter, so no step is read and the trample count is kept', () => {
         const p = b('predator');
-        expect(p.row.status).toBe('impossible');
-        expect(p.row.binding).toBe('run');
+        expect(p.row.status).toBe('n/a');
+        expect(p.row.binding).toBe('the herd turns from a hunter');
+        expect(Object.values(p.cells).map((c) => c.status)).toEqual(['n/a', 'n/a', 'n/a', 'n/a']);
         expect(p.worst.sight).toBeCloseTo(400 * 0.4 - 45, 6);
         expect(p.typical.sight).toBe(355);
-        expect(p.cells.survive.margin).toBe(14);
+        expect(p.trample.survives).toBe(14);
     });
 
     it('a body that can outrun the herd straight ahead says so: 8 against 6.5', () => {
@@ -135,9 +136,9 @@ describe('budgetHerd at the defaults', () => {
 });
 
 describe('budgetHerd where the numbers move', () => {
-    it('a slower herd leaves the predator time: with a run speed of 2 the row is no longer impossible on run', () => {
+    it('a slower herd does not read a predator either: the herd turns from a hunter at any run speed', () => {
         const slow = createConfig({ herdRunSpeed: 2 });
-        expect(budgetHerd(slow, roleParams(slow, 'predator'), MODEL_DEFAULTS).cells.run.status).not.toBe('impossible');
+        expect(budgetHerd(slow, roleParams(slow, 'predator'), MODEL_DEFAULTS).row.status).toBe('n/a');
     });
 
     it('a body with less than one trample of energy cannot survive: survive is impossible', () => {

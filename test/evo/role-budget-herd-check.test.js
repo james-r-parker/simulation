@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createConfig } from '../../js/sim/config.js';
 import { HERD_SCENE_SPECS, HERD_TOLERANCE, herdCheck, herdReadings } from '../../js/evo/role-budget-herd-check.js';
 import { MODEL_DEFAULTS } from '../../js/evo/role-budget-model.js';
+import { playStampede } from '../../js/evo/role-scenes-herd.js';
 
 const world = createConfig({});
 
@@ -28,10 +29,20 @@ describe('herdReadings', () => {
     });
 
     it('reads a body that reacts too late to clear: the sim tramples it where the formula says it is not clear', () => {
-        const late = herdReadings(world, { ...MODEL_DEFAULTS, reactionTicks: 45 }, 'forager');
-        expect(late).toHaveLength(4);
-        expect(late[3].formula).toBe(true);
-        expect(late[3].scene).toBe(true);
+        const late = { ...MODEL_DEFAULTS, reactionTicks: 45 };
+        const readings = herdReadings(world, late, 'forager');
+        expect(readings).toHaveLength(4);
+        expect(readings[3].formula).toBe(true);
+        expect(readings[3].scene).toBe(true);
+        // At a cruise the late body is trampled (two tramples in the sim): the formula's "not clear" is borne out by the sim.
+        const ran = playStampede(world, {
+            spec: 'forager',
+            facing: 'away',
+            run: true,
+            sprint: false,
+            reaction: late.reactionTicks,
+        });
+        expect(ran.outcome.tramples).toBeGreaterThan(0);
     });
 
     it('reads only the specs asked for', () => {

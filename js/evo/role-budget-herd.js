@@ -164,7 +164,7 @@ function caseOf(herd, p, bearing) {
  * @property {boolean} pulled whether the herd's ring is wider than `4 x herdRadius` (see `HerdNumbers`)
  * @property {{arrival: number, walk: number, constant: number, survives: number, walkSurvives: number}} trample the loss of one trample
  *   at the herd's speed on arrival, at its walk speed and at its peak speed, and the tramples the body survives at arrival and walk speed
- * @property {string | null} binding the step of least slack
+ * @property {string | null} binding the step of least slack, or `HUNTER_BINDING` for a body that can hunt (its row is `n/a`)
  */
 
 /**
@@ -190,6 +190,25 @@ function cellsOf(herd, { p, c, model }) {
     };
 }
 
+/** The binding of a hunter's row: a herd turns from a body that can hunt (`senseGroupHunters` in js/sim/herd-startle.js). */
+export const HUNTER_BINDING = 'the herd turns from a hunter';
+
+/**
+ * The row of a body against the herd. A body that can hunt is not read: the herd turns from it before it arrives, so every
+ * step is `n/a` and the binding is `HUNTER_BINDING`.
+ * @param {HerdNumbers} herd the herd's numbers
+ * @param {{p: import('./role-budget-params.js').RoleParams, c: HerdCase, model: import('./role-budget-model.js').RoleModel}} body
+ *   the body, its case and the model
+ * @returns {ReturnType<typeof rowOf>} the row
+ */
+function herdRow(herd, { p, c, model }) {
+    if (p.hunts === 1) {
+        const cells = Object.fromEntries(HERD_STEPS.map((step) => [step, cell(undefined, model)]));
+        return { ...rowOf(`${p.spec}:herd`, cells), status: 'n/a', binding: HUNTER_BINDING };
+    }
+    return rowOf(`${p.spec}:herd`, cellsOf(herd, { p, c, model }));
+}
+
 /**
  * The budget of a body against a stampede.
  * @param {Readonly<Record<string, any>>} config the validated config
@@ -201,12 +220,11 @@ export function budgetHerd(config, p, model) {
     const herd = herdNumbers(config);
     const typical = caseOf(herd, p, 0);
     const worst = caseOf(herd, p, Math.PI);
-    const cells = cellsOf(herd, { p, c: worst, model });
-    const row = rowOf(`${p.spec}:herd`, cells);
+    const row = herdRow(herd, { p, c: worst, model });
     const loss = (/** @type {number} */ speed) => trampleLoss(herd, p, speed);
     return {
         row,
-        cells,
+        cells: row.cells,
         typical,
         worst,
         pulled: herd.pulled,

@@ -152,11 +152,12 @@ describe('the rows of Phase 5', () => {
         const m = matrix(arenaConfig(), model, PHASE5_ROWS, { worldConfig: createConfig({}) });
         expect(m.rows.map((/** @type {any} */ r) => r.status)).toEqual([
             'tight',
-            'impossible',
+            'n/a',
             'impossible',
             'tight',
             'impossible',
         ]);
+        expect(m.rows[1].binding).toBe('the herd turns from a hunter');
         expect(m.rows[0].detail.worst.warning).toBe(59);
     });
 });

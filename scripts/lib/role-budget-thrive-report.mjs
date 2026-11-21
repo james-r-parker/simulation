@@ -67,6 +67,7 @@ function herdLines(d) {
         ...(d.pulled
             ? ['  the herd ring is wider than 4 herd radii: its front is pulled back, so the formula is too fast']
             : []),
+        ...(d.row.status === 'n/a' ? [`  not read: ${d.binding}`] : []),
         one('typical (facing the herd)', d.typical),
         one('worst (facing away, rear view)', d.worst),
         `  a trample takes ${n(t.arrival)} on arrival (${n(t.constant)} at the peak speed) and ${n(t.walk)} at the walk speed: ${t.survives} survived on arrival, ${t.walkSurvives} at the walk`,
