@@ -2,6 +2,8 @@
 // death or at a niche checkpoint. The sim frees a dead agent's slot (and a newborn may fill it) before the observer
 // scores the death, so the traits cannot be read from the world then.
 
+import { visionRatioOf } from '../sim/traits.js';
+
 /**
  * Stores a slot's traits.
  * @param {Record<string, any>} observer the observer
@@ -26,5 +28,6 @@ export function noteBody(observer, slot, size, vision) {
  */
 export function noteBirthBody(observer, world, slot, genomeId) {
     const held = world.genomeId[slot] === genomeId;
-    noteBody(observer, slot, held ? world.baseSize[slot] / world.config.baseSize : 1, held ? world.vision[slot] : 1);
+    const size = held ? world.lanes.baseSize[slot] / world.config.baseSize : 1;
+    noteBody(observer, slot, size, held ? visionRatioOf(world, slot) : 1);
 }

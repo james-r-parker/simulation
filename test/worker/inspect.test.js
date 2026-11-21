@@ -80,7 +80,7 @@ describe('workerLayout', () => {
         expect(layout.inspectOffset).toBe(layout.effectsOffset + layout.effectsWords);
         const inputs = config.rayCount * RAY_CHANNELS + EXTRA_INPUTS;
         expect(layout.inspectWords).toBe(
-            INSPECT_HEADER_WORDS + inputs + config.brainHidden + OUTPUT_COUNT + 18 + TRAITS.length + 13,
+            INSPECT_HEADER_WORDS + inputs + config.brainHidden + OUTPUT_COUNT + 15 + TRAITS.length + 13,
         );
         expect([layout.traitCount, layout.senseCount]).toEqual([TRAITS.length, 13]);
         expect(layout.bytes).toBe((layout.inspectOffset + layout.inspectWords) * 4);
@@ -117,9 +117,6 @@ describe('writeInspect', () => {
         world.lastLoss[slot] = 2;
         world.bittenTimer[slot] = 7;
         world.ateTimer[slot] = 8;
-        world.vision[slot] = 1.1;
-        world.baseSize[slot] = 6;
-        world.childShare[slot] = 0.5;
         world.dose[slot] = 0.36;
         world.infection[slot] = 3;
         world.immuneMask[slot] = 0b101;
@@ -153,7 +150,7 @@ describe('writeInspect', () => {
         expect(views.f32[rows + layout.inputCount]).toBe(0.5);
         expect(views.f32[rows + layout.inputCount + layout.hidden]).toBe(0.75);
         const counters = rows + layout.inputCount + layout.hidden + layout.outputCount;
-        expect(Array.from(views.f32.subarray(counters, counters + 18))).toEqual([
+        expect(Array.from(views.f32.subarray(counters, counters + 15))).toEqual([
             33,
             0.5,
             44,
@@ -166,14 +163,11 @@ describe('writeInspect', () => {
             2,
             7,
             8,
-            Math.fround(1.1),
-            6,
-            0.5,
             Math.fround(0.36),
             3,
             2,
         ]);
-        expect(INSPECT_COUNTERS).toHaveLength(18);
+        expect(INSPECT_COUNTERS).toHaveLength(15);
     });
 
     it('writes each trait ratio and the body sense values after the counters', () => {

@@ -85,9 +85,9 @@ describe('eval.childshare_by_condition', () => {
         for (let i = 0; i < MIN_SLOPE_BIRTHS; i++) {
             const x = 0.04 * (i + 1);
             r.world.energy[mother] = x * maxEnergy;
-            r.world.childShare[mother] = 0.1 + 0.5 * x;
+            r.world.lanes.childEnergyShare[mother] = 0.1 + 0.5 * x;
             r.world.energy[flat] = 0.3 * maxEnergy;
-            r.world.childShare[flat] = 0.2 + (i % 2) * 0.1;
+            r.world.lanes.childEnergyShare[flat] = 0.2 + (i % 2) * 0.1;
             birth(r, mother, child);
             birth(r, flat, child);
         }

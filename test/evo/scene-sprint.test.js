@@ -78,4 +78,18 @@ describe('scene-sprint', () => {
         tickSprint(scene, observer, world);
         expect(sprintMetrics(scene)['eval.sprint_cost_share']?.value).toBeCloseTo(15, 8);
     });
+
+    it('weights a sprinting tick by its effort with the sprint store on, and counts it whole with it off (fair-chase T7a)', () => {
+        const half = fixture();
+        half.world.outputs[OUTPUT_INDEX.SPRINT] = 0.5;
+        half.world.outputs[OUTPUT_COUNT + OUTPUT_INDEX.SPRINT] = 0.5;
+        const on = /** @type {any} */ ({ ...half.world, sprintStore: { level: new Float64Array(2) } });
+        tickSprint(half.scene, half.observer, on);
+        expect(sprintMetrics(half.scene)['eval.sprint_share.hunter']?.value).toBe(0.5);
+        expect(sprintMetrics(half.scene)['eval.sprint_cost_share']?.value).toBeCloseTo(0.0375, 8);
+        const whole = fixture();
+        whole.world.outputs[OUTPUT_INDEX.SPRINT] = 0.5;
+        tickSprint(whole.scene, whole.observer, whole.world);
+        expect(sprintMetrics(whole.scene)['eval.sprint_share.hunter']?.value).toBe(1);
+    });
 });

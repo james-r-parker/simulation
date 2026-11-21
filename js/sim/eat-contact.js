@@ -23,7 +23,7 @@ export function tallyEatContact(world, slot) {
     const bites = world.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.BITE] > 0 ? 1 : 0;
     counts[EAT_CONTACT.CONTACT] += 1;
     counts[EAT_CONTACT.CONTACT_BITE] += bites;
-    if (world.energy[slot] >= FULL_SHARE * world.maxEnergyBySpec[world.spec[slot]]) {
+    if (world.energy[slot] >= FULL_SHARE * world.lanes.maxEnergy[slot]) {
         counts[EAT_CONTACT.FULL] += 1;
         counts[EAT_CONTACT.FULL_BITE] += bites;
     }

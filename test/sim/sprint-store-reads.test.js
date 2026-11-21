@@ -13,6 +13,7 @@ import { allocAgent, allocateWorld, freeAgent } from '../../js/sim/world.js';
 import { hashWorld } from '../../js/sim/world-hash.js';
 import { cloneWithNoisePolicy } from '../../js/sim/birth-policy.js';
 import { SIMPLE_WORLD } from '../helpers/simple-world.js';
+import { writeLaneBases } from '../../js/sim/lane-state.js';
 
 const SMALL = {
     maxAgents: 8,
@@ -54,6 +55,7 @@ function sprinter(w, level, fields = {}) {
     for (const [k, v] of Object.entries(fields)) {
         w[k][slot] = v;
     }
+    writeLaneBases(w, slot);
     w.outputs.fill(0, slot * OUTPUT_COUNT, (slot + 1) * OUTPUT_COUNT);
     w.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.THRUST] = 1;
     w.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.SPRINT] = 1;
@@ -115,6 +117,48 @@ describe('the sprint factor on the sprint cost', () => {
         });
         const { sprintCost } = createConfig({});
         LEVELS.forEach(([, f], k) => expect(costs[k]).toBeCloseTo(sprintCost * f, 9));
+    });
+});
+
+describe('the graded sprint (fair-chase T7a)', () => {
+    /** The efforts asked: none (a trace under SPRINT_REST_EFFORT), half and full. */
+    const EFFORTS = [
+        [0.02, 0],
+        [0.5, 0.5],
+        [1, 1],
+    ];
+
+    it('scales the sprint thrust, the rise of the cap and the sprint cost by the effort at a full store', () => {
+        const { maxThrust, maxVelocity, sprintMultiplier, sprintCost } = createConfig({});
+        const thrusts = EFFORTS.map(([sprint]) => {
+            const w = storeWorld();
+            const slot = sprinter(w, 1);
+            w.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.SPRINT] = sprint;
+            stepSprintStore(w.sprintStore, w);
+            actAll(w);
+            return w.vx[slot];
+        });
+        const caps = EFFORTS.map(([sprint]) => {
+            const w = storeWorld();
+            const slot = sprinter(w, 1, { vx: 100 });
+            w.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.SPRINT] = sprint;
+            stepSprintStore(w.sprintStore, w);
+            integrate(w);
+            return w.vx[slot];
+        });
+        const costs = EFFORTS.map(([sprint]) => {
+            const w = storeWorld({ passiveLoss: 0, sizeEnergyLoss: 0, movementCost: 0, turnCost: 0, visionCost: 0 });
+            const slot = sprinter(w, 1);
+            w.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX.SPRINT] = sprint;
+            stepSprintStore(w.sprintStore, w);
+            applyCosts(w);
+            return 100 - w.energy[slot];
+        });
+        EFFORTS.forEach(([, e], k) => {
+            expect(thrusts[k]).toBeCloseTo(maxThrust * (1 + sprintMultiplier * e), 6);
+            expect(caps[k]).toBeCloseTo(maxVelocity * (1 + sprintMultiplier * e), 5);
+            expect(costs[k]).toBeCloseTo(sprintCost * e, 9);
+        });
     });
 });
 

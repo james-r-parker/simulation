@@ -8,6 +8,7 @@ import { AGENT, FOOD, KIND_STRIDE, WALL } from '../../js/sim/ray-gather.js';
 import { createRng, nextFloat } from '../../js/sim/rng.js';
 import { visionOf } from '../../js/sim/traits.js';
 import { addAgent, addFood, rebuild, senseWorld } from './helpers/sense-world.js';
+import { setSpec } from './helpers/body.js';
 
 const CH_WALL = 6;
 const FORAGER = 0;
@@ -44,18 +45,18 @@ describe('a forward-weighted eye', () => {
     it('hides a body behind a predator at half its range that a forager sees', () => {
         const w = reachWorld({ predator: 0.4 });
         const me = addAgent(w, 500, 500, 10);
-        w.spec[me] = PREDATOR;
+        setSpec(w, me, PREDATOR);
         const range = w.visionBySpec[PREDATOR];
         addAgent(w, 500 - 10 - range / 2 - 10, 500, 10);
         expect(castRay(w, me, BEHIND)[0]).toBe(0);
-        w.spec[me] = FORAGER;
+        setSpec(w, me, FORAGER);
         expect(castRay(w, me, BEHIND)[0]).toBeGreaterThan(0);
     });
 
     it('sees the same body dead ahead', () => {
         const w = reachWorld({ predator: 0.4 });
         const me = addAgent(w, 500, 500, 10);
-        w.spec[me] = PREDATOR;
+        setSpec(w, me, PREDATOR);
         const range = w.visionBySpec[PREDATOR];
         addAgent(w, 500 + 10 + range / 2 + 10, 500, 10);
         expect(castRay(w, me, 0)[0]).toBeCloseTo(1 - (range / 2 + 10) / range, 6);
@@ -64,7 +65,7 @@ describe('a forward-weighted eye', () => {
     it('reads a rear hit by the full range, so a body reads the same distance on every ray', () => {
         const w = reachWorld({ predator: 0.4 });
         const me = addAgent(w, 500, 500, 10);
-        w.spec[me] = PREDATOR;
+        setSpec(w, me, PREDATOR);
         addAgent(w, 400, 500, 10);
         expect(castRay(w, me, BEHIND)[0]).toBeCloseTo(1 - 90 / w.visionBySpec[PREDATOR], 6);
     });
@@ -72,11 +73,11 @@ describe('a forward-weighted eye', () => {
     it('misses a wall behind past the rear reach and sees it at a share of 1', () => {
         const w = reachWorld({ predator: 0.4 });
         const me = addAgent(w, w.visionBySpec[PREDATOR] / 2, 500, 10); // the wall at half the range, beyond 0.4 of it
-        w.spec[me] = PREDATOR;
+        setSpec(w, me, PREDATOR);
         expect(castRay(w, me, BEHIND)[CH_WALL]).toBe(0);
         const open = reachWorld({ predator: 1 });
         const them = addAgent(open, open.visionBySpec[PREDATOR] / 2, 500, 10);
-        open.spec[them] = PREDATOR;
+        setSpec(open, them, PREDATOR);
         expect(castRay(open, them, BEHIND)[CH_WALL]).toBe(1);
     });
 });
@@ -178,7 +179,7 @@ function randomScene(rings, seed) {
     const rng = createRng(seed);
     for (let i = 0; i < w.config.maxAgents; i++) {
         const slot = addAgent(w, 50 + 900 * nextFloat(rng), 50 + 900 * nextFloat(rng), 5 + 20 * nextFloat(rng));
-        w.spec[slot] = Math.floor(5 * nextFloat(rng));
+        setSpec(w, slot, Math.floor(5 * nextFloat(rng)));
         w.angle[slot] = 2 * Math.PI * nextFloat(rng);
         w.coverRing[slot] = rings ? Math.floor(3 * nextFloat(rng)) : 0;
     }

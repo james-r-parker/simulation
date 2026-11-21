@@ -16,6 +16,7 @@ import { terrainRockCount } from '../../js/sim/terrain.js';
 import { FOOD_KIND } from '../../js/sim/carcass.js';
 import { smallWorld } from './helpers/small-world.js';
 import { testPolicy } from './helpers/test-policy.js';
+import { setSpec } from './helpers/body.js';
 
 describe('snapshotLayout', () => {
     it('sizes the buffer for the config maxima', () => {
@@ -236,7 +237,7 @@ describe('writeSnapshot exact layout', () => {
         world.angle[3] = 1.5;
         world.size[3] = 13;
         world.energy[3] = 250;
-        world.spec[3] = 4;
+        setSpec(world, 3, 4);
         world.lineageId[3] = 21;
         world.genomeId[3] = 22;
         const views = freshViews(world);
@@ -328,7 +329,7 @@ describe('writeSnapshot agent extras', () => {
             { spec: 0, bite: 0.5, open: false },
         ];
         for (const { spec, bite, open } of cases) {
-            world.spec[0] = spec;
+            setSpec(world, 0, spec);
             world.outputs[biteAt] = bite;
             writeSnapshot(world, views);
             expect((views.u32[FLAGS] & SNAPSHOT_FLAG.JAW_OPEN) !== 0).toBe(open);

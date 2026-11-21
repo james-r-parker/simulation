@@ -118,7 +118,7 @@ export function canEatNow(world, slot) {
         return false;
     }
     const { satiationShare, digestTicks } = world.config;
-    if (satiationShare > 0 && world.energy[slot] >= satiationShare * world.maxEnergyBySpec[world.spec[slot]]) {
+    if (satiationShare > 0 && world.energy[slot] >= satiationShare * world.lanes.maxEnergy[slot]) {
         return false;
     }
     return digestTicks === 0 || world.ateTimer[slot] >= digestTicks;
@@ -197,7 +197,7 @@ function bites(world, biter, victim) {
 function kickOf(world, biter, victim) {
     const { config } = world;
     const sizeRatio = world.size[victim] / world.size[biter];
-    const fullness = 0.5 + world.energy[victim] / world.maxEnergyBySpec[world.spec[victim]];
+    const fullness = 0.5 + world.energy[victim] / world.lanes.maxEnergy[victim];
     return config.biteCost * sizeRatio * fullness * specParams(config, world.spec[victim]).kickMultiplier;
 }
 
@@ -236,7 +236,7 @@ function applyBite(world, biter, victim) {
     const kick = kickOf(world, biter, victim);
     transferEnergy(world, victim, biter, bite * taken);
     world.biteEnergy[biter] += world.transferGained;
-    const fatal = wasAlive && world.energy[victim] <= killLine(config, world.maxEnergyBySpec[world.spec[victim]]);
+    const fatal = wasAlive && world.energy[victim] <= killLine(config, world.lanes.maxEnergy[victim]);
     noteFatalBiteObservation(world, biter, victim, fatal);
     const moved = world.transferGained + settleKill(world, biter, victim, fatal);
     if (fatal && config.predatorRestTicks > 0 && specParams(config, world.spec[biter]).canHunt) {

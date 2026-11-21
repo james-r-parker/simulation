@@ -41,12 +41,9 @@ const COUNTER_AT = Object.freeze({
     kills: 6,
     children: 7,
     fitnessSoFar: 8,
-    vision: 12,
-    baseSize: 13,
-    childShare: 14,
-    dose: 15,
-    infection: 16,
-    immuneStrains: 17,
+    dose: 12,
+    infection: 13,
+    immuneStrains: 14,
 });
 
 /**
@@ -193,7 +190,7 @@ function countersOf(c, { specName, family, info, male }) {
         { label: 'children', text: grouped(c[COUNTER_AT.children]) },
         { label: 'fitness so far', text: c[COUNTER_AT.fitnessSoFar].toFixed(2) },
     ];
-    return [...rows, { label: 'sex', text: male ? 'male' : 'female' }, ...traitRows(c)];
+    return [...rows, { label: 'sex', text: male ? 'male' : 'female' }];
 }
 
 /**
@@ -207,18 +204,6 @@ export function diseaseText(c) {
         return `infected, strain ${infection - 1}`;
     }
     return immune > 0 ? `immune to ${immune} strain${immune === 1 ? '' : 's'}` : 'healthy';
-}
-
-/**
- * @param {Float32Array} c the counters
- * @returns {InspectorView['counters']} the vision, size and child share traits
- */
-function traitRows(c) {
-    return [
-        { label: 'vision', text: `x${c[COUNTER_AT.vision].toFixed(2)}` },
-        { label: 'size', text: c[COUNTER_AT.baseSize].toFixed(1) },
-        { label: 'child share', text: `${Math.round(c[COUNTER_AT.childShare] * 100)}%` },
-    ];
 }
 
 /** The outputs that light only above a threshold, as the worker's output name and the `info` key it reads (as `calls.js` does). */

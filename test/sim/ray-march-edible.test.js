@@ -4,6 +4,7 @@ import { FOOD_KIND } from '../../js/sim/carcass.js';
 import { RAY_CHANNELS } from '../../js/sim/brain-layout.js';
 import { addAgent, addFood, rebuild, senseWorld } from './helpers/sense-world.js';
 import { describe, expect, it } from 'vitest';
+import { setSpec } from './helpers/body.js';
 
 const FORAGER = 0;
 const PREDATOR = 1;
@@ -20,7 +21,7 @@ function forwardRay({ spec, kind, behind = false, over = {} }) {
     const specialisations = { predator: { plantFoodValue: 0 }, ...over.specialisations };
     const w = senseWorld({ huntSizeRatio: 1.01, ...over, specialisations });
     const me = addAgent(w, 500, 500, 20);
-    w.spec[me] = spec;
+    setSpec(w, me, spec);
     const f = addFood(w, 600, 500, 10);
     w.foodKind[f] = kind;
     if (behind) {

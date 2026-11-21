@@ -52,7 +52,7 @@ describe('speed', () => {
         run(w, 200);
         expect(speedOf(w, me)).toBeCloseTo(w.config.maxVelocity, 4);
         const { maxThrust, damping } = w.config;
-        const uncapped = (damping * maxThrust * thrustEfficiency(w.config, w.temperature[me])) / (1 - damping);
+        const uncapped = (damping * maxThrust * thrustEfficiency(w, me)) / (1 - damping);
         expect(uncapped).toBeGreaterThan(w.config.maxVelocity);
     });
 
@@ -135,7 +135,7 @@ describe('each multiplier of thrustOf', () => {
 
     it('is maxThrust x the temperature efficiency with nothing else on', () => {
         const { w, me } = field();
-        expect(base).toBeCloseTo(w.config.maxThrust * thrustEfficiency(w.config, w.temperature[me]), 6);
+        expect(base).toBeCloseTo(w.config.maxThrust * thrustEfficiency(w, me), 6);
     });
 
     it('grazing (BITE above 0) slows a forager to grazeThrust and never a hunter', () => {

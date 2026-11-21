@@ -5,7 +5,16 @@ import { detTanh } from '../../js/sim/det-math.js';
 import { canMatePair } from '../../js/sim/mate-eligibility.js';
 import { castRays } from '../../js/sim/ray-march.js';
 import { advancePregnancies } from '../../js/sim/reproduction.js';
-import { TRAIT_MAX, TRAIT_SPAN, applyGenes, traitValue, visionOf } from '../../js/sim/traits.js';
+import {
+    TRAIT_MAX,
+    TRAIT_SPAN,
+    applyGenes,
+    baseSizeOf,
+    childShareOf,
+    traitValue,
+    visionOf,
+    visionRatioOf,
+} from '../../js/sim/traits.js';
 import { hashWorld } from '../../js/sim/world-hash.js';
 import { freeAgent } from '../../js/sim/world.js';
 import { buildHash } from '../../js/sim/spatial-hash.js';
@@ -40,13 +49,14 @@ describe('traitValue', () => {
 });
 
 describe('applyGenes', () => {
-    it('derives vision, base size and child share from the trait genes', () => {
+    it('derives the vision, base size and child share lanes from the trait genes through the registry', () => {
         const w = lifeWorld({});
         const slot = addBlob(w);
         setGenes(w, slot, { SIZE: 1, VISION: -1, CHILD_SHARE: 0.5 });
-        expect(w.baseSize[slot]).toBe(Math.fround(w.config.baseSize * traitValue(1)));
-        expect(w.vision[slot]).toBe(Math.fround(traitValue(-1)));
-        expect(w.childShare[slot]).toBe(Math.fround(w.config.childEnergyShare * traitValue(0.5)));
+        expect(baseSizeOf(w, slot)).toBe(w.config.baseSize * traitValue(1));
+        expect(visionRatioOf(w, slot)).toBeCloseTo(traitValue(-1), 12);
+        expect(visionOf(w, slot)).toBe(w.visionBySpec[w.spec[slot]] * traitValue(-1));
+        expect(childShareOf(w, slot)).toBe(w.config.childEnergyShare * traitValue(0.5));
     });
 
     it('zeroes a freed slot', () => {
@@ -54,7 +64,7 @@ describe('applyGenes', () => {
         const s = addBlob(on);
         setGenes(on, s, { SIZE: 1, VISION: 1, CHILD_SHARE: 1 });
         freeAgent(on, s);
-        expect(on.vision[s] + on.baseSize[s] + on.childShare[s]).toBe(0);
+        expect(on.lanes.visionRange[s] + on.lanes.baseSize[s] + on.lanes.childEnergyShare[s]).toBe(0);
     });
 
     it('sizes a body from its own base size', () => {
@@ -118,7 +128,7 @@ describe('child share trait', () => {
         advancePregnancies(w, recordingPolicy([]));
         const child = w.alive.indexOf(1, mother + 1);
         expect(child).toBeGreaterThan(mother);
-        const share = w.childShare[mother];
+        const share = childShareOf(w, mother);
         expect(share).toBeCloseTo(0.65, 5);
         expect(w.energy[mother]).toBeCloseTo(800 * (1 - share), 3);
     });
@@ -138,12 +148,12 @@ describe('child share trait', () => {
 });
 
 describe('hashWorld and traits', () => {
-    it('includes vision and baseSize', () => {
+    it('hashes the trait genes the lanes are derived from, and not the lanes', () => {
         const on = [lifeWorld({ seed: 4 }), lifeWorld({ seed: 4 })];
-        on[1].vision[0] = 0.9;
-        expect(hashWorld(on[1])).not.toBe(hashWorld(on[0]));
-        on[1].vision[0] = 0;
-        on[1].baseSize[0] = 30;
+        on[1].lanes.visionRange[0] = 1;
+        on[1].lanes.baseSize[0] = 30;
+        expect(hashWorld(on[1])).toBe(hashWorld(on[0]));
+        on[1].weights[on[1].layout.traitStart + TRAIT_INDEX.VISION] = 0.5;
         expect(hashWorld(on[1])).not.toBe(hashWorld(on[0]));
     });
 });

@@ -116,6 +116,7 @@ const TODAYS_WORLD_FIELDS = [
     'sprintBySpec',
     'contacts',
     'sprintFactor',
+    'laneMaxVelocity',
 ];
 
 /** A world with every optional per-slot row on, so each one is allocated. */
@@ -187,7 +188,7 @@ describe('the per-slot state of a world', () => {
                 expect(info.excuse, name).toBeUndefined();
             }
         }
-        expect([...OPTIONAL_AGENT_ARRAYS]).toEqual(['sex', 'vision', 'baseSize', 'fastOut']);
+        expect([...OPTIONAL_AGENT_ARRAYS]).toEqual(['sex', 'fastOut']);
     });
 
     it('covers every row of the world: hashed, excused, or hashed by its own list, and nothing else', () => {

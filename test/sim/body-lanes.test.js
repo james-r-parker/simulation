@@ -49,14 +49,34 @@ describe('LANES', () => {
         expect(LANES.some((lane) => lane.field === 'canHunt')).toBe(false);
     });
 
-    it('names each lane once, after its key or else its field, with a family and nothing moved yet', () => {
+    it('names each lane once, after its key or else its field, with a family; the lanes moved in Phase 1 (T3, T13, T13a)', () => {
         expect(new Set(LANES.map((lane) => lane.name)).size).toBe(LANE_COUNT);
         for (const lane of LANES) {
             expect(lane.name).toBe(lane.key ?? lane.field ?? lane.name);
             expect(lane.family).toMatch(/^[a-z]+$/);
-            expect(lane.moved).toBe(false);
         }
-        expect(LANE_COUNT).toBe(113);
+        expect(LANES.filter((lane) => lane.moved && lane.kind === 'ratio').map((lane) => lane.name)).toEqual([
+            'maxThrust',
+            'maxTurn',
+            'maxVelocity',
+            'sprintCost',
+            'sprintDrain',
+            'sprintRefill',
+            'fatSlowShare',
+            'antennaReach',
+            'refugeSenseRange',
+            'visionRange',
+            'hearing',
+            'smokeSight',
+            'maxEnergy',
+            'passiveLoss',
+            'temperatureGainMove',
+            'temperatureLossPassive',
+            'heatSpeedCap',
+            'sprintHeat',
+        ]);
+        expect(LANES.filter((lane) => lane.kind === 'offset').every((lane) => lane.moved)).toBe(true);
+        expect(LANE_COUNT).toBe(115);
         expect(LANES.filter((lane) => lane.kind === 'offset').map((lane) => lane.name)).toHaveLength(6);
     });
 
@@ -68,12 +88,12 @@ describe('LANES', () => {
 });
 
 describe('the lanes a trait adds', () => {
-    it('are hearing and nerve at 1 and smokeSight at 0, for every spec, with no key and no field', () => {
+    it('are hearing, smokeSight and nerve at 1, for every spec, with no key and no field (smoke passes above 1)', () => {
         const added = LANES.filter((lane) => lane.key === null && lane.field === null);
         expect(added.map((lane) => lane.name)).toEqual(['hearing', 'smokeSight', 'nerve']);
         for (const specName of SPEC_NAMES) {
             const bases = laneBases(config, specName);
-            expect([bases.hearing, bases.smokeSight, bases.nerve]).toEqual([1, 0, 1]);
+            expect([bases.hearing, bases.smokeSight, bases.nerve]).toEqual([1, 1, 1]);
         }
     });
 });
@@ -119,9 +139,8 @@ describe('laneBases', () => {
 });
 
 describe('bodyProblem', () => {
-    const moved = [
-        ...LANES.map((lane) => (lane.name === 'maxThrust' || lane.kind === 'offset' ? { ...lane, moved: true } : lane)),
-    ];
+    const moved = LANES;
+    const unmoved = LANES.map((lane) => ({ ...lane, moved: false }));
 
     it('accepts an empty body and refuses a non-object', () => {
         expect(bodyProblem({})).toBeNull();
@@ -132,9 +151,9 @@ describe('bodyProblem', () => {
 
     it('refuses an unknown name, an unmoved lane and a threshold named directly', () => {
         expect(bodyProblem({ speed: 1 })).toMatch(/speed is neither/);
-        expect(bodyProblem({ maxThrust: 1.2 })).toMatch(/no override of maxThrust yet/);
+        expect(bodyProblem({ biteEnergy: 1.2 })).toMatch(/no override of biteEnergy yet/);
         expect(bodyProblem({ temperatureColdStress: 1 }, moved)).toMatch(/shift the thresholds with heatBand/);
-        expect(bodyProblem({ [HEAT_BAND]: 1 })).toMatch(/no heatBand override yet/);
+        expect(bodyProblem({ [HEAT_BAND]: 1 }, unmoved)).toMatch(/no heatBand override yet/);
     });
 
     it('accepts a moved lane above 0 and heatBand once the thresholds have moved, and refuses the rest', () => {
@@ -149,9 +168,14 @@ describe('bodyProblem', () => {
     });
 
     it('is the rule createConfig applies to a spec body', () => {
-        expect(() => createConfig({ specialisations: { scout: { body: { maxThrust: 2 } } } })).toThrow(
-            /config\.specialisations\.scout\.body is .*no override of maxThrust yet/,
+        expect(() => createConfig({ specialisations: { scout: { body: { biteEnergy: 2 } } } })).toThrow(
+            /config\.specialisations\.scout\.body is .*no override of biteEnergy yet/,
         );
+        expect(
+            createConfig({ specialisations: { scout: { body: { maxThrust: 2 } } } }).specialisations.scout.body,
+        ).toEqual({
+            maxThrust: 2,
+        });
         expect(createConfig({ specialisations: { scout: { body: {} } } }).specialisations.scout.body).toEqual({});
     });
 });

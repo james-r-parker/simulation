@@ -10,7 +10,8 @@ import { ringRadius } from './terrain.js';
  * Writes `refugeBearingSin`, `refugeBearingCos` and `refugeNear` into the agent's body block. The nearest ring is the
  * one with the nearest centre (every ring has one radius, so that is also the nearest edge). The bearing is the angle
  * to its centre relative to the heading; inside a ring `refugeNear` is 1, otherwise it falls from 1 at the edge to 0
- * at `refugeSenseRange` and stays there. Allocates nothing; `world.refugeCentres` is read once at world creation.
+ * at the agent's `refugeSenseRange` lane and stays there. Allocates nothing; `world.refugeCentres` is read once at
+ * world creation.
  * @param {World} world the world
  * @param {number} slot the alive agent
  * @param {number} cH the cosine of the agent's heading
@@ -21,7 +22,7 @@ export function writeRefugeInputs(world, slot, cH, sH) {
     const o = slot * world.layout.rawInputCount + world.config.rayCount * RAY_CHANNELS;
     const out = world.inputs;
     const centres = world.refugeCentres;
-    const { refugeSenseRange } = world.config;
+    const refugeSenseRange = world.lanes.refugeSenseRange[slot];
     let sin = 0;
     let cos = 0;
     let near = 0;

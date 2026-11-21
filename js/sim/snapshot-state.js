@@ -32,7 +32,7 @@ function byteOf(v) {
 function stateBits(world, slot) {
     const { config } = world;
     let bits = world.restTimer !== undefined && world.restTimer[slot] > 0 ? SNAPSHOT_STATE.RESTING : 0;
-    const max = world.maxEnergyBySpec[world.spec[slot]];
+    const max = world.lanes.maxEnergy[slot];
     bits |= config.satiationShare > 0 && world.energy[slot] >= config.satiationShare * max ? SNAPSHOT_STATE.SATED : 0;
     bits |= world.coverRing !== undefined && world.coverRing[slot] > 0 ? SNAPSHOT_STATE.IN_COVER : 0;
     return bits | (world.ageTicks[slot] < config.juvenileTicks ? SNAPSHOT_STATE.JUVENILE : 0);

@@ -6,7 +6,7 @@ import { writeBodyInputs } from '../../js/sim/body-inputs.js';
 import { RAY_CHANNELS } from '../../js/sim/brain-layout.js';
 import { ENERGY_SOURCE, addEnergy, transferEnergy } from '../../js/sim/energy.js';
 import { canEatNow } from '../../js/sim/feeding.js';
-import { allocBody } from './helpers/body.js';
+import { allocBody, setSpec } from './helpers/body.js';
 import { smallWorld } from './helpers/small-world.js';
 
 const FORAGER = 0;
@@ -19,7 +19,7 @@ const PREDATOR = 1;
  */
 function agent(w, spec) {
     const slot = allocBody(w);
-    w.spec[slot] = spec;
+    setSpec(w, slot, spec);
     return slot;
 }
 

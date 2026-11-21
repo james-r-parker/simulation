@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { OUTPUT_COUNT } from '../../js/sim/brain-layout.js';
 import { actAll, integrate } from '../../js/sim/physics.js';
 import { addAgent, senseWorld } from './helpers/sense-world.js';
+import { setSpec } from './helpers/body.js';
 
 const FORAGER = 0;
 const PREDATOR = 1;
@@ -16,7 +17,7 @@ const TUNED = { specialisations: { predator: { turnMultiplier: 0.7, sprintBoost:
  */
 function put(w, { spec, out, vx = 0, y = 500 }) {
     const slot = addAgent(w, 500, y, 25);
-    w.spec[slot] = spec;
+    setSpec(w, slot, spec);
     w.vx[slot] = vx;
     w.outputs.set(out, slot * OUTPUT_COUNT);
     return slot;
