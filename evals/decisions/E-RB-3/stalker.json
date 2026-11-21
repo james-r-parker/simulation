@@ -1,11 +1,11 @@
 role budget  config 33020ece451d5e75  rules dfc811309599c0bf
 model {"reactionTicks":2,"hearThreshold":0.1,"breakAngle":1.5707963267948966,"tightTicks":5,"preySprint":"rationed","hunterShare":0.1,"foodDensity":null,"naiveEffort":0.5,"catchShare":0.3,"defenderGap":150,"smokeGap":240,"reliableSight":false}
 
-row             see  hear  warn  turn  run  status  binding
-scout:predator  12   0!    7     0!    0!   tight   hear
+row             see  hear  warn  turn  run  status      binding
+scout:predator  12   48    7     -     X    impossible  run
 
 scout:predator
-  scout sees the hunter at 445 px  alarm tick 2  forager hears tick 3  starts to turn tick 5 at 405 px  runs tick 16 at 317 px
+  scout sees the hunter at 445 px  alarm tick 2  forager hears tick 3  starts to turn tick 5 at 405 px  runs tick 16 at 281 px
   forager sees the hunter itself at 345 px; the hunter closes on it from 311 px or less; it creeps at 8 px a tick
   bites to kill a forager 5, with its alarm seen 5
 
@@ -41,10 +41,11 @@ defender    sprint speed                 12.000   12.000   0.000%      0.010%   
 defender    turn radius                  21.537   21.509   0.131%      0.500%     ok
 defender    sprint turn radius           32.305   32.263   0.131%      0.500%     ok
 
-row             reading                                                                             formula  scene  tolerance
-scout:predator  alarm tick                                                                          2        2      0 ticks    ok
-scout:predator  forager hears                                                                       3        3      0 ticks    ok
-scout:predator  forager moves                                                                       5        5      0 ticks    ok
-scout:predator  gap when the forager moves                                                          405      405    1 px       ok
-scout:predator  the forager gains on the hunter while it turns: the formula holds it still          true     true   agree      ok
-scout:predator  a forager the formula calls safe is safe in the sim: the formula never flatters it  true     true   agree      ok
+row             reading                                                                                           formula  scene  tolerance
+scout:predator  alarm tick                                                                                        2        2      0 ticks    ok
+scout:predator  forager hears                                                                                     3        3      0 ticks    ok
+scout:predator  forager moves                                                                                     5        5      0 ticks    ok
+scout:predator  gap when the forager moves                                                                        405      405    1 px       ok
+scout:predator  the forager gains on the hunter while it turns: the formula holds it still                        true     true   agree      ok
+scout:predator  a forager the formula calls safe is safe in the sim: the formula never flatters it                true     true   agree      ok
+scout:predator  at effort 1, the oracle hunter's, the formula and the sim agree on whether the forager is caught  false    true   agree      DRIFT

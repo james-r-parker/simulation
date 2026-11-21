@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { arenaConfig } from '../../js/evo/chase-arena.js';
 import { MODEL_DEFAULTS } from '../../js/evo/role-budget-model.js';
 import { roleParams } from '../../js/evo/role-budget-params.js';
+import { hunterXs } from '../../js/evo/role-budget-smoke.js';
 import { budgetWarn, warnTimeline } from '../../js/evo/role-budget-warn.js';
 
 /** @param {Record<string, any>} overrides @returns {{scout: any, forager: any, hunter: any}} the bodies of the row */
@@ -26,30 +27,36 @@ describe('warnTimeline at the defaults', () => {
         expect([chain.alarmTick, chain.heardTick, chain.startTick, chain.runTick]).toEqual([2, 3, 5, 16]);
     });
 
-    it('closes the gap at the hunter cruise speed, 8 px a tick', () => {
+    it('creeps at the hunter cruise speed, 8 px a tick, until the forager acts, and sprints from then (Phase 1 convention)', () => {
+        const { hunter } = bodiesOf({});
+        const sprint = hunterXs(hunter, { speed: hunter.cap.cruise, ticks: 11 });
         expect(chain.gapAtStart).toBe(445 - 8 * 5);
-        expect(chain.gapAtRun).toBe(445 - 8 * 16);
+        expect(chain.gapAtRun).toBeCloseTo(chain.gapAtStart - sprint[11], 9);
+        expect(chain.gapAtRun).toBeLessThan(445 - 8 * 16);
     });
 
-    it('a tick of delay at any step costs the forager 8 px, and the hear delay is bounded by the call', () => {
+    it('a tick of delay before the forager acts costs 8 px, one while it turns or waits costs the hunter sprint travel', () => {
         const at = (/** @type {Record<string, number>} */ delays) => warnTimeline(bodiesOf({}), MODEL_DEFAULTS, delays);
+        const { hunter } = bodiesOf({});
+        const xs = hunterXs(hunter, { speed: hunter.cap.cruise, ticks: 13 });
         expect(at({ see: 3 }).gapAtStart).toBe(chain.gapAtStart - 24);
-        expect(at({ hear: 3 }).gapAtRun).toBe(chain.gapAtRun - 24);
-        expect(at({ turn: 2 }).gapAtRun).toBe(chain.gapAtRun - 16);
-        expect(at({ run: 2 }).gapAtRun).toBe(chain.gapAtRun - 16);
+        expect(at({ hear: 3 }).gapAtRun).toBeCloseTo(chain.gapAtRun - 24, 9);
+        expect(at({ turn: 2 }).gapAtRun).toBeCloseTo(chain.gapAtStart - xs[13], 9);
+        expect(at({ run: 2 }).gapAtRun).toBeCloseTo(chain.gapAtStart - xs[13], 9);
+        expect(at({ run: 2 }).gapAtRun).toBeLessThan(chain.gapAtRun - 16);
         expect(at({ hear: 49 }).heardTick).toBe(-1);
         expect(at({ hear: 48 }).heardTick).toBeGreaterThan(0);
     });
 });
 
 describe('budgetWarn', () => {
-    it('at the defaults every step has room, and the warning beats the forager own sight by 7 ticks', () => {
+    it('at the defaults the warning beats the forager own sight by 7 ticks, and the hunter sprinting through the turn leaves it 3', () => {
         const b = budget();
-        expect(margins(b)).toEqual([12, 9, 7, 9, 9]);
-        expect(b.row.status).toBe('ok');
-        expect(b.binding).toBe('warn');
+        expect(margins(b)).toEqual([12, 5, 7, 3, 3]);
+        expect(b.row.status).toBe('tight');
+        expect(b.binding).toBe('turn');
         expect(b.gaps).toEqual({ own: 345, catchable: expect.closeTo(242.67, 1), speed: 8 });
-        expect(b.cells.run.distance).toBeCloseTo(317 - b.gaps.catchable, 6);
+        expect(b.cells.run.distance).toBeCloseTo(b.chain.gapAtRun - b.gaps.catchable, 6);
     });
 
     it('on the courser arm the hunter closes on the warned forager: run is impossible and turn is not read', () => {

@@ -80,6 +80,13 @@ describe('playWarning', () => {
         expect(playWarning(arenaConfig(), OPTIONS)).toEqual(scene);
     });
 
+    it('reads the gap at runAt, and a hunter that sprints from the forager first move is closer then than one that creeps', () => {
+        const sprinting = playWarning(arenaConfig(), { ...OPTIONS, goAt: 5, runAt: 16 });
+        expect(sprinting.ticks.gapAtStart).toBeCloseTo(405, 0);
+        expect(sprinting.ticks.gapAtRun).toBeLessThan(scene.ticks.gapAtRun ?? 0);
+        expect(sprinting.ticks.gapAtRun).toBeGreaterThan(289);
+    });
+
     it('never hears a call from a scout beyond its radius, so the forager never moves', () => {
         const far = playWarning(arenaConfig(), { ...OPTIONS, side: 350, goAt: 60 });
         expect(far.ticks.heardTick).toBe(-1);

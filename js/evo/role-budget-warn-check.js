@@ -4,6 +4,7 @@
 
 import { PX, inTicks, signReading, ticksReading } from './role-budget-defence-check.js';
 import { roleParams } from './role-budget-params.js';
+import { maxCatchableGap } from './role-budget-frame.js';
 import { budgetWarn, warnTimeline } from './role-budget-warn.js';
 import { playWarning } from './role-scenes-warn.js';
 
@@ -25,9 +26,11 @@ export function warnCheck(config, model) {
         reaction: model.reactionTicks,
         threshold: model.hearThreshold,
         side: model.defenderGap,
-        goAt: chain.runTick,
+        goAt: chain.startTick,
+        runAt: chain.runTick,
     });
     const row = 'scout:predator';
+    const oracle = chain.runTick >= 0 && chain.gapAtRun >= maxCatchableGap(hunter, forager, { model, effort: 1 });
     const readings = [
         ticksReading(row, 'alarm tick', [chain.alarmTick, scene.ticks.alarmTick], inTicks(0)),
         ticksReading(row, 'forager hears', [chain.heardTick, scene.ticks.heardTick], inTicks(0)),
@@ -41,6 +44,11 @@ export function warnCheck(config, model) {
             true,
             !['ok', 'tight'].includes(budget.cells.run.status) || !scene.outcome.caught,
         ]),
+        signReading(
+            row,
+            "at effort 1, the oracle hunter's, the formula and the sim agree on whether the forager is caught",
+            [oracle, !scene.outcome.caught],
+        ),
     ];
     return { readings, drift: readings.filter((r) => r.drift).length };
 }
