@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { plainBrain } from '../../js/evo/plain-brain.js';
 import { BORN_CAUSE } from '../../js/sim/events.js';
+import { TRAITS } from '../../js/sim/body-traits.js';
 import { createRng, nextFloat, nextGaussian } from '../../js/sim/rng.js';
 
 const N = 20000;
@@ -128,10 +129,10 @@ describe('plainBrain', () => {
             expect(world.weights[10]).not.toBe(0);
         });
 
-        it('mutates the genes with TRAIT_SIGMA, clamped to 4, drawing as before', () => {
-            const world = on({});
-            world.weights.fill(4, 5, 10);
-            const draws = [];
+        it('mutates the trait genes by the registry step and clamp, and the leak genes with TRAIT_SIGMA, drawing as before', () => {
+            const config = { traitMutationSigma: 0.2, traitGeneClamp: 3 };
+            const world = on(config);
+            world.weights.fill(3, 5, 10);
             const rng = createRng(9);
             brain.childBrain(world, 1, 0, { cause: BORN_CAUSE.SPLIT, rng });
             const ref = createRng(9);
@@ -139,10 +140,37 @@ describe('plainBrain', () => {
                 nextGaussian(ref);
                 nextFloat(ref);
             }
+            const expected = [];
             for (let i = 5; i < 10; i++) {
-                draws.push(Math.min(4, 4 + nextGaussian(ref) * 0.1));
+                const leak = i >= layout.leakStart;
+                const sigma = leak ? 0.1 : 0.2 * (TRAITS.find((t) => t.index === i - 5)?.sigmaScale ?? 1);
+                expected.push(Math.min(leak ? 4 : 3, 3 + nextGaussian(ref) * sigma));
             }
-            expect(Array.from(world.weights.subarray(15))).toEqual(draws.map((d) => Math.fround(d)));
+            expect(Array.from(world.weights.subarray(15))).toEqual(expected.map((d) => Math.fround(d)));
+        });
+
+        it('steps a spare trait slot (no registry entry) by traitMutationSigma alone', () => {
+            const spare = { weightCount: 30, traitStart: 5, leakStart: 29 };
+            /** @type {Record<string, any>} */
+            const world = {
+                ...makeWorld(30, 0),
+                layout: spare,
+                config: { traitMutationSigma: 0.2, traitGeneClamp: 3 },
+            };
+            const rng = createRng(11);
+            brain.childBrain(world, 1, 0, { cause: BORN_CAUSE.SPLIT, rng });
+            const ref = createRng(11);
+            for (let i = 0; i < 5; i++) {
+                nextGaussian(ref);
+                nextFloat(ref);
+            }
+            const registered = TRAITS.length;
+            for (let g = 0; g < 24; g++) {
+                const step = nextGaussian(ref) * 0.2;
+                if (g >= registered) {
+                    expect(world.weights[30 + 5 + g]).toBe(Math.fround(step));
+                }
+            }
         });
     });
 });

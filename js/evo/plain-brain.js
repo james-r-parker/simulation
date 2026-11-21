@@ -2,6 +2,7 @@
 // Not a registered policy and it selects on nothing; the league and the controller runs use it as a fixed brain.
 
 import { nextFloat, nextGaussian } from '../sim/rng.js';
+import { TRAITS } from '../sim/body-traits.js';
 import { BORN_CAUSE } from '../sim/events.js';
 import { TRAIT_SIGMA, WEIGHT_CLAMP } from './mutation.js';
 
@@ -38,6 +39,22 @@ function initBrain(world, slot, rng) {
 }
 
 /**
+ * The step of one gene at or after `traitStart` and the clamp it ends at: a trait gene takes the registry's step
+ * (`traitMutationSigma` x `sigmaScale`, as `mutateTraits` does) and `traitGeneClamp`; a leak gene `TRAIT_SIGMA` and
+ * `WEIGHT_CLAMP`.
+ * @param {Record<string, any>} world the world
+ * @param {number} gene the gene's offset from `traitStart`
+ * @returns {{sigma: number, clamp: number}} the step and the clamp
+ */
+function geneStep(world, gene) {
+    if (world.layout.traitStart + gene >= world.layout.leakStart) {
+        return { sigma: TRAIT_SIGMA, clamp: WEIGHT_CLAMP };
+    }
+    const scale = TRAITS.find((trait) => trait.index === gene)?.sigmaScale ?? 1;
+    return { sigma: world.config.traitMutationSigma * scale, clamp: world.config.traitGeneClamp };
+}
+
+/**
  * The legacy macro mutation is rolled per weight (`NeuralNetwork.mutate`), so it is here.
  * @param {Record<string, any>} world
  * @param {number} child
@@ -58,8 +75,8 @@ function childBrain(world, child, mother, opts) {
             w = fatherWeights[mother * count + i];
         }
         if (i >= geneStart) {
-            const g = w + nextGaussian(rng) * TRAIT_SIGMA;
-            weights[child * count + i] = Math.max(-WEIGHT_CLAMP, Math.min(WEIGHT_CLAMP, g));
+            const { sigma, clamp } = geneStep(world, i - geneStart);
+            weights[child * count + i] = Math.max(-clamp, Math.min(clamp, w + nextGaussian(rng) * sigma));
             continue;
         }
         w += nextGaussian(rng) * MUTATION_SIGMA;
