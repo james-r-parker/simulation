@@ -354,6 +354,14 @@
     "test/evo/role-budget-warn.test.js": [
         "evals/fair-chase/courser.json"
     ],
+    "test/evo/role-metrics.slow.test.js": [
+        "test/evo",
+        "test/evo/role-metrics-defender.slow.test.js",
+        "test/evo/role-metrics-forager.slow.test.js",
+        "test/evo/role-metrics-herd.slow.test.js",
+        "test/evo/role-metrics-reproducer.slow.test.js",
+        "test/evo/role-metrics-scout.slow.test.js"
+    ],
     "test/evo/role-scenes-thrive.test.js": [
         "evals/fair-chase/courser.json"
     ],
