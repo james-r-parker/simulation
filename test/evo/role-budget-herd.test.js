@@ -25,6 +25,15 @@ describe('herdNumbers', () => {
     });
 });
 
+describe('the pulled flag', () => {
+    it('is set for a ring wider than 4 herd radii (a herd of 12), and not at the defaults', () => {
+        expect(herd.pulled).toBe(false);
+        expect(herdNumbers(createConfig({ herdSize: 12 })).pulled).toBe(true);
+        const big = createConfig({ herdSize: 12 });
+        expect(budgetHerd(big, roleParams(big, 'forager'), MODEL_DEFAULTS).pulled).toBe(true);
+    });
+});
+
 describe('herdTimeline', () => {
     it('matches a naive loop of the relaxation, capped at the run speed', () => {
         const line = herdTimeline(herd, { ticks: 100 });

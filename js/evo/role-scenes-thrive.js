@@ -20,9 +20,10 @@ const LIMIT = 80000;
 /**
  * @param {Readonly<Record<string, any>>} config the default world's config
  * @param {number} width the arena's width
+ * @param {{herds?: number}} [options] the herds to keep (none), which also drops the food patches so a herd flees rather than routes
  * @returns {Readonly<Record<string, any>>} the config with the world emptied: no food, herds, refuges or floor, no neighbours
  */
-function emptied(config, width) {
+export function emptied(config, width, { herds = 0 } = {}) {
     return arenaConfig({
         ...config,
         worldWidth: width,
@@ -35,7 +36,9 @@ function emptied(config, width) {
         foodSpawnRate: 0,
         fertileZoneMax: 0,
         refugeCount: 0,
-        herdCount: 0,
+        herdCount: herds,
+        herdDungZoneMax: 0,
+        foodPatchCount: herds > 0 ? 0 : config.foodPatchCount,
         coldMarginWidth: 0,
         checkInvariants: false,
     });

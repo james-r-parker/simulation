@@ -25,6 +25,8 @@ const FLANK_TURN = Math.PI / 2;
  * @property {number} damage `trampleDamage`
  * @property {number} maxVelocity the speed a trample's closing speed is read against
  * @property {number} stampede `herdStampedeTicks`
+ * @property {boolean} pulled whether the ring is wider than `4 x herdRadius`, which pulls the front animal back toward the centroid at
+ *   full speed (`setDesiredVelocity`): the run of `herdTimeline` is then too fast, and the lateral pull is not modelled
  */
 
 /**
@@ -40,6 +42,7 @@ export function herdNumbers(config) {
         damage: config.trampleDamage,
         maxVelocity: config.maxVelocity,
         stampede: config.herdStampedeTicks,
+        pulled: (config.herdSize * 2.2 * config.herdRadius) / (2 * Math.PI) > 4 * config.herdRadius,
     };
 }
 
@@ -158,6 +161,7 @@ function caseOf(herd, p, bearing) {
  * @property {Record<string, import('./role-budget-cell.js').Cell>} cells see, turn, run and survive of the worst case
  * @property {HerdCase} typical the body on the centre line facing the herd
  * @property {HerdCase} worst the body on the centre line facing away, on its rear view
+ * @property {boolean} pulled whether the herd's ring is wider than `4 x herdRadius` (see `HerdNumbers`)
  * @property {{arrival: number, walk: number, constant: number, survives: number, walkSurvives: number}} trample the loss of one trample
  *   at the herd's speed on arrival, at its walk speed and at its peak speed, and the tramples the body survives at arrival and walk speed
  * @property {string | null} binding the step of least slack
@@ -205,6 +209,7 @@ export function budgetHerd(config, p, model) {
         cells,
         typical,
         worst,
+        pulled: herd.pulled,
         trample: {
             arrival: loss(worst.arrival),
             walk: loss(herd.walk),
