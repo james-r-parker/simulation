@@ -2,7 +2,7 @@
 
 **Status:** In progress - Phases 1 and 4 are built (the keep-rule guard reads the settled catch metric on the E254 baseline). Phase 2 has a terminal hunter count candidate; its longer runs are open. Phase 6 (role metrics against planted scenes) is next: it is gate 2 before any training. Phase 5 (headline metrics) follows.
 **Validated:** bc55972e (2026-11-20)
-**Priority:** 1 - Measurement lead. Phase 4 is built before any other read: the power readings, the keep rule and the 16-seed interval have defects (review of 2026-11-20), so no verdict is trusted until they are fixed; Phase 5 (the headline metrics) follows
+**Priority:** 1 - Measurement lead. Phase 4 (the statistics layer) is built. Next: step 1 (registries.md: events, then the detector interface), then Phase 6 (every role's metrics against planted scenes, gate 2 before any training), then Phase 5 (the headline metrics)
 **Depends on:** [metric-trust.md](metric-trust.md)
 
 Active plans need detectors that can judge their Targets, done criteria and predictions. This work serves every scene
@@ -12,7 +12,7 @@ in [principles.md](../principles.md) through its detector, without paying for a 
 
 This doc is a lead: it holds a rank in the Build queue, and the docs below are built as its steps, in order, after its own next work. A step doc keeps its own phases, tasks and status line.
 
-Own work first: Phase 6 (role metrics, gate 2 before any training), then Phase 5 (headline metrics), then Phases 2 and 3. Phase 4 (the statistics layer) is built.
+Step 1 (registries.md) comes first: its Phase 1, and its Phase 3 (the detector interface) before Phase 6 here. Then own work: Phase 6 (role metrics, gate 2 before any training), Phase 5 (headline metrics), Phases 2 and 3. Phase 4 (the statistics layer) is built.
 
 | Step | Doc                                          | Built when                                                                                                                                 |
 | ---- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |

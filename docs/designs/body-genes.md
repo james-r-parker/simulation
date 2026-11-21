@@ -77,7 +77,7 @@ A trait is one entry of a registry. The layout, the birth, the mutation, the ins
 
 ### The registry (`js/sim/body-traits.js`)
 
-`TRAITS` is a frozen list. `TRAIT_GENES` is its length and `TRAIT_INDEX` is built from it (`SIZE` 0, `VISION` 1, `CHILD_SHARE` 2, `LEARN` 3, `SPEED` 4, `SPRINT_STORE` 5, `FAT` 6, `HEAT_BAND` 7, `BURN` 8, `HEARING` 9, `NOSE` 10, `SMOKE_SIGHT` 11, `EYES_OR_EARS` 12, `CLEAR_OR_SMOKE` 13, `AGILE_OR_FAST` 14, `WIDE_OR_FAR` 15, `GUT` 16, `NERVE` 17), so the layout follows the registry.
+`TRAITS` is a frozen list of the 18 named traits. `TRAIT_INDEX` is built from it, and `TRAIT_GENES` is `TRAIT_SLOTS` (24: the named traits and six spare slots) (`SIZE` 0, `VISION` 1, `CHILD_SHARE` 2, `LEARN` 3, `SPEED` 4, `SPRINT_STORE` 5, `FAT` 6, `HEAT_BAND` 7, `BURN` 8, `HEARING` 9, `NOSE` 10, `SMOKE_SIGHT` 11, `EYES_OR_EARS` 12, `CLEAR_OR_SMOKE` 13, `AGILE_OR_FAST` 14, `WIDE_OR_FAR` 15, `GUT` 16, `NERVE` 17), so the layout follows the registry.
 
 | Field        | Meaning                                                                                                                                                                                                                                                                                                                                                                            |
 | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -325,11 +325,11 @@ Registered in `js/evo/metric-registry/` and computed in `js/evo/scene-genes.js`.
 
 **Targets:** bench.step_ms@500, bench.phase_ms.sense@500, bench.phase_ms.brain@500
 
-Each stays inside the `bench-check` margin of a re-recorded `bench/baseline.json`. One layout version (`pooled-v6`) carries the lane catalogue, the thirteen inputs and the twenty-four trait slots. The new traits are neutral, but the world is not bit-identical: a random brain reads thirteen more inputs, `randomWeights` spreads over more inputs, a birth draws for five more genes, and the four existing genes take the clamp of 3. Every golden is re-pinned; the reads that say the design is the same are an eval of 16 seeds against `origin/main` with no keep-rule guard `WORSE`. [fair-chase.md](fair-chase.md) T7a (the graded sprint) is built in the same pull request.
+Each stays inside the `bench-check` margin of a re-recorded `bench/baseline.json`. One layout version (`pooled-v6`) carries the lane catalogue, the thirteen inputs and the twenty-four trait slots. The new traits are neutral, but the world is not bit-identical: a random brain reads thirteen more inputs, `randomWeights` spreads over more inputs, a birth draws for twenty more trait slots, and the four existing genes take the clamp of 3. Every golden is re-pinned; the reads that say the design is the same are an eval of 16 seeds against `origin/main` with no keep-rule guard `WORSE`. [fair-chase.md](fair-chase.md) T7a (the graded sprint) is built in the same pull request.
 
-| Chunk | Tasks                                                                        | Builder                                         |
-| ----- | ---------------------------------------------------------------------------- | ----------------------------------------------- |
-| A     | T1, T2, T6a, T7, T30 to T33, T3, T8, T13, T13a, T9, T22, T9a, T34 to T37, T5 | Sonnet; Opus for the kernel parts of T3 and T31 |
+| Chunk | Tasks                                                                        | Builder                                                                                     |
+| ----- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| A     | T1, T2, T6a, T7, T30 to T33, T3, T8, T13, T13a, T9, T22, T9a, T34 to T37, T5 | Sonnet; Opus for the Rust of T3 (`move_all`), T7 and T31 (`brain.rs`) and T13a (`sense.rs`) |
 
 ### Phase 2 - The calculator reads the body
 
@@ -447,10 +447,10 @@ Inside the `bench-check` margin; every golden `worldHash` is unchanged by each c
 
 ### Phase 2 - The calculator reads the body
 
-| #   | Task                                                                                                                                                                                                                                                                                                                          | Nature      | Depends on |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------- |
-| T10 | Add the `traits` argument of `roleParams(config, specName, traits)` in [role-budget.md](role-budget.md) (a ratio per trait, composed as `applyTraits` composes it), `js/evo/role-budget-genes.js` (`traitCorners`) and `--genes` in `scripts/role-budget.mjs`; a test that `roleParams` with every ratio 1 equals `laneBases` | [judgement] | T5         |
-| T12 | Conformance review of Phase 2 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                                                                                                                                                           | [judgement] | T10        |
+| #   | Task                                                                                                                                                                                                                                                                                                                                                                                          | Nature      | Depends on |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------- |
+| T10 | After [role-budget.md](role-budget.md) T5 (the command exists): add the `traits` argument of `roleParams(config, specName, traits)` in [role-budget.md](role-budget.md) (a ratio per trait, composed as `applyTraits` composes it), `js/evo/role-budget-genes.js` (`traitCorners`) and `--genes` in `scripts/role-budget.mjs`; a test that `roleParams` with every ratio 1 equals `laneBases` | [judgement] | T5         |
+| T12 | Conformance review of Phase 2 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                                                                                                                                                                                                                           | [judgement] | T10        |
 
 ### Phase 3 - Choose the numbers
 

@@ -142,7 +142,7 @@ The scene metrics the effects must move exist: `eval.pack_kills_per_eaten_death`
 ## The calculator and the levels
 
 - [role-budget.md](role-budget.md) reads effects through `roleParams(config, specName, traits, effects)`: a level per effect, composed as `liveOf` composes it. The defender's row reads `staggered`, the scout's row `alert`, the sitter's row `chilled`, and a new row `pack:forager` reads two hunters, one rallied, against one alone and prints `packGain`, the catch margin a rally adds.
-- [brain-reflex-tests.md](brain-reflex-tests.md) Phase 5 gains `answer-the-call`: a hunter with a kin's hunt call heard from a bearing and no prey in view turns to the bearing.
+- [brain-reflex-tests.md](brain-reflex-tests.md) Phase 5 holds `answer-the-call` (its T21a): a hunter with a kin's hunt call heard from a bearing and no prey in view turns to the bearing.
 
 ## Phases
 
@@ -160,9 +160,9 @@ Inside the `bench-check` margin; `fadeEffects` is a new phase row of `bench:part
 
 **Targets:** none - every new number is 0; its readings are the effect shares of "Detectors" on the default world, which say how often each effect's trigger occurs
 
-| Chunk | Tasks     | Builder |
-| ----- | --------- | ------- |
-| B     | T9 to T14 | Sonnet  |
+| Chunk | Tasks          | Builder |
+| ----- | -------------- | ------- |
+| B     | T9 to T12, T14 | Sonnet  |
 
 ### Phase 3 - The numbers
 
@@ -170,9 +170,9 @@ Inside the `bench-check` margin; `fadeEffects` is a new phase row of `bench:part
 
 The numbers are chosen with the calculator and read on the default world with [body-genes.md](body-genes.md) Phase 3, in the same screen and the same keep-rule pair. No trained brain is needed.
 
-| Chunk | Tasks      | Builder |
-| ----- | ---------- | ------- |
-| C     | T15 to T19 | Sonnet  |
+| Chunk | Tasks           | Builder |
+| ----- | --------------- | ------- |
+| C     | T13, T15 to T19 | Sonnet  |
 
 ## Decisions
 
@@ -213,7 +213,7 @@ The numbers are chosen with the calculator and read on the default world with [b
 | T2  | Move the body family: `fat`, `coldBand`, `heatBand`, `coldRamp`, `hotRamp`, `outOfBand`, `juvenile`, `spent`; delete `fatFactor`, `thrustEfficiency`, `passiveMultiplier` and the `juvenileBurnOf` multiplier, each reader moved to `liveOf` at the same point of the tick; `test/sim/effects-legacy.test.js` rows for each | [judgement]  | T1         |
 | T3  | Move the feeding family: `grazing`, `handling`, `digesting`, `sated`, `resting`, `sick`, `diseased`; the `eat` gate in `canEatNow`; the two drains with their loss causes; legacy rows                                                                                                                                      | [judgement]  | T1         |
 | T4  | Move the life and signal rules of today: `immature`, `recovering`, `pregnant`, `alarmSeen`, `calling`, `smokeCooling`; the `mate`, `split`, `call` and `smoke` gates; legacy rows                                                                                                                                           | [judgement]  | T1         |
-| T5  | Add the body input `reserve` in the layout commit of [body-genes.md](body-genes.md) T7 (or as its own layout version when that commit has merged); the inspector's effect rows; tests                                                                                                                                       | [judgement]  | T2         |
+| T5  | Wire the body input `reserve`, which the layout commit of [body-genes.md](body-genes.md) T7 adds, to the sprint store's level in `writeBodyInputs`; the inspector's effect rows; tests                                                                                                                                      | [judgement]  | T2         |
 | T6  | Add the `fadeEffects` row to `bench:parts`, time it under the CPU lock and record it; re-record `bench/baseline.json` in its own commit if the step moved                                                                                                                                                                   | [mechanical] | T2, T3, T4 |
 | T7  | Add a test that fails a within-life rule left outside the registry: the functions the Phase 1 table deletes are gone, and `thrustOf`, `tickCost` and `canEatNow` hold no condition of their own beyond the rules of the "Not effects" table                                                                                 | [mechanical] | T2, T3, T4 |
 | T8  | Conformance review of Phase 1 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                                                                                                                                                         | [judgement]  | T5, T6, T7 |
@@ -226,14 +226,14 @@ The numbers are chosen with the calculator and read on the default world with [b
 | T10 | Add `world.heardFrom` in `hearOne`, `hearThreshold`, and `rallied`, `answered` and `hoarse` with their keys at 0: one stack per call heard, `answered` on a kill both hunters bit, the two ways a `hoarse` stack comes off; the applier tests of the Delivery row | [judgement] | T8           |
 | T11 | Add `alert` (seen alarms only), `huddled` (fed kin only; the pass over the spatial hash every 8 ticks) and `staggered` (the `DefenderShoved` event in `tryDefenderRepel`) with their keys at 0                                                                    | [judgement] | T8           |
 | T12 | Add `js/evo/scene-effects.js` and the four detectors with their source tests and registry entries; run 16 seeds and record `eval.effect_share.*`                                                                                                                  | [judgement] | T9, T10, T11 |
-| T13 | Add the `effects` argument of `roleParams`, the `pack:forager` row and `packGain` to [role-budget.md](role-budget.md), and the `answer-the-call` reflex case; tests                                                                                               | [judgement] | T10          |
-| T14 | Conformance review of Phase 2 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                                                                                               | [judgement] | T12, T13     |
+| T14 | Conformance review of Phase 2 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                                                                                               | [judgement] | T12          |
 
 ### Phase 3 - The numbers
 
 | #   | Task                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Nature       | Depends on |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | ---------- |
-| T15 | Choose each effect's numbers with `role:budget`: `rallyThrust` and `rallyBurn` so `packGain` is above `tightTicks` and a lone hunter is no worse; `staggerThrust` and `staggerTicks` so the defender's intercept cell is `ok`; the cold stack with the sitter row; write the arms into the screen of [body-genes.md](body-genes.md) T14                                                                                                                            | [judgement]  | T14        |
+| T13 | After [role-budget.md](role-budget.md) T5: add the `effects` argument of `roleParams`, the `pack:forager` row and `packGain`; tests                                                                                                                                                                                                                                                                                                                                | [judgement]  | T14        |
+| T15 | Choose each effect's numbers with `role:budget`: `rallyThrust` and `rallyBurn` so `packGain` is above `tightTicks` and a lone hunter is no worse; `staggerThrust` and `staggerTicks` so the defender's intercept cell is `ok`; the cold stack with the sitter row; write the arms into the screen of [body-genes.md](body-genes.md) T14                                                                                                                            | [judgement]  | T13        |
 | T16 | Read the arms in that 16-seed screen and the 64-seed keep-rule pair; record the scene metrics and each effect's share                                                                                                                                                                                                                                                                                                                                              | [mechanical] | T15        |
 | T17 | Check the cheats on the finalist with scripted bodies: two hunters that only call at each other gain no `answered` stack and lose energy; a hunter that stands by while its pack-mate kills gains none; a body that calls alone reaches 5 `hoarse` stacks; an alarm with no threat in view alerts nobody; a rallied hunter that never closes ends below an unrallied one; a huddle of bodies that never move dies no later than a lone sitter by more than a tenth | [judgement]  | T15        |
 | T18 | Adopt with body-genes.md T18 as a breaking PR to `main` with its `library/seasons.json` change: the finalist's numbers become the defaults, goldens re-pinned in their own commit; an effect whose guard reads `WORSE` keeps its numbers at 0                                                                                                                                                                                                                      | [judgement]  | T16, T17   |

@@ -3,7 +3,6 @@
 **Status:** Proposed - the systems map of the sim, and three concepts that are spread over many files made into registries: events, the brain's inputs and outputs, and the observer's detectors; Phase 1 (events, the spec names and the per-slot state list) is first.
 **Validated:** 23e8cc66 (2026-11-21)
 **Scheduled by:** [metric-noise.md](metric-noise.md) step 1 - the detector interface is built before metric-noise.md Phase 6 adds the role metrics, since each detector added today touches 12 to 22 files
-**Depends on:** [body-genes.md](body-genes.md)
 
 > Companion to [body-genes.md](body-genes.md) (the lane catalogue and the trait registry) and [status-effects.md](status-effects.md) (the effects registry), which follow the same pattern.
 

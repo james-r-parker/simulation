@@ -1,5 +1,7 @@
 # Handoff 2026-11-20 - build the improvement plans
 
+**Read "Direction (user, 2026-11-21)" first.** It is the current order. The Focus, Build order and Progress sections are the record of 2026-11-20 and of the first coordinator's nights; where they disagree with Direction (which step is next, what gates training, `season/next`), Direction holds.
+
 For the session that builds the plans written on 2026-11-20. Read `AGENTS.md` and `docs/principles.md` first, then the
 plan for the lane being started (the `resume-plan` skill).
 
@@ -55,8 +57,15 @@ lands first, in big chunks (one phase to a pull request), straight on `main` (a 
 | 7    | A reflex case and a drill for each role, bars from the calculator, then the reflex validation study                                                                                                                                                                                                   | [brain-reflex-tests.md](../designs/brain-reflex-tests.md) Phase 5 then Phase 2; [training-loop.md](../designs/training-loop.md) T34 | gate 3: level one and level two measure the right things                         |
 | 8    | Training: `train:feasible` on the graded-sprint arm, then the ladder screen                                                                                                                                                                                                                           | fair-chase.md T7b, T8                                                                                                               | the first training runs                                                          |
 
-Beside lane B, with no order between them: body-genes.md Phase 5 (the remaining readers move to lanes, mechanical),
-training-loop.md T33 and T28, and lanes A and C as listed under "Progress".
+Beside lane B: body-genes.md Phase 5 (the remaining readers move to lanes, mechanical), and lanes A and C as listed under "Progress". After step 8: training-loop.md T33 (it is a training run) and T28.
+
+**Do not run before step 8:** `npm run train`, `train:feasible`, `train:screen`, `train:tune`, `train:profile` on a real ladder, or a champion export. Evals of the live policy (`npm run eval`, `eval:compare`, the screens of step 5) are not training and may run.
+
+**Rust, by Opus:** body-genes.md T3 (`move_all`), T7 and T31 (`wasm/src/brain.rs`), T13a (`wasm/src/sense.rs`). fair-chase.md T7a needs no Rust change.
+
+**Step 5 before gate 2:** the screen of step 5 is judged by the keep rule's settled guard, which metric-noise.md Phase 4 already verified; the role metrics that step 6 checks are reported there, not decided on.
+
+**History in other plans:** `season/next` in eat-choice.md, low-density-edge.md, carrying-capacity.md and unit-knockout.md describes how built phases landed; it is not a rule.
 
 ### Decisions behind the plans
 

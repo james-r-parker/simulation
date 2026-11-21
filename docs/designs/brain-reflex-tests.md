@@ -202,9 +202,9 @@ The reflex tier is the fastest measure there is (522 genomes a second, 776 times
 - Each case passes the validity rule of Phase 1: random brains and constant brains fail it and the scripted reference (`js/evo/reflex-references.js`) passes it.
 - `npm run reflex -- --role <spec>` scores one role's cases.
 
-| Chunk | Tasks      | Builder |
-| ----- | ---------- | ------- |
-| E     | T20 to T24 | Sonnet  |
+| Chunk | Tasks                  | Builder |
+| ----- | ---------------------- | ------- |
+| E     | T20 to T24 (with T21a) | Sonnet  |
 
 ## Decisions
 
@@ -294,13 +294,14 @@ The reflex tier is the fastest measure there is (522 genomes a second, 776 times
 
 ### Phase 5 - A case for each role
 
-| #   | Task                                                                                                                                                                                                                    | Nature      | Depends on |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------- |
-| T20 | Write the inventory: for each role, the first skill its job needs ([role-budget.md](role-budget.md) rows), the reflex case that reads it today or none, and the drill that reads it; record it in this doc              | [judgement] | -          |
-| T21 | Add `js/evo/reflex-cases-roles.js` (`sprint-on-prey`, `hold-the-bite`, `call-on-threat`, `turn-to-alarm`, `flee-on-alarm`, `clear-the-herd`) with their references, the `--role` flag and tests of each case's validity | [judgement] | T20        |
-| T22 | Add `js/evo/reflex-bars.js` (`reflexBars` from the role budget) and move every case's bars to it, with a test that a config change moves a bar                                                                          | [judgement] | T21        |
-| T23 | Run T10 (`E-RT-1`) with the role cases in, and apply T11's decision rule                                                                                                                                                | [judgement] | T22        |
-| T24 | Conformance review of Phase 5, in parallel with `scripts/check.sh`                                                                                                                                                      | [judgement] | T23        |
+| #    | Task                                                                                                                                                                                                                                                                                                                                                          | Nature      | Depends on |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------- |
+| T20  | Write the inventory: for each role, the first skill its job needs ([role-budget.md](role-budget.md) rows), the reflex case that reads it today or none, and the drill that reads it; record it in this doc                                                                                                                                                    | [judgement] | -          |
+| T21  | Add `js/evo/reflex-cases-roles.js` (`sprint-on-prey`, `hold-the-bite`, `call-on-threat`, `turn-to-alarm`, `flee-on-alarm`, `clear-the-herd`) with their references, the `--role` flag and tests of each case's validity                                                                                                                                       | [judgement] | T20        |
+| T21a | After [body-genes.md](body-genes.md) Phase 1 and [status-effects.md](status-effects.md) T10: add `pick-the-weak`, `flee-what-closes`, `mind-the-numbers` and `answer-the-call` (a hunter with a kin's hunt call heard from a bearing and no prey in view turns to the bearing) to `js/evo/reflex-cases-roles.js`, with their references and validity tests    | [judgement] | T21        |
+| T22  | Add `js/evo/reflex-bars.js` (`reflexBars` from the role budget) and move every case's bars to it, with a test that a config change moves a bar                                                                                                                                                                                                                | [judgement] | T21, T21a  |
+| T23  | Run T10 (`E-RT-1`) with the role cases in, on `pooled-v6` genomes: the elites of live-policy evals saved with `--save-champions` (16 seeds, 200000 ticks) and random brains, since every earlier champion and the league are refused by the new layout; the study's league row is left out until a league exists. Apply T11's decision rule on the drill rows | [judgement] | T22        |
+| T24  | Conformance review of Phase 5, in parallel with `scripts/check.sh`                                                                                                                                                                                                                                                                                            | [judgement] | T23        |
 
 ## Verification
 
