@@ -145,6 +145,7 @@ add one to the month file and run `node scripts/notes-index.mjs --write` in the 
 - 2026-11-20 - The sprint store changes the breaking chase only when the hunter outlasts its prey (E253, E-FC-1) - [2026-11](../notes/2026-11.md#2026-11-20---the-sprint-store-changes-the-breaking-chase-only-when-the-hunter-outlasts-its-prey-e253-e-fc-1)
 - 2026-11-20 - Where a 20-generation ladder run spends its wall time (training-loop T26) - [2026-11](../notes/2026-11.md#2026-11-20---where-a-20-generation-ladder-run-spends-its-wall-time-training-loop-t26)
 - 2026-11-21 - The per-slot state contract found one array outside worldHash (registries Phase 1) - [2026-11](../notes/2026-11.md#2026-11-21---the-per-slot-state-contract-found-one-array-outside-worldhash-registries-phase-1)
+- 2026-11-21 - A startled herd's held centroid was a defect, not a design (role-budget T21a) - [2026-11](../notes/2026-11.md#2026-11-21---a-startled-herds-held-centroid-was-a-defect-not-a-design-role-budget-t21a)
 - 2026-10-11 - jscpd 5 has no exitCode option - [2026-10](../notes/2026-10.md#2026-10-11---jscpd-5-has-no-exitcode-option)
 - 2026-10-11 - Git hooks export GIT_DIR and GIT_INDEX_FILE - [2026-10](../notes/2026-10.md#2026-10-11---git-hooks-export-git_dir-and-git_index_file)
 - 2026-10-11 - WebGPU in WSL Chromium is SwiftShader only - [2026-10](../notes/2026-10.md#2026-10-11---webgpu-in-wsl-chromium-is-swiftshader-only)
