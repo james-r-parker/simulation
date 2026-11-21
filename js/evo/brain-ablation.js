@@ -4,6 +4,7 @@ import { brainLayout } from '../sim/brain-layout.js';
 import { createConfig } from '../sim/config.js';
 import { createRng, fork } from '../sim/rng.js';
 import { applyEdits, silenceHook } from './brain-edit.js';
+import { layerArena } from './drill-body-rules.js';
 import { playTrial, viewOf } from './memory-probe-run.js';
 
 /**
@@ -35,7 +36,7 @@ export function editTrials({ subject, drill, edits, seed, trials, config = {} })
  */
 function replayTrials({ subject, drill, unit, edits, seed, trials, config }) {
     checkTrialCount(trials);
-    const arena = { ...config, ...drill.arena };
+    const arena = layerArena(config, drill.arena);
     const staged = { ...subject, spec: subject.spec ?? drill.spec };
     const base = createConfig(arena);
     const weights = editedWeights(staged, brainLayout(base), unit, edits);

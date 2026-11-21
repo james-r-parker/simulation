@@ -6,6 +6,7 @@ import { brainLayout } from '../sim/brain-layout.js';
 import { createConfig } from '../sim/config.js';
 import { createRng, fork } from '../sim/rng.js';
 import { wilsonInterval } from './binomial.js';
+import { layerArena } from './drill-body-rules.js';
 import { randomWeights } from './mutation.js';
 import { playTrial, viewOf } from './memory-probe-run.js';
 
@@ -94,7 +95,7 @@ function withArms(score, { drill, subject, wanted, run }) {
  */
 export function drillSubject(drill, subject, options = {}) {
     const { seed = 1, trials = DRILL_TRIALS, log, arms = false } = options;
-    const config = { ...options.config, ...drill.arena };
+    const config = layerArena(options.config, drill.arena);
     const staged = { ...subject, spec: subject.spec ?? drill.spec };
     const view = viewOf(staged, createConfig(config));
     const rng = fork(createRng(seed), `drill:${drill.name}`);
