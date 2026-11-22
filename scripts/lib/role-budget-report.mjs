@@ -103,7 +103,7 @@ function defendLines(budget) {
         `  alarm ${at(run.alarmTick)}  heard ${at(run.heardTick)}  defender moves ${at(run.startTick)}  touches the hunter ${at(run.interceptTick)}  caller dies ${at(baseline.killTick)} (no defender) / ${at(run.killTick)}`,
         `  shove ${shove}`,
         `  a hunter's bite on the defender takes ${defenderBite.taken.toFixed(0)} and costs the hunter ${defenderBite.kick.toFixed(1)} of kick`,
-        `  smoke: ${smoke.refused ? 'refused (the defender faces the hunter) ' : ''}release at tick ${smoke.releaseTick} (walk ${smoke.runTicks}, turn ${smoke.facingTicks}), latest ${smoke.latestRelease}; hidden ${smoke.hiddenTicks} ticks, caller needs ${smoke.escapeNeed} to leave the view; slack defender ${smoke.slackDefender ?? 'X'}, caller ${smoke.slackCaller ?? 'X'}`,
+        `  smoke: release at tick ${smoke.releaseTick} (walk ${smoke.runTicks}, turn ${smoke.facingTicks}), latest ${smoke.latestRelease}; hidden ${smoke.hiddenTicks} ticks, caller needs ${smoke.escapeNeed} to leave the view; slack defender ${smoke.slackDefender ?? 'X'}, caller ${smoke.slackCaller ?? 'X'}`,
     ];
 }
 
