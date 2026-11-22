@@ -58,7 +58,7 @@ export function pickWorkers({ env = process.env, cores = availableParallelism(),
         return null;
     }
     const held = leases.reduce((sum, l) => sum + l.workers, 0);
-    return Math.max(1, workerLedger(flying, cores).free - held);
+    return Math.max(1, workerLedger(flying, cores, env).free - held);
 }
 
 /**

@@ -66,10 +66,11 @@ export function collectRuns(files) {
 /**
  * @param {{workers?: number | null}[]} flying the runs in flight
  * @param {number} [cores] the core count
+ * @param {Record<string, string | undefined>} [env] the environment (`CI` lifts the budget to every core)
  * @returns {{budget: number, claimed: number, free: number}} the worker budget, what in-flight runs claim, what is left
  */
-export function workerLedger(flying, cores = availableParallelism()) {
-    const budget = defaultWorkers(cores);
+export function workerLedger(flying, cores = availableParallelism(), env = process.env) {
+    const budget = defaultWorkers(cores, env);
     const claimed = flying.reduce((sum, run) => sum + (run.workers ?? 0), 0);
     return { budget, claimed, free: Math.max(0, budget - claimed) };
 }
