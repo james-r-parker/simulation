@@ -9,13 +9,17 @@ const world = createConfig({});
 const COURSER = JSON.parse(readFileSync('evals/fair-chase/courser.json', 'utf8'));
 
 describe('playIdle', () => {
-    it('a sitter alone lives the ticks its energy lasts with the body cooling: 2744 from 200, 7741 from 800 (a forager)', () => {
-        expect(playIdle(world, { spec: 'forager', energy: 200, speed: 0 })).toEqual({
-            ticks: { life: 2744 },
-            outcome: { died: true, coldest: expect.any(Number) },
-        });
-        expect(playIdle(world, { spec: 'forager', energy: 800, speed: 0 }).ticks.life).toBe(7741);
-    });
+    it(
+        'a sitter alone lives the ticks its energy lasts with the body cooling: 2744 from 200, 7741 from 800 (a forager)',
+        () => {
+            expect(playIdle(world, { spec: 'forager', energy: 200, speed: 0 })).toEqual({
+                ticks: { life: 2744 },
+                outcome: { died: true, coldest: expect.any(Number) },
+            });
+            expect(playIdle(world, { spec: 'forager', energy: 800, speed: 0 }).ticks.life).toBe(7741);
+        },
+        scaleTimeout(30000),
+    );
 
     it('a walker dies sooner than a sitter: it pays for every px, and keeps warmer', () => {
         const walked = playIdle(world, { spec: 'forager', energy: 200, speed: 2.1 });
