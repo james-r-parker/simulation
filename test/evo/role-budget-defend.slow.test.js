@@ -105,9 +105,9 @@ describe('the smoke slack against the scenes', () => {
         expect(reading(DEFAULTS, (w) => w === 'caller out of view when the cover ends')).toBeUndefined();
     });
 
-    it('the geometry refuses a defender that faces the hunter, and the scene puts its cloud on the caller side', () => {
+    it('a defender that faces the hunter drops its cloud toward it, in the geometry and in the scene', () => {
         for (const arm of ARMS) {
-            const r = reading(arm, (w) => w.includes('refused'));
+            const r = reading(arm, (w) => w.includes('drops the cloud toward it'));
             expect([r.formula, r.scene], arm.name).toEqual([true, true]);
         }
     });

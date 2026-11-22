@@ -42,10 +42,10 @@ describe('playDefenderSmoke', () => {
         expect(run.outcome.cloud.x).toBeCloseTo(178, 0);
     });
 
-    it('a defender that faces the hunter drops the cloud behind it, on the caller side: it is not between', () => {
+    it('a defender that faces the hunter drops the cloud toward it, with no turn: it is between', () => {
         const run = playDefenderSmoke(arenaConfig(), { ...DEFENDER, facing: 'hunter' });
-        expect(run.outcome.between).toBe(false);
-        expect(run.outcome.cloud.x).toBeCloseTo(345 - (29 + 29) + (29 + 80), 0);
+        expect(run.outcome.between).toBe(true);
+        expect(run.outcome.cloud.x).toBeCloseTo(345 - (29 + 29) - (29 + 80), 0);
     });
 
     it('the hunter with a short view loses the caller that runs sideways behind the cloud', () => {
