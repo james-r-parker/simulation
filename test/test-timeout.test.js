@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+    CI_TIMEOUT_FACTOR,
     COVERAGE_TIMEOUT_FACTOR,
     COVERAGE_TIMEOUT_MS,
     DEFAULT_TIMEOUT_MS,
@@ -10,29 +11,29 @@ import {
 
 describe('testTimeoutFor', () => {
     it('keeps Vitest default of 5000 ms without coverage', () => {
-        expect(testTimeoutFor(['node', 'vitest', 'run'])).toBe(DEFAULT_TIMEOUT_MS);
+        expect(testTimeoutFor(['node', 'vitest', 'run'], {})).toBe(DEFAULT_TIMEOUT_MS);
         expect(DEFAULT_TIMEOUT_MS).toBe(5000);
     });
 
     it('gives 20000 ms when --coverage is among the arguments', () => {
-        expect(testTimeoutFor(['node', 'vitest', 'run', '--coverage'])).toBe(COVERAGE_TIMEOUT_MS);
+        expect(testTimeoutFor(['node', 'vitest', 'run', '--coverage'], {})).toBe(COVERAGE_TIMEOUT_MS);
         expect(COVERAGE_TIMEOUT_MS).toBe(20000);
     });
 
     it('also reads the --coverage.enabled form', () => {
-        expect(testTimeoutFor(['vitest', '--coverage.enabled'])).toBe(COVERAGE_TIMEOUT_MS);
+        expect(testTimeoutFor(['vitest', '--coverage.enabled'], {})).toBe(COVERAGE_TIMEOUT_MS);
     });
 
     it('does not treat --coverage=false as coverage', () => {
-        expect(testTimeoutFor(['vitest', '--coverage=false'])).toBe(DEFAULT_TIMEOUT_MS);
-        expect(testTimeoutFor(['vitest', '--coverage.enabled=false'])).toBe(DEFAULT_TIMEOUT_MS);
+        expect(testTimeoutFor(['vitest', '--coverage=false'], {})).toBe(DEFAULT_TIMEOUT_MS);
+        expect(testTimeoutFor(['vitest', '--coverage.enabled=false'], {})).toBe(DEFAULT_TIMEOUT_MS);
     });
 });
 
 describe('timeoutFactorFor', () => {
     it('is 1 without coverage and the coverage factor with it', () => {
-        expect(timeoutFactorFor(['vitest', 'run'])).toBe(1);
-        expect(timeoutFactorFor(['vitest', 'run', '--coverage'])).toBe(COVERAGE_TIMEOUT_FACTOR);
+        expect(timeoutFactorFor(['vitest', 'run'], {})).toBe(1);
+        expect(timeoutFactorFor(['vitest', 'run', '--coverage'], {})).toBe(COVERAGE_TIMEOUT_FACTOR);
     });
 });
 
@@ -50,5 +51,24 @@ describe('scaleTimeout', () => {
     it('ignores a factor below 1 or not a number, so it never shortens a timeout', () => {
         expect(scaleTimeout(1000, { TEST_TIMEOUT_FACTOR: '0.5' })).toBe(1000);
         expect(scaleTimeout(1000, { TEST_TIMEOUT_FACTOR: 'x' })).toBe(1000);
+    });
+});
+
+describe('runner factor', () => {
+    it('stretches the default and explicit timeouts on CI', () => {
+        const env = { CI: 'true' };
+        expect(testTimeoutFor(['vitest'], env)).toBe(DEFAULT_TIMEOUT_MS * CI_TIMEOUT_FACTOR);
+        expect(timeoutFactorFor(['vitest'], env)).toBe(CI_TIMEOUT_FACTOR);
+    });
+
+    it('multiplies with the coverage factor', () => {
+        expect(timeoutFactorFor(['vitest', '--coverage'], { CI: '1' })).toBe(
+            COVERAGE_TIMEOUT_FACTOR * CI_TIMEOUT_FACTOR,
+        );
+    });
+
+    it('lets TEST_TIMEOUT_FACTOR set the factor by hand and never shortens', () => {
+        expect(testTimeoutFor(['vitest'], { CI: '1', TEST_TIMEOUT_FACTOR: '5' })).toBe(DEFAULT_TIMEOUT_MS * 5);
+        expect(testTimeoutFor(['vitest'], { TEST_TIMEOUT_FACTOR: '0.1' })).toBe(DEFAULT_TIMEOUT_MS);
     });
 });

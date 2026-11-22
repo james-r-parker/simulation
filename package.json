@@ -14,6 +14,7 @@
     "check": "scripts/check.sh",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:report": "scripts/test-failures.sh",
     "lint": "eslint --max-warnings 0 .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

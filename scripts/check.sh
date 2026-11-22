@@ -178,7 +178,7 @@ if [[ $LIST -eq 1 ]]; then
   exit 0
 fi
 
-[[ -d node_modules ]] || { echo "node_modules is missing - run: npm ci" >&2; exit 1; }
+[[ -d node_modules ]] || { echo "node_modules is missing - run: scripts/worktree-setup.sh (links the main checkout's, else npm ci)" >&2; exit 1; }
 BIN="$ROOT/node_modules/.bin"
 
 mkdir -p "$LOG_DIR"
@@ -208,7 +208,9 @@ digest() {
   case "$gate" in
     test|docs-tests)
       # Each failed test's name, its assertion and the first frame in the repo, then the totals.
-      out="$(grep -E '^\s*(FAIL |AssertionError|Error:|TypeError|ReferenceError|❯ (test|js|scripts)/|Test Files |Tests )' "$log" \
+      # scripts/test-report.mjs --log prints the same compact form as `npm run test:report` (timeouts labelled).
+      out="$(node "$ROOT/scripts/test-report.mjs" --log "$log" --full 2>/dev/null | sed -E "s#${ROOT}/##g"; grep -E '^\s*(Test Files |Tests )' "$log")"
+      [[ "$out" == *"no failing test"* ]] && out="$(grep -E '^\s*(FAIL |AssertionError|Error:|TypeError|ReferenceError|❯ (test|js|scripts)/|Test Files |Tests )' "$log" \
         | sed -E "s#${ROOT}/##g" | awk '!seen[$0]++')" ;;
     typecheck)
       out="$(grep -E '\([0-9]+,[0-9]+\): error TS[0-9]+' "$log" | awk '!seen[$0]++')" ;;
@@ -311,6 +313,19 @@ else
 fi
 
 # Not yet built gates report skipped; each is its own function so it is filled in separately.
+# with_test_workers <command...>: runs the command with Vitest's worker cap from the free share of the worker budget
+# (scripts/lib/test-workers.mjs; TEST_MAX_WORKERS overrides it; nothing on CI) and holds a lease while it runs.
+with_test_workers() {
+  local n rc=0
+  n="$(node "$ROOT/scripts/test-workers.mjs" claim $$ 2>/dev/null)" || n=""
+  if [[ -n $n ]]; then
+    VITEST_MAX_WORKERS="$n" with_cpu_lock_shared "$@" || rc=$?
+  else
+    with_cpu_lock_shared "$@" || rc=$?
+  fi
+  node "$ROOT/scripts/test-workers.mjs" release $$ 2>/dev/null || true
+  return $rc
+}
 # gate_test_related: the tests related to the staged files (vitest related).
 gate_test_related() {
   if [[ "$TIER" != 1 ]]; then
@@ -318,7 +333,7 @@ gate_test_related() {
   elif [[ ${#RELATED_FILES[@]} -eq 0 ]]; then
     skip_gate test-related "no staged .js or .mjs files"
   else
-    run_gate test-related "$BIN/vitest" related --run --passWithNoTests --exclude '**/*.slow.test.js' "${RELATED_FILES[@]}"
+    run_gate test-related with_test_workers "$BIN/vitest" related --run --passWithNoTests --exclude '**/*.slow.test.js' "${RELATED_FILES[@]}"
   fi
 }
 # gate_deps: layering rules from .dependency-cruiser.cjs (dependency-cruiser).
@@ -466,9 +481,9 @@ run_tests() {
   local junit="$1"
   shift
   if [[ $CI -eq 1 ]]; then
-    "${VITEST_BIN:-$BIN/vitest}" run --reporter=default --reporter=junit --outputFile.junit="TestResults/$junit" "$@"
+    with_test_workers "${VITEST_BIN:-$BIN/vitest}" run --reporter=default --reporter=junit --outputFile.junit="TestResults/$junit" "$@"
   else
-    "${VITEST_BIN:-$BIN/vitest}" run "$@"
+    with_test_workers "${VITEST_BIN:-$BIN/vitest}" run "$@"
   fi
 }
 

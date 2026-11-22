@@ -97,3 +97,40 @@ describe('with_cpu_lock', { timeout: scaleTimeout(30_000) }, () => {
         expect(r.status).toBe(0);
     });
 });
+
+/**
+ * Holds the lock shared from another process, returning once it is held.
+ * @param {number} seconds how long
+ * @returns {Promise<void>} resolves when the holder owns the lock
+ */
+function holdShared(seconds) {
+    return new Promise((done) => {
+        const child = spawn('flock', ['-s', lock, 'bash', '-c', `echo held; sleep ${seconds}`], {
+            stdio: ['ignore', 'pipe', 'ignore'],
+        });
+        child.stdout.once('data', () => done());
+    });
+}
+
+describe('with_cpu_lock_shared', { timeout: scaleTimeout(30_000) }, () => {
+    it('lets a second shared holder run at once', async () => {
+        await holdShared(3);
+        const r = run('with_cpu_lock_shared echo now');
+        expect(r.stdout.trim()).toBe('now');
+        expect(r.ms).toBeLessThan(2000);
+    });
+
+    it('waits for an exclusive holder, as a bench makes it', async () => {
+        await hold(2);
+        const r = run('with_cpu_lock_shared echo now');
+        expect(r.stdout.trim()).toBe('now');
+        expect(r.stderr).toContain('waiting for the CPU lock');
+    });
+
+    it('makes an exclusive timing job wait for a running test', async () => {
+        await holdShared(2);
+        const r = run('with_cpu_lock echo bench');
+        expect(r.stdout.trim()).toBe('bench');
+        expect(r.stderr).toContain('waiting for the CPU lock');
+    });
+});

@@ -29,6 +29,11 @@ lock_held_by_ancestor() {
 
 with_cpu_lock() {
   local lock fd status wait="${CHECK_CPU_LOCK_WAIT:-3600}"
+  # with_cpu_lock_shared takes `flock -s`: test runs share the machine side by side but a timing gate, which holds the
+  # lock exclusively, waits for them and they wait for it. A plain variable, never exported to the command's children.
+  local mode=()
+  [[ "${_CPU_LOCK_SHARED:-0}" == 1 ]] && mode=(-s)
+  _CPU_LOCK_SHARED=0
   if [[ "${CHECK_CPU_LOCK:-}" == off || "${CHECK_CPU_LOCK_HELD:-}" == 1 ]]; then
     "$@"
     return $?
@@ -44,9 +49,9 @@ with_cpu_lock() {
     CHECK_CPU_LOCK_HELD=1 "$@"
     return $?
   fi
-  if ! flock -n "$fd"; then
+  if ! flock "${mode[@]}" -n "$fd"; then
     echo "waiting for the CPU lock ($lock)" >&2
-    if ! flock -w "$wait" "$fd"; then
+    if ! flock "${mode[@]}" -w "$wait" "$fd"; then
       echo "gave up waiting for the CPU lock after ${wait}s ($lock)" >&2
       exec {fd}>&-
       return 75
@@ -56,4 +61,11 @@ with_cpu_lock() {
   status=$?
   exec {fd}>&-
   return "$status"
+}
+
+# with_cpu_lock_shared <command...>: with_cpu_lock with a shared lock, for the test gates (scripts/lib/test-workers.mjs sets
+# the worker cap; docs/agent-reference.md, "Only timing work needs a quiet machine").
+with_cpu_lock_shared() {
+  _CPU_LOCK_SHARED=1
+  with_cpu_lock "$@"
 }

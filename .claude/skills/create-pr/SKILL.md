@@ -62,6 +62,8 @@ scripts/browser-perf.mjs` (v6 by default; `--viewport 3840x2160` and `2560x1440`
     - append learnings to `docs/notes/<YYYY-MM>.md` as a dated `### YYYY-MM-DD - <topic>` entry, then run
       `node scripts/notes-index.mjs --write` (it updates the index in `docs/designs/sim-notes.md`)
 7. **Write the PR body** to a file (the template under Ship); `ship.sh` checks it (step 4) before it pushes.
+   A branch checked out in another worktree (a harness-made `worktree-agent-*` branch) cannot be pushed under its own
+   name from here: `git push origin HEAD:<branch>`.
 
 ## Git conventions
 
@@ -145,7 +147,7 @@ commit.
 
 A rerun after a fix commit resumes at step 2 on the same PR. The run is logged to `.checklogs/ship.jsonl`.
 
-On a red `check` (exit 1) the digest names the job; for more, `gh run view <run-id> --log-failed`.
+On a red `check` (exit 1) run `scripts/ci-failures.sh <pr>` (failed tests, assertions, timeouts, about 40 lines); wait for checks with `scripts/ci-wait.sh <pr>`, never a `gh run watch` loop. Run tests with `npm run test:report`.
 
 - `static`: the "Local gate" step shows the digest under each `✗` line; for more, `gh run download <run-id> -n
 check-logs` (`.checklogs/` and `TestResults/`). A `format` or `designs-index` failure is fixed by `scripts/check.sh --fix`.

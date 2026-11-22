@@ -44,6 +44,10 @@ export default defineConfig({
                 'js/app/renderer/scene.js',
                 'js/app/renderer/bloom.js',
                 'scripts/alloc-check.mjs',
+                // gh and vitest shells; their parsing is in scripts/lib/ci-log.mjs, ci-checks.mjs and test-report.mjs.
+                'scripts/ci-failures.mjs',
+                'scripts/ci-wait.mjs',
+                'scripts/test-report.mjs',
                 'scripts/browser/**',
                 'scripts/lib/browser-session.mjs',
                 'scripts/lib/perf-run.mjs',

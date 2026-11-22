@@ -71,7 +71,9 @@ When one agent hands tasks to others (user, 2026-10-22):
   `perf:browser`, `alloc-check`) and the optional full local gate (`scripts/check.sh`, for perf PRs; its `bench-check` and slow-test timeouts
   fail under load) run through `flock /tmp/claude-1000/cpu.lock <cmd>` and only while no eval or screen is running.
   Evals, screens, the ladder and replays are deterministic whatever the load, so they run side by side and may fill
-  the CPU.
+  the CPU. Test runs (`npm run test:report`, the `test` gates of `check.sh`, the pre-commit hook's related tests) hold the
+  same lock shared (`flock -s`; `scripts/lib/cpu-lock.sh` `with_cpu_lock_shared`), so tests run side by side while a
+  bench (exclusive) waits for them and they wait for it. Pass `--no-lock` to `test:report` when your own `flock` holds it.
 - **Report once, briefly**: PR link, what changed, measurements, decisions, anything unsure.
 
 ## Hard rules

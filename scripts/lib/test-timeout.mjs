@@ -21,20 +21,39 @@ function coverageOn(argv) {
     return argv.some((arg) => /^--coverage(\.enabled)?$/.test(arg) || /^--coverage(\.enabled)?=true$/.test(arg));
 }
 
+/** What every timeout is multiplied by on a CI runner: a shared 4 vCPU runner ran `role-scenes-thrive` in 8.7 s against the 5 s
+ *  default (2026-11-22), and tests were being fixed one by one. */
+export const CI_TIMEOUT_FACTOR = 3;
+
 /**
- * @param {string[]} argv the Vitest command line
- * @returns {number} the default per-test timeout in ms
+ * @param {Record<string, string | undefined>} env the environment: `TEST_TIMEOUT_FACTOR` (a number of 1 or more) sets the
+ *   factor by hand, otherwise `CI` picks CI_TIMEOUT_FACTOR
+ * @returns {number} the runner's multiplier
  */
-export function testTimeoutFor(argv) {
-    return coverageOn(argv) ? COVERAGE_TIMEOUT_MS : DEFAULT_TIMEOUT_MS;
+export function runnerFactor(env) {
+    const set = Number(env.TEST_TIMEOUT_FACTOR);
+    if (Number.isFinite(set) && set >= 1) {
+        return set;
+    }
+    return env.CI ? CI_TIMEOUT_FACTOR : 1;
 }
 
 /**
  * @param {string[]} argv the Vitest command line
+ * @param {Record<string, string | undefined>} [env] the environment
+ * @returns {number} the default per-test timeout in ms
+ */
+export function testTimeoutFor(argv, env = process.env) {
+    return (coverageOn(argv) ? COVERAGE_TIMEOUT_MS : DEFAULT_TIMEOUT_MS) * runnerFactor(env);
+}
+
+/**
+ * @param {string[]} argv the Vitest command line
+ * @param {Record<string, string | undefined>} [env] the environment
  * @returns {number} the multiplier for explicit test timeouts
  */
-export function timeoutFactorFor(argv) {
-    return coverageOn(argv) ? COVERAGE_TIMEOUT_FACTOR : 1;
+export function timeoutFactorFor(argv, env = process.env) {
+    return (coverageOn(argv) ? COVERAGE_TIMEOUT_FACTOR : 1) * runnerFactor(env);
 }
 
 /**
