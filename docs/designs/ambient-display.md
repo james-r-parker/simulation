@@ -1,8 +1,8 @@
 # Ambient display
 
 **Status:** In progress - Phases 1, 3, 5 and 6 are built; Phase 7 (a calm camera) is built except T40 (`perf:browser` at 240 Hz with `?tv=1`, the OLED walk); open: T6, T10b, T11 and T22 need the real GPU with the user watching, and T40 owes a 240 Hz `tv=1` run.
-**Validated:** 3c6f1225 (2026-11-21)
-**Priority:** 5 - App lead. The app is the product and is watched on a side screen all day; an idle screen shows a static camera today, and the scene reel (Phase 6) is how a behaviour change is reviewed; app-only work on its own lane
+**Validated:** 80f10d18 (2026-11-22)
+**Priority:** 5 - App lead. Phases 1, 3, 5, 6 and most of 7 (director, follow, far-screen look, insights drawer, scene reel, calm camera) are built; remaining work is the real-GPU OLED walks and 240 Hz `?tv=1` run (T6, T10b, T11, T22, T40)
 **Depends on:** [crisp-renderer.md](crisp-renderer.md), [continuous-follow.md](continuous-follow.md), [worker-and-renderer.md](worker-and-renderer.md), [pack-worker.md](pack-worker.md)
 
 > Companion to [crisp-renderer.md](crisp-renderer.md), which owns the layers, the models, the clips and the frame budgets, and to [continuous-follow.md](continuous-follow.md), which owns follow as built. This doc owns the unattended experience: what the camera does with nobody at the keyboard, how a life ends on screen, what follow shows, the far-screen look, and the insights drawer.
