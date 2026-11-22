@@ -1,0 +1,19 @@
+{
+  "id": "E273",
+  "plan": "body-genes.md",
+  "task": "T14",
+  "stream": "body-genes",
+  "date": "2026-11-22",
+  "branch": "eval/body-genes-e-bg-2",
+  "kind": "compare",
+  "hypothesis": "With the spans of step5-d open and every cost exponent at 0 the genes run to the edge of their menu (no cost holds them); the paired costs (heat, fat, sense) pull the gene mass back inside the span, so eval.gene_edge_share falls.",
+  "prediction": "Written before the run. no-cost reads eval.gene_edge_share above 0.4 (control has no span, so 0 or n/a); all-costs reads under 0.3 and no spec reads fewer than 5 agents at the end on more than 2 of 16 seeds; heat-only and fat-only each land between no-cost and all-costs (each lowers the edge share of its own traits only: speed and sprintStore for heat, fat, size and burn for fat). No arm reads worse than control on guard.alive. Falsified if all-costs stays above 0.3 or if any arm collapses a spec.",
+  "targets": ["eval.gene_edge_share"],
+  "before": "pending",
+  "after": "pending",
+  "verdicts": { "pending": "no-difference" },
+  "effect": "no-difference",
+  "note": "",
+  "outcome": "no-verdict",
+  "reports": ["evals/decisions/E273-body-genes-costs/results.md"]
+}
