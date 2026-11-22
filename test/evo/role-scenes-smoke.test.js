@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { arenaConfig } from '../../js/evo/chase-arena.js';
+import { MODEL_DEFAULTS } from '../../js/evo/role-budget-model.js';
+import { roleParams } from '../../js/evo/role-budget-params.js';
+import { defenderSmokeGeometry } from '../../js/evo/role-budget-smoke.js';
 import { playDefenderSmoke, playSmoke } from '../../js/evo/role-scenes-smoke.js';
 
 /** A hunter with a short view: smoke can hide the body for good. */
@@ -51,6 +54,20 @@ describe('playDefenderSmoke', () => {
     it('the hunter with a short view loses the caller that runs sideways behind the cloud', () => {
         expect(playDefenderSmoke(arenaConfig(BLIND), DEFENDER).outcome.escaped).toBe(true);
         expect(playDefenderSmoke(arenaConfig(), DEFENDER).outcome.escaped).toBe(false);
+    });
+
+    it('the calculator reads the caller as the scene does: it escapes behind a facing-hunter cloud only when the hunter sees short', () => {
+        for (const [extra, escapes] of [
+            [{}, false],
+            [BLIND, true],
+        ]) {
+            const config = arenaConfig(extra);
+            const bodies = ['predator', 'forager', 'defender'].map((s) => roleParams(config, s));
+            const geometry = defenderSmokeGeometry(bodies, { ...MODEL_DEFAULTS, guardPosture: 'between' });
+            const run = playDefenderSmoke(config, { ...DEFENDER, facing: 'hunter' });
+            expect(geometry.hiddenTicks >= geometry.escapeNeed).toBe(escapes);
+            expect(run.outcome.escaped).toBe(escapes);
+        }
     });
 
     it('replays bit for bit', () => {
