@@ -196,7 +196,7 @@ As built, where the steps above left a choice (the numbers of `evals/decisions/E
 
 **Read on 2026-11-22** (config / `guardPosture`; smoke slack defender, caller): `step5` defaults, `side`: binding `repel: off`, release tick 42 against latest 9 (-33, -2, hidden 0). `between`: release at tick 5, latest 5, hidden 15, the caller needs 36 (0, -23), binding `repel: off`, so the two readings were two postures. `step5-d.json` with the shove on (40, 4): `side` binds `run` (impossible), `between` binds `smoke` with intercept 12 and the same slacks (0, -23). The caller's test is the sim's: with no target memory the budget keeps the hunter on its heading through the cloud, and the scene agrees. No smoke number was tuned.
 
-**Next: decoy or target switch (planned, not built).** If the caller stays red, the hunter retargets to the nearest confronting threat inside the smoke (a cuttlefish's ink decoy, a mobbing bird's target switch), so the defender, not the caller, holds its attention. It needs a sim rule that says what a hunter does when its rays hit a cloud, a measured scene metric first, and its own design row; it is not a number to tune on the existing cloud.
+**Next: decoy or target switch (planned in [smoke-decoy.md](smoke-decoy.md), not built).** If the caller stays red, the hunter retargets to the nearest confronting threat inside the smoke (a cuttlefish's ink decoy, a mobbing bird's target switch), so the defender, not the caller, holds its attention. It needs a sim rule that says what a hunter does when its rays hit a cloud, a measured scene metric first, and its own design row; it is not a number to tune on the existing cloud.
 
 ## Phase 3 steps - the scout (`js/evo/role-budget-warn.js`)
 

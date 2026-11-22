@@ -25,6 +25,7 @@ Lead docs in priority order - 1 is built next. Set in each doc's `**Priority:**`
     7. [Hunter practice](hunter-practice.md) - the bite detectors and the within-lifetime gain, read once a hunter can reach its prey
     8. [Hunter learning](hunter-learning.md) - the refusal wires and the too-big body, after hunter-practice.md names what a hunter still gets wrong
     9. [Scent trails and carrion scent](scent-trails.md) - trail and carrion scent; it builds on stillness.md and on body-priced carcasses
+    10. [Smoke decoy](smoke-decoy.md) - the `defender:predator` row of [role-budget.md](role-budget.md) (gate 1 of "Before any training") is red on the caller's smoke escape, and this is the rule its "Next: decoy" option asks for
 4. [World balance and biology](world-balance.md) - World lead (every feature on by default, tested and balanced before any training). The world plans wait on the measurement fixes (metric-noise.md Phase 4) and on the bodies a fair chase adopts (fair-chase.md gate 4, the Step 5 adoption), not on its trained rung: every one of them is judged by a keep-rule read and most by a hunter metric
     1. [Honest budgets](honest-budgets.md) - no task is actionable until a fair chase gives recruitment something to keep: Phases 3 and 5 are parked on the keep rule and Phase 6 names no finalist (E179, E189)
     2. [Low-density edge](low-density-edge.md) - three tasks left (T11b, T23, T28); the edge under 100 prey is re-read on the fixed measurement
@@ -74,7 +75,7 @@ Describe shipped code. Trust these, and fix them when the code moves.
 - [Sprint burst](sprint-burst.md) - Phase 1 detectors kept; Phase 2 gate not met on E210 (T3)
 - [Web presence](web-presence.md) - a designed icon in every size, Open Graph and Twitter cards, a full `<head>`, an installable web app manifest with a splash, `robots.txt` and `sitemap.xml`
 
-## In progress (34)
+## In progress (35)
 
 Partly built - the note says which phases are real.
 
@@ -101,6 +102,7 @@ Partly built - the note says which phases are real.
 - [Role budget](role-budget.md) - Phases 1 to 5, T24 (escort distance) and guard posture (`guardPosture: 'between'`) are built; `defender:predator` stays red on the caller's smoke escape, so Sta... _(validated 80f10d1, 2026-11-22)_ _(depends on [body-genes.md](body-genes.md))_
 - [Scent trails and carrion scent](scent-trails.md) - Phase 1 detectors and E-ST2-1 baseline complete (E210); the trail probe remains before Phase 2 _(validated 3a150d7, 2026-11-17)_ _(depends on [honest-budgets.md](honest-budgets.md), [senses-and-motor.md](senses-and-motor.md))_
 - [Senses and motor](senses-and-motor.md) - Phases 1, 2 and 5 are built (interface checks; `audit:chase` with E-SM-1 falsified, E185; hunter eyes adopted on a 64-seed keep rule, E186). Phase 3 code is bui... _(validated f5ebac7, 2026-11-15)_ _(depends on [training.md](training.md))_
+- [Smoke decoy](smoke-decoy.md) - planned; nothing built yet (T1 is this doc). Next: T2, the failing tests and the decoy reading in the ray march _(validated 1e3eb3c, 2026-11-22)_ _(depends on [role-budget.md](role-budget.md), [body-genes.md](body-genes.md))_
 - [Status effects](status-effects.md) - Phases 1 and 2 built and reviewed (T8, T14; E270 predates T30, after which neutral `eval.effect_share.*` reads 0). Phase 3: T13 built, T15 chosen in `step5-d.js... _(validated 80f10d1, 2026-11-22)_ _(depends on [body-genes.md](body-genes.md))_
 - [Stillness](stillness.md) - Phase 1 detectors and E210 baseline complete; Phase 2 gate met _(validated 3ca2b1f, 2026-11-17)_ _(depends on [honest-budgets.md](honest-budgets.md), [habitat-cover.md](habitat-cover.md), [training-stages.md](training-stages.md))_
 - [Throughput](throughput.md) - Phase 3 T6, T7a and T7b are built (`grazeHerds` +432%, the field phase +136% at 500 agents); T7, T7c and the review T8 are open. Phase 1 (measure, T1, T1a and T... _(validated e354962, 2026-11-22)_ _(depends on [wasm-kernels.md](wasm-kernels.md))_
