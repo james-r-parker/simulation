@@ -48,7 +48,9 @@ export function readFailure(message, root) {
         .map((l) => l.trim())
         .filter((l) => /^(- Expected|\+ Received|Expected:|Received:)/.test(l))
         .slice(0, 3);
-    const frame = lines.map((l) => /\(?((?:test|js|scripts)\/[^\s():]+:\d+)(?::\d+)?\)?\s*$/.exec(l)).find(Boolean);
+    const frame = lines
+        .map((l) => /(?<![\w-])\(?((?:test|js|scripts)\/[^\s():]+:\d+)(?::\d+)?\)?\s*$/.exec(l))
+        .find(Boolean);
     const t = /timed out in (\d+)\s*ms/i.exec(headline);
     return { headline, detail, where: frame ? frame[1] : '', timeout: t ? Number(t[1]) : null };
 }

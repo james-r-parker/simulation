@@ -60,6 +60,14 @@ describe('readFailure', () => {
     });
 });
 
+describe('readFailure frames', () => {
+    it('skips a library frame whose path only ends in test/', () => {
+        const message =
+            'Error: x\n at /repo/node_modules/vitest/dist/chunks/run.js:2700:1\n at /repo/test/x.test.js:4:2';
+        expect(readFailure(message, ROOT).where).toBe('test/x.test.js:4');
+    });
+});
+
 describe('formatReport', () => {
     it('summarises, labels timeouts and lists tests over half the limit', () => {
         const lines = formatReport(
