@@ -73,7 +73,7 @@ describe('defenceCheck with other models', () => {
     });
 
     it('for a release before the hunter reaches the cloud it also reads the cloud, the blind ticks and the caller escape', () => {
-        const quick = { maxVelocity: 5, specialisations: { predator: { visionRange: 100 } } };
+        const quick = { smokeDecoyTicks: 0, maxVelocity: 5, specialisations: { predator: { visionRange: 100 } } };
         const run = defenceCheck(arenaConfig(quick), { ...MODEL_DEFAULTS, reactionTicks: 0 });
         expect(run.drift).toBe(0);
         const names = run.readings.filter((r) => r.row === 'smoke:defender').map((r) => r.what);
