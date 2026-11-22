@@ -11,6 +11,8 @@ import { nextTick, observed } from './helpers/observer-world.js';
 import { loose } from './helpers/metric-registry.js';
 import { laneBases } from '../../js/sim/body-lanes.js';
 import { SPEC_NAMES } from '../../js/sim/specs.js';
+import { TRAIT_SLOTS } from '../../js/sim/brain-layout.js';
+import { TRAITS } from '../../js/sim/body-traits.js';
 
 const ON = { hashCellSize: 256 };
 const NAMES = ['trait_spread', 'body_plan_coverage', 'sex_balance'];
@@ -111,6 +113,28 @@ describe('eval.body_plan_coverage', () => {
         checkpointWith(r, 10000, [{ size: 1.3, vision: 0.7 }]);
         expect(r.observer.body.cells[4 * 5]).toBe(1);
         expect(read(r).body_plan_coverage).toEqual({ value: 1 / 25 });
+    });
+
+    it('bins against the spec span: a span of 0.15 reaches the outer bins at 0.85 and 1.15', () => {
+        const r = observed(ON);
+        const spec = r.world.spec[0];
+        for (const trait of ['size', 'vision']) {
+            r.world.traitSpans[spec * TRAIT_SLOTS + TRAITS.findIndex((t) => t.name === trait)] = 0.15;
+        }
+        checkpointWith(r, 10000, [{ size: 0.85, vision: 1.15 }]);
+        expect(r.observer.body.cells[0 * 5 + 4]).toBe(1);
+        checkpointWith(r, 11000, [{ size: 1.15, vision: 0.85 }]);
+        expect(r.observer.body.cells[4 * 5 + 0]).toBe(1);
+    });
+
+    it('falls back to the 0.3 span for a menu without the trait', () => {
+        const r = observed(ON);
+        const spec = r.world.spec[0];
+        for (const trait of ['size', 'vision']) {
+            r.world.traitSpans[spec * TRAIT_SLOTS + TRAITS.findIndex((t) => t.name === trait)] = 0;
+        }
+        checkpointWith(r, 10000, [{ size: 0.76, vision: 1.24 }]);
+        expect(r.observer.body.cells[0 * 5 + 4]).toBe(1);
     });
 
     it('is 25/25 when every cell holds an agent', () => {

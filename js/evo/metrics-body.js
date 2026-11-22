@@ -3,6 +3,8 @@
 // checkpoint at or after burn-in and adds to run-long sums in `observer.body` (outside `observer.series`, which the
 // worker drains); the metrics read those sums at report time. Nothing here runs per tick or allocates.
 
+import { TRAIT_SLOTS } from '../sim/brain-layout.js';
+import { TRAITS } from '../sim/body-traits.js';
 import { TRAIT_SPAN, visionRatioOf } from '../sim/traits.js';
 import { SEX } from '../sim/sex.js';
 import { none, ok } from './metrics-stats.js';
@@ -22,12 +24,27 @@ export function createBodyPools() {
     return { sampled: 0, spreadSum: 0, spreadCount: 0, cells: new Uint8Array(GRID_BINS * GRID_BINS), sexSum: 0 };
 }
 
+const SIZE_INDEX = TRAITS.findIndex((trait) => trait.name === 'size');
+const VISION_INDEX = TRAITS.findIndex((trait) => trait.name === 'vision');
+
 /**
- * @param {number} multiplier a trait as a multiple of its default, in `[1 - TRAIT_SPAN, 1 + TRAIT_SPAN]`
+ * @param {Float64Array} traitSpans every spec's span for every trait slot
+ * @param {number} spec a spec
+ * @param {number} index a trait's index
+ * @returns {number} the spec's span for the trait, or `TRAIT_SPAN` when its menu does not hold the trait
+ */
+function spanOf(traitSpans, spec, index) {
+    const span = traitSpans[spec * TRAIT_SLOTS + index];
+    return span > 0 ? span : TRAIT_SPAN;
+}
+
+/**
+ * @param {number} multiplier a trait as a multiple of its default, in `[1 - span, 1 + span]`
+ * @param {number} span the spec's span for the trait, so the outer bins stay reachable on a narrow menu
  * @returns {number} its bin, `0` to `GRID_BINS - 1`, over equal slices of that range
  */
-function binOf(multiplier) {
-    const bin = Math.floor(((multiplier - (1 - TRAIT_SPAN)) / (2 * TRAIT_SPAN)) * GRID_BINS);
+function binOf(multiplier, span) {
+    const bin = Math.floor(((multiplier - (1 - span)) / (2 * span)) * GRID_BINS);
     return Math.min(GRID_BINS - 1, Math.max(0, bin));
 }
 
@@ -72,7 +89,9 @@ export function sampleBody(pools, world) {
             q1 += vision * vision;
             s2 += childShare[slot];
             q2 += childShare[slot] * childShare[slot];
-            pools.cells[binOf(baseSize[slot] / config.baseSize) * GRID_BINS + binOf(vision)] = 1;
+            const spec = world.spec[slot];
+            const sizeBin = binOf(baseSize[slot] / config.baseSize, spanOf(world.traitSpans, spec, SIZE_INDEX));
+            pools.cells[sizeBin * GRID_BINS + binOf(vision, spanOf(world.traitSpans, spec, VISION_INDEX))] = 1;
         }
     }
     if (n === 0) {
