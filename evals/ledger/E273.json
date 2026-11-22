@@ -9,11 +9,18 @@
   "hypothesis": "With the spans of step5-d open and every cost exponent at 0 the genes run to the edge of their menu (no cost holds them); the paired costs (heat, fat, sense) pull the gene mass back inside the span, so eval.gene_edge_share falls.",
   "prediction": "Written before the run. no-cost reads eval.gene_edge_share above 0.4 (control has no span, so 0 or n/a); all-costs reads under 0.3 and no spec reads fewer than 5 agents at the end on more than 2 of 16 seeds; heat-only and fat-only each land between no-cost and all-costs (each lowers the edge share of its own traits only: speed and sprintStore for heat, fat, size and burn for fat). No arm reads worse than control on guard.alive. Falsified if all-costs stays above 0.3 or if any arm collapses a spec.",
   "targets": ["eval.gene_edge_share"],
-  "before": "pending",
-  "after": "pending",
-  "verdicts": { "pending": "no-difference" },
+  "before": "control: gene_edge_share 0, population_mean 233, 12/16 seeds alive, 1 seed under 80 hunters",
+  "after": "no-cost 0 / 218 / 10 / 2; heat-only 0 / 194 / 10 / 0; fat-only 0 / 221 / 13 / 1; all-costs 0 / 171 / 7 / 5. No arm reads worse than control on the keep rule; gene_spread is 0.002-0.006 on every arm",
+  "verdicts": {
+    "no-cost eval.gene_edge_share": "no-difference",
+    "heat-only eval.gene_edge_share": "no-difference",
+    "fat-only eval.gene_edge_share": "no-difference",
+    "all-costs eval.gene_edge_share": "no-difference",
+    "all-costs guard.alive": "no-difference",
+    "fat-only guard.alive": "no-difference"
+  },
   "effect": "no-difference",
-  "note": "",
-  "outcome": "no-verdict",
+  "note": "16 seeds x 200000 ticks per arm, 24 workers, live policy. The prediction is falsified: no-cost reads gene_edge_share 0, not above 0.4, so the all-costs under 0.3 leg is vacuous. Genes barely leave their start in 200000 ticks (spread 0.002 to 0.006, against the 0.05 E-BG-3 asks of predator speed), so this screen cannot rank the costs; only the harm side reads: all-costs thins the population (171 against 233) and leaves 5 seeds under 80 hunters. fat-only is the finalist for T15 (least harm, 13/16 alive).",
+  "outcome": "falsified",
   "reports": ["evals/decisions/E273-body-genes-costs/results.md"]
 }
