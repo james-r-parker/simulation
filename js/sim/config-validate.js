@@ -127,6 +127,7 @@ const RULES = {
     smokeTicks: int(1, MAX_U16),
     smokeCooldown: int(0, MAX_U16),
     smokeAimArc: num(0, PI),
+    smokeDecoyTicks: int(0, MAX_U16),
     smokeThreshold: UNIT,
     packWindow: int(1),
     maxClouds: int(0, 256),

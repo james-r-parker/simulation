@@ -7,6 +7,7 @@ import { OUTPUT_COUNT, OUTPUT_INDEX } from '../sim/brain-layout.js';
 import { detCos, detSin } from '../sim/det-math.js';
 import { ARENA_CENTRE, stageArena } from './chase-arena.js';
 import { callerBrain, pursuerBrain, smokerBrain, steer, wrap } from './chase-oracles.js';
+import { GRIP, readPreyRays } from './role-scenes-decoy.js';
 
 import { norm } from './role-budget-kinematics.js';
 import { roleParams } from './role-budget-params.js';
@@ -42,6 +43,18 @@ function covered(world, from, target) {
 function blindHunter({ hunter, target }) {
     const chase = pursuerBrain({ pursuer: hunter, evader: target, sprint: true });
     return (world) => {
+        const rays = readPreyRays(world, hunter);
+        if (rays.decoy && rays.aim) {
+            // smoke-decoy: a fresh cloud reads as a body, so the hunter turns to the nearest prey ray, with no memory of the target
+            const at = hunter * OUTPUT_COUNT;
+            world.outputs.fill(0, at, at + OUTPUT_COUNT);
+            world.outputs[at + OUTPUT_INDEX.TURN] = steer(world, hunter, rays.aim);
+            const gripped = rays.reach >= GRIP;
+            world.outputs[at + OUTPUT_INDEX.THRUST] = gripped ? 0 : 1;
+            world.outputs[at + OUTPUT_INDEX.SPRINT] = gripped ? 0 : 1;
+            world.outputs[at + OUTPUT_INDEX.BITE] = 1;
+            return;
+        }
         if (!covered(world, hunter, target)) {
             chase(world);
             return;
@@ -121,10 +134,11 @@ function followCloud({ hunter, body, origin, view }) {
  * Plays the prey's smoke: the hunter, at its sprint cap, is `gap` behind the prey, which faces away and drops a cloud at tick
  * 0, then runs sideways at full sprint; the hunter keeps its heading while the cloud lies on its line to the prey.
  * @param {Readonly<Record<string, any>>} config an `arenaConfig`
- * @param {{gap: number}} options the centre gap at the release
+ * @param {{gap: number, trace?: (world: Record<string, any>, n: number) => void}} options the centre gap at the release and a
+ *   hook called after every tick
  * @returns {SmokeScene} the readings from the real sim
  */
-export function playSmoke(config, { gap }) {
+export function playSmoke(config, { gap, trace }) {
     const specs = /** @type {Record<string, any>} */ (config.specialisations);
     const hunter = roleParams(config, 'predator');
     const { x, y } = ARENA_CENTRE;
@@ -136,7 +150,10 @@ export function playSmoke(config, { gap }) {
     const follow = followCloud({ hunter: 0, body: 1, origin: { x, y }, view: hunter });
     runScene(staged, {
         brains: [blindHunter({ hunter: 0, target: 1 }), smokerBrain({ prey: 1, release: 0 })],
-        observe: follow.observe,
+        observe: (world, n) => {
+            trace?.(world, n);
+            return follow.observe(world);
+        },
     });
     const { hiddenTicks, cloudLife, ...outcome } = follow.read();
     return { ticks: { releaseTick: 0, hiddenTicks, cloudLife }, outcome };

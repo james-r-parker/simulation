@@ -59,10 +59,11 @@ describe('a sprinting prey turning away from the hunter', () => {
 describe('smoke released behind a fleeing prey', () => {
     /**
      * @param {boolean} smoke whether the prey releases smoke
+     * @param {number} [decoy] `smokeDecoyTicks`
      * @returns {number[][]} the nine values of each hunter ray after two ticks
      */
-    function hunterRays(smoke) {
-        const world = createArena({ gap: 250, hunterEnergy: 2500 });
+    function hunterRays(smoke, decoy = 0) {
+        const world = createArena({ gap: 250, hunterEnergy: 2500, over: { smokeDecoyTicks: decoy } });
         runArena(world, { ticks: 2, prey: fleeBrain(smoke) });
         const flat = rayValues(world, HUNTER);
         return Array.from({ length: world.config.rayCount }, (_v, k) =>
@@ -80,6 +81,13 @@ describe('smoke released behind a fleeing prey', () => {
         const rays = hunterRays(true);
         expect(rays[0][CH_SMOKE]).toBe(1);
         expect(rays.every((ray) => ray[CH_PREY] === 0)).toBe(true);
+        expect(rays[0][0]).toBeGreaterThan(0.7);
+    });
+
+    it('with the decoy the fresh cloud also reads as a prey on that ray, at the proximity of the cloud, not of the body behind it', () => {
+        const rays = hunterRays(true, 60);
+        expect(rays[0][CH_SMOKE]).toBe(1);
+        expect(rays[0][CH_PREY]).toBeCloseTo(rays[0][0], 6);
         expect(rays[0][0]).toBeGreaterThan(0.7);
     });
 });

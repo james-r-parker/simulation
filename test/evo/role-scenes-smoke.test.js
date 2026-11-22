@@ -6,7 +6,9 @@ import { defenderSmokeGeometry } from '../../js/evo/role-budget-smoke.js';
 import { playDefenderSmoke, playSmoke } from '../../js/evo/role-scenes-smoke.js';
 
 /** A hunter with a short view: smoke can hide the body for good. */
-const BLIND = { maxVelocity: 5, specialisations: { predator: { visionRange: 100 } } };
+const BLIND = { smokeDecoyTicks: 0, maxVelocity: 5, specialisations: { predator: { visionRange: 100 } } };
+/** The cloud as plain smoke (docs/designs/smoke-decoy.md): the scenes below were written for it. */
+const NO_DECOY = { smokeDecoyTicks: 0 };
 const STANDING = -Math.PI / 2;
 const DEFENDER = { reaction: 2, threshold: 0.1, standing: STANDING };
 
@@ -20,7 +22,7 @@ describe('playSmoke', () => {
     });
 
     it('the hunter is blind for as long as the cloud lies on its line to the prey, and the prey is seen again at the defaults', () => {
-        const run = playSmoke(arenaConfig(), { gap: 240 });
+        const run = playSmoke(arenaConfig(NO_DECOY), { gap: 240 });
         expect(run.ticks.hiddenTicks).toBe(15);
         expect(run.outcome.escaped).toBe(false);
     });
@@ -53,12 +55,12 @@ describe('playDefenderSmoke', () => {
 
     it('the hunter with a short view loses the caller that runs sideways behind the cloud', () => {
         expect(playDefenderSmoke(arenaConfig(BLIND), DEFENDER).outcome.escaped).toBe(true);
-        expect(playDefenderSmoke(arenaConfig(), DEFENDER).outcome.escaped).toBe(false);
+        expect(playDefenderSmoke(arenaConfig(NO_DECOY), DEFENDER).outcome.escaped).toBe(false);
     });
 
     it('the calculator reads the caller as the scene does: it escapes behind a facing-hunter cloud only when the hunter sees short', () => {
         const arms = /** @type {Array<[Record<string, any>, boolean]>} */ ([
-            [{}, false],
+            [NO_DECOY, false],
             [BLIND, true],
         ]);
         for (const [extra, escapes] of arms) {

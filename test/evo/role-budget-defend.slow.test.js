@@ -16,8 +16,8 @@ const SLOW = {
     defenderRepelCost: 2,
     specialisations: { predator: { sprintBoost: 0.5 } },
 };
-/** A hunter with a short view: smoke can hide the body for good. */
-const BLIND = { maxVelocity: 5, specialisations: { predator: { visionRange: 100 } } };
+/** A hunter with a short view: smoke can hide the body for good. Plain smoke: the decoy has its own arm below. */
+const BLIND = { smokeDecoyTicks: 0, maxVelocity: 5, specialisations: { predator: { visionRange: 100 } } };
 
 /** @typedef {{name: string, config: Record<string, any>, model: Record<string, number>}} Arm */
 /** @type {Arm[]} */
@@ -33,6 +33,7 @@ const ARMS = [
     },
     { name: 'a hunter with a short view', config: BLIND, model: {} },
     { name: 'a hunter with a short view, brains with no reaction', config: BLIND, model: { reactionTicks: 0 } },
+    { name: 'defaults, plain smoke (no decoy)', config: { smokeDecoyTicks: 0 }, model: {} },
 ];
 const [DEFAULTS, , NEAR, FAR, , , QUICK] = ARMS;
 
@@ -88,10 +89,12 @@ describe('the defender budget against the scenes', () => {
 });
 
 describe('the smoke slack against the scenes', () => {
-    it('agrees in sign: the prey escapes from a hunter with a short view, and not at the defaults', () => {
+    it('agrees in sign: the prey escapes from a hunter with a short view, and from the decoy at the defaults, not from plain smoke', () => {
         const pick = (/** @type {string} */ w) => w === 'out of view when the cover ends';
+        const plain = ARMS[7];
         expect([reading(ARMS[5], pick).formula, reading(ARMS[5], pick).scene]).toEqual([true, true]);
-        expect([reading(DEFAULTS, pick).formula, reading(DEFAULTS, pick).scene]).toEqual([false, false]);
+        expect([reading(DEFAULTS, pick).formula, reading(DEFAULTS, pick).scene]).toEqual([true, true]);
+        expect([reading(plain, pick).formula, reading(plain, pick).scene]).toEqual([false, false]);
     });
 
     it('agrees in sign for the caller when the defender releases before the hunter reaches the cloud', () => {

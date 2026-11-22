@@ -19,7 +19,7 @@ import {
 import { detCos, detSin } from './det-math.js';
 import { couldBite } from './bite-rule.js';
 import { isKin } from './kin.js';
-import { AGENT, FOOD, KIND_STRIDE, OX, OY, RANGE } from './ray-gather.js';
+import { AGENT, FOOD, KIND_STRIDE, OX, OY, RANGE, SMOKE } from './ray-gather.js';
 import { COVER_TOTALS } from './cover.js';
 import { visionOf } from './traits.js';
 import { SENSE_WORD, senseSlot, beginSense } from './wasm-sense.js';
@@ -57,6 +57,17 @@ function agentChannel(world, slot, other) {
 }
 
 /**
+ * @param {World} world the world
+ * @param {number} cloud the cloud's index
+ * @returns {boolean} whether the cloud is still a decoy: its age is under `smokeDecoyTicks` (smoke-decoy.md). A cuttlefish's
+ *   ink pseudomorph holds the shape of a body while the ink is dense; the cloud's age is `smokeTicks - cloudTtl`
+ */
+function isDecoy(world, cloud) {
+    const { smokeTicks, smokeDecoyTicks } = world.config;
+    return smokeTicks - world.cloudTtl[cloud] < smokeDecoyTicks;
+}
+
+/**
  * Writes the current ray's best hit as `RAY_CHANNELS` input values at `base`, and its food hue (0 when the hit is not food);
  * the sense kernel writes its body lanes.
  * @param {World} world the world
@@ -87,6 +98,9 @@ function writeRay(world, slot, base, ray) {
         inputs[base + agentChannel(world, slot, other)] = proximity;
     } else {
         inputs[base + CHANNEL_OF_KIND[kind]] = 1;
+        if (kind === SMOKE && isDecoy(world, key - kind * KIND_STRIDE)) {
+            inputs[base + CH_PREY] = proximity; // smoke-decoy: a fresh cloud also reads as a body
+        }
     }
 }
 

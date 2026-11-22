@@ -67,6 +67,7 @@ describe('the defender row against the escort distance', () => {
 describe('the guard posture', () => {
     const BETWEEN = { guardPosture: 'between' };
     const SHOVED = { ...STEP5_D, ...SHOVE };
+    const PLAIN = { ...SHOVED, smokeDecoyTicks: 0 };
 
     it('is derived as `side` and is overridable to `between`, and a bad value is refused', () => {
         expect(guardPosture(validateModel({}))).toBe('side');
@@ -89,8 +90,8 @@ describe('the guard posture', () => {
         }
     });
 
-    it('with the shove on the guard lands it before the kill and holds the kill off; the row is still red on the smoke', () => {
-        const { budget } = read(SHOVED, BETWEEN);
+    it('with the shove on the guard lands it before the kill and holds the kill off; on plain smoke the row is still red on the smoke', () => {
+        const { budget } = read(PLAIN, BETWEEN);
         expect(budget.run.repelTick).not.toBeNull();
         expect(budget.run.killTick).toBeNull();
         for (const step of ['hear', 'turn', 'run', 'intercept']) {
@@ -102,8 +103,18 @@ describe('the guard posture', () => {
         expect(read(SHOVED).budget.run.repelTick).toBeNull();
     });
 
-    it('releases without the turn (the cloud drops toward the hunter in front) and the caller is still too slow to leave the view', () => {
-        const { smoke } = read(SHOVED, BETWEEN).budget;
+    it('with the decoy (the default) the same guard reads tight, bound by the smoke: the caller has time to spare', () => {
+        const { budget } = read(SHOVED, BETWEEN);
+        expect(budget.run.killTick).toBeNull();
+        expect(budget.cells.smoke.status).toBe('tight');
+        expect(budget.row.status).toBe('tight');
+        expect(budget.binding).toBe('smoke');
+        expect(budget.smoke.slackDefender).toBe(0);
+        expect(/** @type {number} */ (budget.smoke.slackCaller)).toBeGreaterThan(30);
+    });
+
+    it('releases without the turn (the cloud drops toward the hunter in front) and on plain smoke the caller is too slow to leave the view', () => {
+        const { smoke } = read(PLAIN, BETWEEN).budget;
         expect(smoke.facingTicks).toBe(0);
         expect(smoke.releaseTick).toBe(smoke.latestRelease);
         expect(smoke.slackDefender).toBe(0);

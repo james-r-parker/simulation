@@ -4,7 +4,7 @@
       "name": "default",
       "overrides": {},
       "ticks": 5000,
-      "worldHash": "f066265a2e08f763"
+      "worldHash": "6032e92b43c751ad"
     },
     {
       "name": "busy",
@@ -23,7 +23,7 @@
         "coldMarginWidth": 0
       },
       "ticks": 5000,
-      "worldHash": "013311b6dbd4406a"
+      "worldHash": "8db9da5b5e84432e"
     },
     {
       "name": "disease",
@@ -43,7 +43,7 @@
         "diseaseSeedRate": 0.01
       },
       "ticks": 5000,
-      "worldHash": "9611b9fcb80c612d"
+      "worldHash": "fa537471b7185914"
     },
     {
       "name": "sprint-store",
@@ -51,7 +51,7 @@
         "sprintStoreEnabled": true
       },
       "ticks": 2000,
-      "worldHash": "ba97df3edc447c33"
+      "worldHash": "c1a0504b4d9e6612"
     }
   ],
   "shortCases": [
@@ -78,7 +78,7 @@
         "coldMarginWidth": 0
       },
       "ticks": 300,
-      "worldHash": "946234d6b114e816"
+      "worldHash": "743273f0157dc225"
     },
     {
       "name": "disease",
@@ -98,7 +98,7 @@
         "diseaseSeedRate": 0.01
       },
       "ticks": 300,
-      "worldHash": "241bb18a44822b50"
+      "worldHash": "c8a9baca7893eaad"
     },
     {
       "name": "sprint-store",

@@ -33,7 +33,7 @@ export const STORE_SHARE = 0.5;
  * @property {{passive: number, size: number, move: number, turn: number, sprint: number, upkeep: number, juvenile: number, standingMult: number, drain: number, heat: number}} cost
  * @property {{restitution: number}} contact the contact impulse of `resolveContacts`
  * @property {{radius: number, ticks: number, threshold: number, cost: number}} call
- * @property {{radius: number, ticks: number, cooldown: number, cost: number, threshold: number}} smoke
+ * @property {{radius: number, ticks: number, cooldown: number, cost: number, threshold: number, decoy: number}} smoke
  * @property {{energy: number, cost: number, impulse: number}} repel the defender's shove (`tryDefenderRepel`): the energy it drains
  *   from a hunter in its jaws, what it costs the defender, and the knockback; 0 and 0 energy and impulse is off
  * @property {{gainMove: number, lossPassive: number, optimalMax: number, start: number, efficiency: number, optimalMin: number,
@@ -252,6 +252,7 @@ function signalsOf(config, lane) {
             cooldown: lane.smokeCooldown,
             cost: lane.smokeCost,
             threshold: lane.smokeThreshold,
+            decoy: config.smokeDecoyTicks,
         },
         repel: {
             energy: lane.defenderRepelEnergy,

@@ -7,6 +7,7 @@ import { cell } from './role-budget-cell.js';
 import { escortGap, guardPosture } from './role-budget-escort.js';
 import { charge, costOf, createBody, stepBody } from './role-budget-body.js';
 import { norm, speedStep, swingTicks } from './role-budget-kinematics.js';
+import { decoyProfile } from './role-budget-decoy.js';
 import { steerOut } from './role-budget-play.js';
 import { walkAndStop } from './role-budget-walk.js';
 import { viewReach, viewReachCos } from './role-budget-senses.js';
@@ -74,18 +75,39 @@ function inView(hunter, body, hx) {
 }
 
 /**
+ * @param {boolean} was whether the hunter was blind the tick before
+ * @param {{t: number, life: number, hunter: {x: number, y: number}, body: {x: number, y: number}, cloud: Cloud}} now the tick,
+ *   the cloud's life in ticks, the hunter, the body and the cloud
+ * @returns {boolean} whether the hunter is still blind: it was, the cloud is still there and the line to the body meets it
+ */
+function stillBlind(was, { t, life, hunter, body, cloud }) {
+    return was && t <= life && segmentHitsCloud(hunter, body, cloud);
+}
+
+/**
+ * @param {import('./role-budget-body.js').Body} body the hidden body
+ * @param {boolean} waiting whether it has not sensed the cloud yet
+ * @returns {{turn: number, sprint: number, thrust?: number}} its outputs: nothing while it waits, else a full sprint sideways
+ */
+function runnerOut(body, waiting) {
+    return waiting ? { turn: 0, sprint: 0, thrust: 0 } : { turn: steerOut(body, { x: 0, y: 1 }), sprint: 1 };
+}
+
+/**
  * The hidden body runs sideways from the release at full sprint, steering at `(0, 1)` on the body law of the sim (it turns
  * and gathers speed, it does not jump to its cap); the hunter keeps its heading along `xs`. The hunter's view is its reach
  * at the bearing of the body from its heading, plus the body's size.
  * @param {import('./role-budget-params.js').RoleParams} hunter the hunter
  * @param {import('./role-budget-params.js').RoleParams} runner the hidden body
- * @param {{xs: number[], from: number, at: {x: number, y: number}, cloud: Cloud, life: number, paid?: number, lag?: number}} scene
+ * @param {{xs: number[], from: number, at: {x: number, y: number}, cloud: Cloud, life: number, paid?: number, lag?: number,
+ *   held?: number}} scene
  *   the hunter's profile and the index of the release in it, where the body stands (facing +x), the cloud, its life in ticks,
- *   the energy the body paid to release (0 when another body released) and the ticks before it starts to run (1 for a body
- *   that senses a cloud another body released, which exists from that tick's signal phase)
+ *   the energy the body paid to release (0 when another body released), the ticks before it starts to run (1 for a body
+ *   that senses a cloud another body released, which exists from that tick's signal phase) and the ticks from the release for
+ *   which the cloud is a decoy and the hunter's attention is on it (0: none; the body is not seen in that time)
  * @returns {Hidden} the hidden and the escape ticks
  */
-export function shadowRun(hunter, runner, { xs, from, at, cloud, life, paid = 0, lag = 0 }) {
+export function shadowRun(hunter, runner, { xs, from, at, cloud, life, paid = 0, lag = 0, held = 0 }) {
     const b = createBody(runner, { x: at.x, y: at.y, angle: 0 });
     charge(b, paid);
     let hidden = 0;
@@ -93,10 +115,11 @@ export function shadowRun(hunter, runner, { xs, from, at, cloud, life, paid = 0,
     let seen = -1;
     for (let t = 0; from + t < xs.length; t++) {
         const hx = xs[from + t];
-        seen = inView(hunter, b, hx) ? t : seen;
-        blind = blind && t <= life && segmentHitsCloud({ x: hx, y: 0 }, b, cloud);
+        const attending = t < held; // the hunter's rays hold the decoy, not the body (smoke-decoy.md)
+        seen = !attending && inView(hunter, b, hx) ? t : seen;
+        blind = attending || stillBlind(blind, { t, life, hunter: { x: hx, y: 0 }, body: b, cloud });
         hidden += blind ? 1 : 0;
-        const out = t < lag ? { turn: 0, sprint: 0, thrust: 0 } : { turn: steerOut(b, { x: 0, y: 1 }), sprint: 1 };
+        const out = runnerOut(b, t < lag);
         charge(b, costOf(b, out, stepBody(b, out)));
     }
     const last = xs.length - from - 1;
@@ -132,9 +155,17 @@ export function smokeCell(hunter, prey, model) {
     const gap = model.smokeGap;
     const r = prey.smoke.radius;
     const cloud = { x: gap - (prey.size + r), y: 0, r };
-    const xs = hunterXs(hunter, { speed: hunter.cap.sprint });
+    const held = prey.smoke.decoy;
+    const xs = decoyProfile(hunter, {
+        xs: hunterXs(hunter, { speed: hunter.cap.sprint }),
+        from: 0,
+        cloud,
+        held,
+        speed: hunter.cap.sprint,
+    });
     const { hiddenTicks, escapeNeed } = shadowRun(hunter, prey, {
         xs,
+        held,
         from: 0,
         at: { x: gap, y: 0 },
         cloud,
@@ -248,11 +279,14 @@ export function defenderSmokeGeometry([hunter, caller, defender], model) {
     const facing = walk.turned ? Math.ceil(swingTicks(spread(walk.angle), defender.turnRate.start)) : 0;
     const cloud = { x: walk.x - (defender.size + defender.smoke.radius), y: walk.y, r: defender.smoke.radius };
     const releaseTick = 2 * model.reactionTicks + 1 + walk.ticks + facing;
-    const xs = hunterXs(hunter, { speed: hunter.cap.cruise });
-    const latest = latestRelease(xs, { cloud, reaction: model.reactionTicks, speed: hunter.cap.cruise });
-    const from = Number.isFinite(releaseTick) ? Math.min(releaseTick, xs.length - 1) : 0;
+    const creep = hunterXs(hunter, { speed: hunter.cap.cruise });
+    const latest = latestRelease(creep, { cloud, reaction: model.reactionTicks, speed: hunter.cap.cruise });
+    const from = Number.isFinite(releaseTick) ? Math.min(releaseTick, creep.length - 1) : 0;
+    const held = defender.smoke.decoy;
+    const xs = decoyProfile(hunter, { xs: creep, from, cloud, held });
     const hidden = shadowRun(hunter, caller, {
         xs,
+        held,
         from,
         at: { x: length, y: 0 },
         cloud,
