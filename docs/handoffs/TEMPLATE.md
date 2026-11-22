@@ -11,7 +11,7 @@ The plan doc, the task ids, and the reading that ends the stream (a PR merged, a
 ## Owns
 
 The paths the stream may edit. Two live streams own no path in common; a path two streams need goes to one of them and
-the other waits for its PR.
+the other waits for its branch to be merged into the batch.
 
 ## Worker budget
 
@@ -24,7 +24,8 @@ next id). A stream of another model family records no experiment.
 
 ## Before it stops
 
-Commit, open a PR, and write what is running (run names from `scripts/run-detached.sh`) and what is next into this
+Commit on the chunk branch (cut from the coordinator's batch branch); do not push or open a PR - the coordinator merges
+it into the batch (`AGENTS.md`, user 2026-11-22). Write what is running (run names from `scripts/run-detached.sh`) and what is next into this
 handoff file. Never end a turn with a background job running.
 
 ## Ruled out

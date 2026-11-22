@@ -78,6 +78,10 @@ scripts/browser-perf.mjs` (v6 by default; `--viewport 3840x2160` and `2560x1440`
 
 ## Ship (only when the user asks to push or open a PR)
 
+One PR per session (user, 2026-11-22): subagents commit on chunk branches cut from the coordinator's `batch/` branch and
+never push or open a PR; the coordinator merges each into the batch with `--no-ff`, runs the gate, and ships the batch
+once at the end of the session or when the user asks. Run `ship.sh` from the batch branch only; the body covers every chunk.
+
 Write the body to a file (not committed; `.pr-body.md` is the usual name), ending with the attribution line the
 environment specifies:
 
