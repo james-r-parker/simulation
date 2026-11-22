@@ -62,6 +62,8 @@ scripts/browser-perf.mjs` (v6 by default; `--viewport 3840x2160` and `2560x1440`
     - append learnings to `docs/notes/<YYYY-MM>.md` as a dated `### YYYY-MM-DD - <topic>` entry, then run
       `node scripts/notes-index.mjs --write` (it updates the index in `docs/designs/sim-notes.md`)
 7. **Write the PR body** to a file (the template under Ship); `ship.sh` checks it (step 4) before it pushes.
+   A branch checked out in another worktree (a harness-made `worktree-agent-*` branch) cannot be pushed under its own
+   name from here: `git push origin HEAD:<branch>`.
 
 ## Git conventions
 

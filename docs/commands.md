@@ -130,6 +130,14 @@ The digest under its `✗` line, then `.checklogs/<gate>.log` (kept until the ne
 
 `TEST_SCOPE=fast npx vitest run`
 
+Worker cap: `test:report`, the `test` gates of `scripts/check.sh` and the pre-commit hook set `VITEST_MAX_WORKERS` to the workers the shared budget has free (the `npm run state` ledger, `workerLedger` in `scripts/lib/run-workers.mjs`, less what other test runs hold), at least 1, and hold a lease file in `$TEST_LEASE_DIR` (default `<tmp>/blob-test-leases`; one file per process, stale pids ignored) while they run, since a test run is not a detached run and `npm run state` does not list it. `TEST_MAX_WORKERS=<n>` sets the cap by hand; CI is never capped (`scripts/lib/test-workers.mjs`)
+
+Lock: test runs hold `/tmp/claude-1000/cpu.lock` shared (`flock -s`), timing commands hold it exclusively, so a bench started while tests run waits instead of skewing; `test:report --no-lock` skips it.
+
+GitHub reads: `ci-failures` and `ci-wait` cache gh responses under `/tmp/claude-<uid>/gh-cache` (`$GH_CACHE_DIR`; `GH_CACHE=off` skips it) for 60 s, a completed job's log for good, so parallel agents on one PR share the API calls.
+
+New worktree without `node_modules`: `scripts/worktree-setup.sh` (hard-links the main checkout's when `package-lock.json` matches, else `npm ci`; `task-start.sh` does this for its own worktree).
+
 Timeouts: the default test limit and `scaleTimeout` stretch x3 on CI (`CI` set), x6 under coverage, up to x4 on a busy machine; `TEST_TIMEOUT_FACTOR=<n>` sets the factor by hand (`scripts/lib/test-timeout.mjs`)
 
 ## Bench

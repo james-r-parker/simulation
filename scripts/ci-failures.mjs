@@ -5,10 +5,13 @@
 import { execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import { summariseJob } from './lib/ci-log.mjs';
+import { cachedGh } from './lib/gh-cache.mjs';
 
 /** @param {string[]} args gh arguments @returns {string} stdout */
-const gh = (args) =>
+const ghRun = (args) =>
     execFileSync('gh', args, { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] });
+/** @param {string[]} args gh arguments @returns {string} stdout, shared between agents (scripts/lib/gh-cache.mjs) */
+const gh = (args) => cachedGh(args, { run: ghRun });
 /** @param {string[]} args gh arguments @returns {any} parsed stdout */
 const json = (args) => JSON.parse(gh(args));
 

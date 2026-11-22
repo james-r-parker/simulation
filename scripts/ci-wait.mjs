@@ -4,6 +4,7 @@
 // on red (exit 1); exit 124 when the call ran out, saying how to resume. An empty check list is not passing.
 import { execFileSync } from 'node:child_process';
 import { ciFailures } from './ci-failures.mjs';
+import { cachedGh } from './lib/gh-cache.mjs';
 import { callBudget, classifyChecks, parseInterval } from './lib/ci-checks.mjs';
 
 /** @param {string[]} args argv @param {string} name a flag @returns {string | undefined} its value */
@@ -14,17 +15,18 @@ const flag = (args, name) => (args.includes(name) ? args[args.indexOf(name) + 1]
  * @returns {object[]} the checks (an empty list when gh finds none)
  */
 function checks(pr) {
-    try {
-        return JSON.parse(
-            execFileSync('gh', ['pr', 'checks', pr, '--json', 'name,bucket,state'], { encoding: 'utf8' }),
-        );
-    } catch (error) {
-        // gh exits 8 while checks are pending and 1 with "no checks reported"; stdout holds the JSON when there is any.
+    // gh exits 8 while checks are pending and 1 with "no checks reported"; stdout holds the JSON when there is any.
+    const run = (/** @type {string[]} */ a) => {
         try {
-            return JSON.parse(/** @type {any} */ (error).stdout || '[]');
-        } catch {
-            return [];
+            return execFileSync('gh', a, { encoding: 'utf8' });
+        } catch (error) {
+            return /** @type {any} */ (error).stdout || '[]';
         }
+    };
+    try {
+        return JSON.parse(cachedGh(['pr', 'checks', pr, '--json', 'name,bucket,state'], { run }));
+    } catch {
+        return [];
     }
 }
 

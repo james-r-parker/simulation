@@ -9,6 +9,8 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { summariseJob } from './lib/ci-log.mjs';
+import { DEFAULT_LOCK, sharedLockCommand } from './lib/cpu-lock.mjs';
+import { claimWorkers, releaseWorkers } from './lib/test-workers.mjs';
 import { formatReport, selectTests } from './lib/test-report.mjs';
 import { busyScale, testTimeoutFor } from './lib/test-timeout.mjs';
 
@@ -50,12 +52,19 @@ try {
         process.exit(0);
     }
     const json = join(tmp, 'result.json');
+    const workers = claimWorkers(process.pid, { root });
     const start = Date.now();
     const vitest = ['vitest', 'run', '--reporter=json', `--outputFile.json=${json}`, ...pick.filters];
-    const run = spawnSync('npx', vitest, {
+    const lock = sharedLockCommand({
+        lockPath: process.env.CHECK_CPU_LOCK || DEFAULT_LOCK,
+        command: 'npx',
+        args: vitest,
+        env: args.includes('--no-lock') ? { CHECK_CPU_LOCK: 'off' } : process.env,
+    });
+    const run = spawnSync(lock.command, lock.args, {
         cwd: root,
         encoding: 'utf8',
-        env: { ...process.env, ...pick.env },
+        env: { ...process.env, ...pick.env, ...(workers === null ? {} : { VITEST_MAX_WORKERS: String(workers) }) },
         maxBuffer: 1 << 28,
     });
     let result;
@@ -70,5 +79,6 @@ try {
     console.log(formatReport(result, { root, defaultTimeoutMs, wallMs: Date.now() - start, full }).join('\n'));
     process.exit(result.numFailedTests > 0 || result.numFailedTestSuites > 0 || run.status ? 1 : 0);
 } finally {
+    releaseWorkers(process.pid);
     rmSync(tmp, { recursive: true, force: true });
 }
