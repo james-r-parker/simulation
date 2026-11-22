@@ -307,6 +307,17 @@ step for the Targets: a reader per group generated from its effect list (the `MO
 the dispatch), and reading a lane's base lazily in `liveIn` when the group's levels are all 0, so the `visionCost` and
 `sprintCost` lanes are read only when `tickCost` needs them.
 
+**Measured (T29 re-read, 2026-11-22): the Targets are still not met, on a quiet machine.** `flock /tmp/claude-1000/cpu.lock node scripts/bench-compare.mjs --base 4e56979d --sizes=500 --runs=5` (load 0.85 on 32 cores, no run in flight), head 80f10d18, median of 5 runs; `bench/baseline.json` not re-recorded (the step is within 5% and the row asks for it only if the step moved):
+
+| Reading                   | 4e56979d | head   | Change | Bar | Met |
+| ------------------------- | -------- | ------ | ------ | --- | --- |
+| lifecycle@500 (ms a tick) | 0.0950   | 0.1400 | +47.4% | +5% | no  |
+| physics@500               | 0.1682   | 0.2001 | +19.0% | +5% | no  |
+| step_ms@500               | 1.8236   | 1.8972 | +4.0%  | +5% | yes |
+| brain@500 (noise check)   | 0.4151   | 0.4125 | -0.6%  | -   | -   |
+
+The w7680 row reads lifecycle +52.0%, physics +14.4%, step +6.9%. The gap is real and not load: the brain phase is flat. The next steps stay as written above (a generated reader per group, lazy base reads in `liveIn`).
+
 The T30 conformance review (a fresh agent, beside `scripts/check.sh`) found no defect in the code: no per-tick
 allocation, `foldGroup` multiplies in `liveOf`'s order, and no sim reader of the four skipped effects' stacks or events. It
 corrected two rows as built: T24's `effectLive` count is read by the fade pass only (`fold` and `gateOpen` do not check it;
