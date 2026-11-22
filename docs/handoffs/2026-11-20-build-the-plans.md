@@ -262,7 +262,7 @@ Findings to carry:
 - **Step 5.** E272 (16 seeds): step5-b and step5-d both do no harm to the keep rule's seed guards; step5-d is the
   finalist (1 better, 3 worse: `body_plan_coverage` 0.18 to 0.055 from the narrowed spans, the defender's fitness). No
   rally was raised on step5-d although `rallyThrust` is 0.1. Before T18: correct the calculator's cold-stack formula
-  (`--check` exits 1 on step5-d, 3.9% short on `forager:idle`), re-run the predator corner reads at the final spans,
+  (`--check` exited 1 on step5-d, 3.9% short on `forager:idle`; fixed 2026-11-22 on `feat/coldstack-defender-release`: `chilled` scales the passive term only, and `coldStep` keeps the sim's signed clock; it now exits 0), re-run the predator corner reads at the final spans,
   then the 64-seed keep-rule pair (E-BG-3).
 - **Process.** `gh run watch` polling from many watchers exhausted the GitHub API (5000 an hour) once; poll at
   `-i 120` or slower. A stacked PR closes when its base branch is deleted: retarget it first. Coverage timeouts were
@@ -273,3 +273,22 @@ and the user's defender answer; then step 6 (registries T12, metric-noise gate 2
 step 5 is adopted) and step 7 (brain-reflex-tests T23, E-RT-1). A - agent-workflow Phase 7 (less merge churn). C - the
 real-GPU items: a 240 Hz `perf:browser` run with `?tv=1`, the user's OLED walk for ambient-display T40, the GPU clips of
 T6, T11 and T22.
+
+### Progress - coordinator session 2026-11-22
+
+Batch `batch/2026-11-22-steps` (one PR):
+
+- **Speed reads** (quiet machine): body-genes T54 met (`sense@500` -15.1%, `sense@500w7680` -1.6%). Status-effects
+  Phase 5 Targets still unmet (`lifecycle@500` +47.4%, `physics@500` +19.0% above 4e56979d; brain flat).
+- **Calculator cold stack** now matches the sim's `chilled` (passive term only) and `stepChilled` clock;
+  `role:budget --check` on step5-d exits 0. No config numbers moved.
+- **No rally on step5-d**: no `PackCalled` is ever raised (hunt output never above `huntCallThreshold`), so the rally
+  is never reached. Before T16 reads it, script a two-hunter call scene or screen a policy that calls.
+- **Defender smoke (user, 2026-11-22: release without the turn, shape B)**: a cloud is aimed at the nearest hunter
+  within `visionRange` and `smokeAimArc` (0.785 rad) of the heading, else dropped behind as before. Breaking; season 12
+  `rulesHash` moved in place to `c64124f01c20ac17`. Defender release is now on time (slack 0, was -21), but the cell is
+  still `impossible`: the cloud hides the caller for 15 ticks and it needs 36 to leave the view (caller slack -23).
+
+Next per lane: B - the defender caller's escape (the caller side, not the release) needs a design call; step 5 T18
+path (predator corner reads at the final spans, then E-BG-3 64-seed keep rule) now that `--check` passes;
+status-effects Phase 5 speed steps (generated readers, lazy `liveIn`). A - agent-workflow Phase 7.

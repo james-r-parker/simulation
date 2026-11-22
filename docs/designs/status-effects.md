@@ -182,6 +182,8 @@ Inside the `bench-check` margin; `fadeEffects` is a new phase row of `bench:part
 
 The numbers are chosen with the calculator and read on the default world with [body-genes.md](body-genes.md) Phase 3, in the same screen and the same keep-rule pair. No trained brain is needed.
 
+**2026-11-22 finding (E272, step5-d):** no `rallied` stack was raised because no hunt call was ever fired, not because the rally is disabled or uncounted. `rally` in `js/sim/effect-hear.js` is reached only through `noteHeard`, from a `PackCalled` heard above `hearThreshold` by a kin hunter, and `huntCall` in `js/sim/calls.js` fires only when the brain's hunt output exceeds `huntCallThreshold` (0.65) with the hunt gate open. `evals/role-budget/step5-d.json` sets `rallyThrust` 0.1 and does not touch any of that; `callEffectsOn` is true. A replay of seeds 1, 2 and 3 for 20000 ticks on that config at `--level debug` logs 0 `PackCalled` and 0 `AlarmCalled` events, and `eval.hunt_call_answer` is null on the defaults too (E270), as `metric-registry/intent.js` says hunt calls evolved on 8 of 128 seeds. At the defaults the untrained policy never calls, so the rally is unreachable in a screen without calling hunters. Next: a scripted two-hunter scene, or a screen on a policy that calls, before T16 reads the rally as harmless or useless.
+
 | Chunk | Tasks           | Builder |
 | ----- | --------------- | ------- |
 | C     | T13, T15 to T19 | Sonnet  |
@@ -306,6 +308,17 @@ The level reads still go through `levelOfEffect`, whose four `switch` parts are 
 step for the Targets: a reader per group generated from its effect list (the `MOTION` levels read in place, as T26 wrote
 the dispatch), and reading a lane's base lazily in `liveIn` when the group's levels are all 0, so the `visionCost` and
 `sprintCost` lanes are read only when `tickCost` needs them.
+
+**Measured (T29 re-read, 2026-11-22): the Targets are still not met, on a quiet machine.** `flock /tmp/claude-1000/cpu.lock node scripts/bench-compare.mjs --base 4e56979d --sizes=500 --runs=5` (load 0.85 on 32 cores, no run in flight), head 80f10d18, median of 5 runs; `bench/baseline.json` not re-recorded (the step is within 5% and the row asks for it only if the step moved):
+
+| Reading                   | 4e56979d | head   | Change | Bar | Met |
+| ------------------------- | -------- | ------ | ------ | --- | --- |
+| lifecycle@500 (ms a tick) | 0.0950   | 0.1400 | +47.4% | +5% | no  |
+| physics@500               | 0.1682   | 0.2001 | +19.0% | +5% | no  |
+| step_ms@500               | 1.8236   | 1.8972 | +4.0%  | +5% | yes |
+| brain@500 (noise check)   | 0.4151   | 0.4125 | -0.6%  | -   | -   |
+
+The w7680 row reads lifecycle +52.0%, physics +14.4%, step +6.9%. The gap is real and not load: the brain phase is flat. The next steps stay as written above (a generated reader per group, lazy base reads in `liveIn`).
 
 The T30 conformance review (a fresh agent, beside `scripts/check.sh`) found no defect in the code: no per-tick
 allocation, `foldGroup` multiplies in `liveOf`'s order, and no sim reader of the four skipped effects' stacks or events. It

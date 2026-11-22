@@ -6,7 +6,7 @@ import { MODEL_DEFAULTS } from '../../js/evo/role-budget-model.js';
 describe('defenceCheck at the defaults', () => {
     const { readings, drift } = defenceCheck(arenaConfig(), MODEL_DEFAULTS);
 
-    it('reads the call, the hearing, the touch, the kill, both smokes and the refusal, with no drift', () => {
+    it('reads the call, the hearing, the touch, the kill, both smokes and the aimed drop, with no drift', () => {
         expect(drift).toBe(0);
         expect(readings.map((r) => `${r.row} ${r.what}`)).toEqual([
             'defender:predator alarm tick',
@@ -21,7 +21,7 @@ describe('defenceCheck at the defaults', () => {
             'smoke:prey cloud life',
             'smoke:prey out of view when the cover ends',
             'smoke:defender release tick',
-            'smoke:defender a defender facing the hunter is refused: the cloud is not between',
+            'smoke:defender a defender facing the hunter drops the cloud toward it: the cloud is between',
         ]);
         // at the escort distance the defender's path to the smoke spot grazes the caller (the formula has no bumps), so the
         // walk is not read at the defaults; it is read from 150 px below

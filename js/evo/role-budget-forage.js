@@ -85,7 +85,8 @@ export function heatFactor(ctx, temperature) {
 export function gaitCost(ctx, { speed, energy, heat = 1, stacks = 0 }) {
     const { cost, sizing } = ctx.p;
     const size = Math.max(sizing.min, sizing.base + energy / sizing.perEnergy);
-    const standing = (cost.passive + cost.size * cost.standingMult * size) * heat * (1 + ctx.cold.rate * stacks);
+    // `chilled` scales the `passiveLoss` lane alone (the size term stays), the temperature ramps scale both: tickCost in js/sim/energy.js
+    const standing = (cost.passive * (1 + ctx.cold.rate * stacks) + cost.size * cost.standingMult * size) * heat;
     return (standing + cost.move * speed * speed) * cost.drain * cost.juvenile + cost.upkeep;
 }
 
@@ -104,23 +105,28 @@ export function bestRangeSpeed(ctx, energy) {
 }
 
 /**
+ * The cold stack's clock as `stepChilled` (js/sim/effect-chilled.js) keeps it, signed: above 0 the ticks under the band, below 0
+ * the ticks back in it with stacks left to lose, and 0 while warm with none; it restarts at 0 when the body crosses the edge.
  * @param {Context} ctx the context
- * @param {{stacks: number, clock: number, cold: boolean}} at the stacks, the ticks since the last change and whether the body is
- *   under the optimal band
+ * @param {{stacks: number, clock: number, cold: boolean}} at the stacks, the signed clock and whether the body is under the
+ *   optimal band
  * @returns {{stacks: number, clock: number}} the cold stack a tick later (unchanged and at 0 with the effect off)
  */
-function coldStep(ctx, { stacks, clock, cold }) {
+export function coldStep(ctx, { stacks, clock, cold }) {
     if (ctx.cold.rate === 0) {
         return { stacks: 0, clock: 0 };
     }
-    const tick = clock + 1;
-    if (cold && tick >= ctx.cold.ticks) {
-        return { stacks: Math.min(ctx.cold.max, stacks + 1), clock: 0 };
+    if (cold) {
+        const next = clock < 0 ? 1 : clock + 1;
+        return next >= ctx.cold.ticks
+            ? { stacks: Math.min(ctx.cold.max, stacks + 1), clock: 0 }
+            : { stacks, clock: next };
     }
-    if (!cold && tick >= ctx.cold.recover) {
-        return { stacks: Math.max(0, stacks - 1), clock: 0 };
+    if (stacks === 0) {
+        return { stacks, clock: 0 };
     }
-    return { stacks, clock: tick };
+    const next = clock > 0 ? -1 : clock - 1;
+    return -next >= ctx.cold.recover ? { stacks: stacks - 1, clock: 0 } : { stacks, clock: next };
 }
 
 /**

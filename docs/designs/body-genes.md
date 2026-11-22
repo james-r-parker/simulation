@@ -1,6 +1,6 @@
 # Body genes
 
-**Status:** In progress - Phases 1 and 2 built. Phase 3: T46 and T51 built, next T17. Phase 5 built and reviewed (T45). Phase 7: T52, T53 built and reviewed (T55: nothing blocking); T54 (the quiet-machine bench) is open.
+**Status:** In progress - Phases 1 and 2 built. Phase 3: T46 and T51 built, next T17. Phase 5 built and reviewed (T45). Phase 7 built (T52 to T55; T54 read 2026-11-22: both Targets met).
 **Validated:** f77acde1 (2026-11-21)
 **Scheduled by:** [fair-chase.md](fair-chase.md) step 1 - the next chunk of the hunting lane: Phase 1 (body and senses) is built before the calculator, which reads it; Phase 2 follows role-budget.md Phase 1, and Phase 3 chooses the numbers with the calculator
 **Depends on:** [fair-chase.md](fair-chase.md)
@@ -573,8 +573,16 @@ decision on how wide a menu must be: `eval.gene_edge_share` of the screen (E-BG-
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ | ---------- |
 | T52 | (built) Trim `writeRay` in `js/sim/ray-march.js`: zero a slot's `raySize`, `raySpeed` and `rayClosing` range once in `castSlot` before its rays in place of three stores a ray, and pass the caster's size, velocity and the speed span into `bodySenseOf` once a slot; every golden unchanged                                                                                                               | [mechanical] | T5         |
 | T53 | (built) Rust (Opus): the sense kernel (`wasm/src/sense.rs`, `sense_slot`) writes `raySize`, `raySpeed` and `rayClosing` for each agent hit with the det-math `tanh`, bit-identical to `bodySenseOf`; delete the JS `writeBody` path (no fallback) and test the kernel's lanes against a naive reference in the test; rebuild `blob-kernels.wasm` and its hashes; `bench:micro -- --area wasm --compare HEAD` | [judgement]  | T52        |
-| T54 | Measure: `flock /tmp/claude-1000/cpu.lock node scripts/bench-compare.mjs --base ab0b1833 --sizes=500 --runs=5` on a quiet machine, the two Targets against the 3% bar (`bench.phase_ms.sense@500w7680` from the tracked w7680 row), recorded in this phase                                                                                                                                                   | [judgement]  | T53        |
+| T54 | (built) Measure: `flock /tmp/claude-1000/cpu.lock node scripts/bench-compare.mjs --base ab0b1833 --sizes=500 --runs=5` on a quiet machine, the two Targets against the 3% bar (`bench.phase_ms.sense@500w7680` from the tracked w7680 row), recorded in this phase                                                                                                                                           | [judgement]  | T53        |
 | T55 | (built) Conformance review of Phase 7 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                                                                                                                                                                                                                                  | [judgement]  | T54        |
+
+**Measured (T54, 2026-11-22): both Targets are met.** `flock /tmp/claude-1000/cpu.lock node scripts/bench-compare.mjs --base ab0b1833 --sizes=500 --runs=5` on a quiet machine (load 0.85 on 32 cores, no run in flight), head 80f10d18, median of 5 runs:
+
+- `sense@500w7680`: 0.4658 ms a tick at ab0b1833, 0.4584 at head, -1.6% (bar +3%).
+- `sense@500`: 0.5354 at ab0b1833, 0.4546 at head, -15.1% (bar +3%).
+- `step_ms@500`, for context: 2.0609 to 1.9509, -5.3%.
+
+The body sense in the sense kernel pays for itself. The same run shows the phases Phase 5 of [status-effects.md](status-effects.md) owns still above the bar against ab0b1833 (lifecycle@500 +22.9%, physics@500 +13.7%).
 
 **As built in T55.** Review of T42 to T46, T51 and T53 against `js/sim/body-lanes.js`, `write_body` in `wasm/src/sense.rs`, `senseLoss` in `js/sim/energy.js`, `js/sim/traits.js` and the `js/evo` normalisers: nothing blocking. The kernel's three lanes equal the naive reference (`test/sim/helpers/body-sense-reference.js`) bit for bit over 8 fuzz seeds, no JS `bodySenseOf` remains beside it, the cost keys are no-ops at 0 (tested), and the per-tick paths allocate nothing. Left open: `visionBySpec`, `turnBySpec` and `maxEnergyBySpec` in `js/sim/world.js` are read by tests only now and can go with their fixtures; T54 is not done.
 
