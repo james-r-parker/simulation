@@ -182,6 +182,8 @@ Inside the `bench-check` margin; `fadeEffects` is a new phase row of `bench:part
 
 The numbers are chosen with the calculator and read on the default world with [body-genes.md](body-genes.md) Phase 3, in the same screen and the same keep-rule pair. No trained brain is needed.
 
+**2026-11-22 finding (E272, step5-d):** no `rallied` stack was raised because no hunt call was ever fired, not because the rally is disabled or uncounted. `rally` in `js/sim/effect-hear.js` is reached only through `noteHeard`, from a `PackCalled` heard above `hearThreshold` by a kin hunter, and `huntCall` in `js/sim/calls.js` fires only when the brain's hunt output exceeds `huntCallThreshold` (0.65) with the hunt gate open. `evals/role-budget/step5-d.json` sets `rallyThrust` 0.1 and does not touch any of that; `callEffectsOn` is true. A replay of seeds 1, 2 and 3 for 20000 ticks on that config at `--level debug` logs 0 `PackCalled` and 0 `AlarmCalled` events, and `eval.hunt_call_answer` is null on the defaults too (E270), as `metric-registry/intent.js` says hunt calls evolved on 8 of 128 seeds. At the defaults the untrained policy never calls, so the rally is unreachable in a screen without calling hunters. Next: a scripted two-hunter scene, or a screen on a policy that calls, before T16 reads the rally as harmless or useless.
+
 | Chunk | Tasks           | Builder |
 | ----- | --------------- | ------- |
 | C     | T13, T15 to T19 | Sonnet  |
