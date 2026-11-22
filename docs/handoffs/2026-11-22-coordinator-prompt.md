@@ -32,6 +32,8 @@ You build by delegating chunks to subagents, reviewing their work and merging on
 
 ## Where it stands
 
+- `origin/main` is at `80f10d18` (release `11.0.0`, PR #630 and release PR #503 are both already merged; production is
+  season 12 without the step-5 numbers adopted). Do not merge another release PR without the user's word.
 - Lane B steps 1 to 4 are built. Step 5 has its candidates: `evals/role-budget/step5-d.json` is the finalist. E272: no
   harm to the keep rule's seed guards at 16 seeds; `body_plan_coverage` 0.18 to 0.055; no rally raised.
 - Built in the calculator: the defender row is read at an escort distance (87 px) and, optionally, in a guard posture

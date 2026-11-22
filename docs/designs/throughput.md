@@ -1,8 +1,8 @@
 # Throughput
 
-**Status:** In progress - Phase 3 T6, T7a and T7b are built (`grazeHerds` +432%, the field phase +136% at 500 agents); T7, T7c and the review T8 are open. Phase 1 (measure, T1 to T5), Phase 2 and Phases 4 to 6 are not started.
-**Validated:** 3c6f1225 (2026-11-21)
-**Priority:** 6 - Speed lead. Every eval and screen waits on ticks per second; Phases 1 to 4 change no behaviour, and Phase 3 (the loops over what is alive) has measured prototypes
+**Status:** In progress - Phase 3 T6, T7a and T7b are built (`grazeHerds` +432%, the field phase +136% at 500 agents); T7, T7c and the review T8 are open. Phase 1 (measure, T1, T1a and T2 to T5), Phase 2 and Phases 4 to 6 are not started.
+**Validated:** e3549629 (2026-11-22)
+**Priority:** 5 - Speed lead (the sim runs fast before any training). Every eval and screen waits on ticks per second; Phases 1 to 4 change no behaviour, and Phase 3 (the loops over what is alive) has measured prototypes; gate 6 of fair-chase.md "Before any training" needs its Targets and status-effects.md T31
 **Depends on:** [wasm-kernels.md](wasm-kernels.md)
 
 > Companion to [wasm-kernels.md](wasm-kernels.md), which moved the brain, the ray march, the spatial hash, the pheromone update and physics to Rust and squeezed each kernel under a bit-identical contract. This doc does not repeat a squeeze that doc tried and reverted.
@@ -63,7 +63,7 @@ Each is a question for a task, not a finding.
 
 **Targets:** none - bench tools and readings; no sim behaviour change
 
-- **One window.** `scripts/bench.mjs` times the step and its phases on the same ticks, and prints the mean agents alive and `bench.agent_us@<n>` (step microseconds per living agent) beside `bench.step_ms@<n>`. `bench/baseline.json` gains the new keys in its own commit.
+- **One window.** `scripts/bench.mjs` times the step and its phases on identical seeded runs, checks their ending hashes and accounts for observer and harness time. The fixed-size workload holds its requested population and prints the mean agents alive and `bench.agent_us@<n>` (step microseconds per living agent) beside `bench.step_ms@<n>`. `bench/baseline.json` gains the new keys in its own commit.
 - **Scaling by part.** `npm run bench:parallel -- --part <name>` runs one part on every worker: `world` (today), `brain` (`brain_forward` on the micro world of `bench/micro/`), `sense`, and `spin` (a `tanh` loop over 4 KiB: no memory traffic). The table prints each part's efficiency at each count.
 - **Pages and cores.** The same table with transparent huge pages `always`, and with workers pinned by `taskset` to the cores with the large L3, to the others, and to one thread a core.
 
@@ -71,10 +71,10 @@ Prediction, written before the run (`E-TP-1`): at 16 workers `spin` keeps at lea
 
 #### Chunks
 
-| Chunk | Tasks    | Holds                                                          |
-| ----- | -------- | -------------------------------------------------------------- |
-| A     | T1, T2   | The bench window and the part table (code, Sonnet)             |
-| B     | T3 to T5 | The runs on a quiet machine, the verdict and the review (runs) |
+| Chunk | Tasks       | Holds                                                          |
+| ----- | ----------- | -------------------------------------------------------------- |
+| A     | T1, T1a, T2 | The bench window and the part table (code, Sonnet)             |
+| B     | T3 to T5    | The runs on a quiet machine, the verdict and the review (runs) |
 
 Re-measured on 2026-11-20 with `npm run bench:parallel` (noisy: two light jobs were running): 16 workers keep 64% of one world's speed at 500 agents and at 100 agents, and a loop with no memory traffic keeps 79%, so about 21 of the 36 points lost at 16 workers appear without memory traffic. Weights a fifth the size change nothing at 16. 24 workers give 10% more than 16. T2 to T4 confirm or replace this on a quiet, pinned machine before a Phase 2 row opens.
 
@@ -234,13 +234,14 @@ The candidates sum to about 14% of the default world and 10% of a full one. A ke
 
 ### Phase 1 - Measure
 
-| #   | Task                                                                                                                                                                                                        | Nature       | Depends on |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T1  | Time the step and its phases on the same ticks in `scripts/bench.mjs`; print agents alive and `bench.agent_us@<n>`; explain the 0.64 ms in no phase in [sim-notes.md](sim-notes.md); re-record the baseline | [judgement]  | -          |
-| T2  | Add `--part` (`world`, `brain`, `sense` or `spin`) to `npm run bench:parallel`, with the efficiency column and a test of the argument parsing                                                               | [judgement]  | -          |
-| T3  | Run `E-TP-1`: prediction first; the part table at 1, 8, 16, 24 and 32 workers with huge pages `madvise` and `always` (the user sets it; it needs root)                                                      | [mechanical] | T2         |
-| T4  | Run the pinned tables (`taskset`): large-L3 cores, the others, one thread a core; state the worker count and pin map that give the most ticks a second                                                      | [mechanical] | T2         |
-| T5  | Write the verdict: which Phase 2 rows open, with the numbers; conformance review of Phase 1 by a fresh agent, in parallel with `scripts/check.sh`                                                           | [judgement]  | T1, T3, T4 |
+| #   | Task                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Nature       | Depends on      |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | --------------- |
+| T1  | **What:** time the step and its phases over the same seeded measured ticks in `benchSize`. **Why:** `phaseMedians` currently advances into a later window with raw `STEP_PHASES`, omitting the observer overrides and policy feed used by the named-policy step pass. **How:** use two identically warmed subjects with the same seed, config and policy. Time the whole step in one and instrument the effective phases in the other, including observer overrides and the same policy event and after-step path. Report observer-feed time separately and reconcile per-tick totals before taking medians. Pin matching tick ranges and final `worldHash` on reference and named-policy fixtures. | [judgement]  | -               |
+| T1a | **What:** hold the requested population in `benchSize` and report the occupancy it actually times. **Why:** the default floor acts only below 8 agents, so a run named `@500` can time a depleted world. **How:** set `floorTrigger: size` with `initialAgents`, `minAgents` and `maxAgents`. Verify occupancy at every measured tick in both passes, including a fixture with a death and refill. Report the mean population and `bench.agent_us@<n>` and refuse to record a fixed-size baseline when occupancy differs. Re-record `bench/baseline.json` under the CPU lock once T1 and this task are in place.                                                                                    | [judgement]  | T1              |
+| T2  | Add `--part` (`world`, `brain`, `sense` or `spin`) to `npm run bench:parallel`, with the efficiency column and a test of the argument parsing                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | [judgement]  | -               |
+| T3  | Run `E-TP-1`: prediction first; the part table at 1, 8, 16, 24 and 32 workers with huge pages `madvise` and `always` (the user sets it; it needs root)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | [mechanical] | T2              |
+| T4  | Run the pinned tables (`taskset`): large-L3 cores, the others, one thread a core; state the worker count and pin map that give the most ticks a second                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | [mechanical] | T2              |
+| T5  | Write the verdict: which Phase 2 rows open, with the numbers; conformance review of Phase 1 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | [judgement]  | T1, T1a, T3, T4 |
 
 ### Phase 2 - Memory and the machine
 
@@ -287,7 +288,7 @@ The candidates sum to about 14% of the default world and 10% of a full one. A ke
 ## Verification
 
 1. `scripts/check.sh --fix --docs` for this doc; `scripts/check.sh` green on each chunk PR.
-2. Phase 1: `npm run bench` prints agents alive and microseconds per living agent, and the phases sum to the step within 5%; `npm run bench:parallel -- --part brain` and `--part spin` print their efficiency at each count.
+2. Phase 1: `npm run bench` prints agents alive and microseconds per living agent, and the timed phases plus observer and harness overhead reconcile with the measured tick total within 5% before aggregation; `npm run bench:parallel -- --part brain` and `--part spin` print their efficiency at each count.
 3. Phase 2: `npm run bench:parallel` shows more ticks a second at 16 workers than Phase 1's table, outside the margin, or the phase records that nothing opened.
 4. Phase 3: `npm run bench:parts -- --area field --compare origin/main` shows the field phase faster outside the margin, and the goldens are unchanged.
 5. Phase 4: `npm run bench:micro -- --area drill --compare origin/main` shows more trials a second, and a floor-off eval report is byte-identical.

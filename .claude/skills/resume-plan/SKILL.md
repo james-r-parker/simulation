@@ -65,7 +65,7 @@ before starting any task, and restamp it when it checks out.
 10. **Ask before starting.** Do not begin implementation until the user confirms the next step. When work starts, run
     `scripts/task-start.sh <type>/<short-desc> --plan docs/designs/<doc>.md`: it fetches, makes a worktree branched from
     `origin/main` with `node_modules` ready, and prints the doc's status, the next unbuilt chunk and its task rows (the
-    worktree path is its last line). Work in that worktree. At the end of the chunk, `scripts/ship.sh` (see `create-pr`).
+    worktree path is its last line). Work in that worktree. A subagent's chunk branch is cut from the session's batch branch and committed locally; the coordinator merges it into the batch, and `scripts/ship.sh` runs once per session (see `create-pr`, AGENTS.md).
 
 ## Red flags
 

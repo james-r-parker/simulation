@@ -6,7 +6,7 @@ Detail that [AGENTS.md](../AGENTS.md) summarises. AGENTS.md is read at the start
 
 When one agent hands tasks to others (user, 2026-10-22):
 
-- **One chunk at a time per stream**, each branched from the latest `origin/main`. Parallel branches in one path
+- **One chunk at a time per stream**, each branched from the session's batch branch, which is cut from the latest `origin/main`. Parallel branches in one path
   conflict in the config files and the plan doc, and the rework costs more than the parallelism saves.
 - **Streams and one coordinator.** A stream is a lane given to another session with a prompt. One coordinator session
   owns the Build queue, the experiment ledger and every plan doc's `**Status:**` line; streams are sessions of the
@@ -20,11 +20,23 @@ When one agent hands tasks to others (user, 2026-10-22):
   ladder, the last experiments, the last 20 ships (median minutes, first-run green share), open PRs and the worktree
   class counts. A stream's handoff names its `--workers` from that page; `run-detached.sh` records `workers` in
   `runs.json` and prints one warning line when a lone run claims under half the free workers.
-- **Build in chunks (user, 2026-10-29).** One PR carries one chunk: 4 to 8 related tasks, usually most of a phase,
+- **One batch branch, one PR per session (user, 2026-11-22).** The coordinator keeps one local `batch/<date>-<desc>`
+  branch cut from fresh `origin/main`. Each subagent builds its chunk on its own branch cut from the batch
+  (`git worktree add -b <type>/<desc> .claude/worktrees/<name> <batch>` until `task-start.sh --from` exists, agent-workflow T45),
+  commits locally, and does not push or open a PR (this replaces the 2026-11-20 rule that subagents open PRs). When a
+  subagent finishes, the coordinator reviews its commits against the plan rows, merges its branch into the batch with
+  `--no-ff`, runs the gate (`scripts/check.sh --fix --quick`) and carries on; a red gate is fixed on the batch before
+  the next merge. One PR for the whole session goes up at the end of the session, or when the user asks, with
+  `scripts/ship.sh --title <subject> --body <file>` from the batch (the body covers each chunk: scene served, Targets,
+  status moves), and is merged on green CI. It replaces many small PRs, for throughput: fewer CI runs, less merge churn
+  and rebasing. Everything above still holds: one coordinator, parallel streams only on disjoint Owns paths, a chunk
+  that changes `rulesHash` carries its `library/seasons.json` entry in the same batch, and evals, screens and timing
+  runs stay out of a code chunk.
+- **Build in chunks (user, 2026-10-29).** One chunk carries 4 to 8 related tasks, usually most of a phase,
   built in order by one subagent on one branch, one commit per task. During the chunk each commit runs only the
   pre-commit hook (`scripts/check.sh --tier 1`), whose `test-related` gate runs the tests of the staged files, so the
   task's own tests run at commit time (`npx vitest run <files>` is for iterating before it, not a second run); the pre-push check
-  (`scripts/check.sh --fix --quick`) runs once per chunk PR and CI runs the full gate. The delegating agent still reviews each task's commit against its
+  (`scripts/check.sh --fix --quick`) runs once per session PR and CI runs the full gate. The delegating agent still reviews each task's commit against its
   plan row. Golden re-pins keep their own commit inside the chunk. Long runs stay separate: evals, screens and timing
   runs (quiet machine) never go in a code chunk; the one exception is a baseline re-record, a [mechanical] commit of its
   own inside an adopt chunk, run on a quiet machine under the CPU lock. A design doc lists its chunks in a "Chunks" table under each phase. A chunk with any [judgement] task is built by
@@ -46,7 +58,7 @@ When one agent hands tasks to others (user, 2026-10-22):
   its turn reporting the run name; the delegating agent starts its own `scripts/wait-run.sh <name>` in the background
   and resumes the subagent when it returns. Commit something on the branch first: a worktree with no commits is
   auto-deleted when the turn ends, and a non-frozen run dies with it.
-- **Clean up after each merge (user, 2026-10-23).** Once a subagent's PR merges, run `scripts/worktree-gc.sh`: it
+- **Clean up after each merge (user, 2026-10-23).** Once a subagent's branch is merged into the batch (or a PR merges), run `scripts/worktree-gc.sh`: it
   removes the `safe` worktrees (a merged PR holds all of HEAD and the tree is clean) with `git worktree remove` and
   deletes their local branches. Only worktrees under `<main checkout>/.claude/worktrees/` are removed; a named stream checkout elsewhere lists as `outside` and needs `--all`. Never use `--force`. `scripts/worktree-gc.sh --list` classes every worktree and says why
   each kept one is kept: `live` (the main checkout, the calling session, a locked one, a process in it, a run in flight

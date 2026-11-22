@@ -72,10 +72,10 @@ four columns (`#`, `Task`, `Nature`, `Depends on`), `T`-numbered ids and `[mecha
    for a body of work are approved, and the user confirms the Build queue, before its code changes.
 2. **Picking work back up** - the `resume-plan` skill re-validates the doc against `origin/main` and names the next
    phase.
-3. **Build one chunk per branch and PR** - `scripts/task-start.sh <type>/<desc> --plan <doc>` makes the worktree and
-   names the chunk; commit per task.
-4. **Before pushing** - the `create-pr` skill: a plan-conformance review agent, measurements for the phase's Targets, the
-   phase marked `(built)` and the status line moved in the same PR. Then `scripts/ship.sh --title <subject> --body <file>`
+3. **Build one chunk per branch, merged into the session batch** - `scripts/task-start.sh <type>/<desc> --plan <doc>`
+   makes the worktree and names the chunk (cut from the batch branch; see Delegating); commit per task; no push, no PR.
+4. **Before pushing** - the `create-pr` skill, once per session's batch: a plan-conformance review agent per chunk,
+   measurements for each phase's Targets, each phase marked `(built)` and its status line moved in the same PR. Then `scripts/ship.sh --title <subject> --body <file>`
    runs the gate, pushes, opens the PR, turns on auto-merge and waits until it is merged or red (push and PR only when
    the user asks).
 5. **Measuring a change** - the `run-evolution-loop` skill: check the detector first, prediction first, at least 16 seeds
@@ -89,16 +89,21 @@ four columns (`#`, `Task`, `Nature`, `Depends on`), `T`-numbered ids and `[mecha
 
 Full text: [docs/agent-reference.md](docs/agent-reference.md). The rules:
 
-- **One chunk at a time per stream** (user, 2026-10-22), each branched from the latest `origin/main`. A stream is a
+- **One chunk at a time per stream** (user, 2026-10-22), each branched from the session's batch branch (below). A stream is a
   lane handed to another session with a prompt (`docs/handoffs/TEMPLATE.md`, committed as
   `docs/handoffs/<YYYY-MM-DD>-<stream>.md` before it starts); streams run side by side only when their Owns paths are
   disjoint, since parallel branches in one path cost more in rework than they save.
 - **One coordinator, one model family.** One session owns the queue, the ledger and every plan doc's status line.
   Streams are sessions of its model family; a session of another model family edits no plan doc and records no
   experiment (a flaky test or a renderer spike is its work).
-- **Build in chunks** (user, 2026-10-29): one PR is one chunk of 4 to 8 related tasks, built in order by one subagent on
-  one branch, one commit per task. Each commit runs the pre-commit hook; the pre-push check runs once per chunk PR and
-  CI runs the full gate. The delegating agent reviews each task's commit against its plan row. Evals, screens and timing
+- **One batch branch, one PR per session** (user, 2026-11-22): the coordinator keeps one local `batch/<date>-<desc>`
+  branch cut from fresh `origin/main`. A subagent builds its chunk on its own branch cut from the batch, commits
+  locally and neither pushes nor opens a PR. As each finishes, the coordinator reviews it, merges it into the batch
+  with `--no-ff`, runs the gate and goes on. One PR for the whole session goes up at the end (or when the user asks)
+  and is merged on green CI. This replaces many small PRs: fewer CI runs, less merge churn and rebasing.
+- **Build in chunks** (user, 2026-10-29): one chunk is 4 to 8 related tasks, built in order by one subagent on
+  one branch, one commit per task. Each commit runs the pre-commit hook; the pre-push check runs once per session PR
+  and CI runs the full gate. The delegating agent reviews each task's commit against its plan row. Evals, screens and timing
   runs never go in a code chunk (a baseline re-record is the one exception).
 - **Pick the model by the task's tag:** `[mechanical]` to Haiku, `[judgement]` to Sonnet; a chunk with any
   `[judgement]` task is Sonnet's. The delegating agent reviews every result before it merges.
