@@ -5,7 +5,7 @@
 import { roleParams } from './role-budget-params.js';
 import { defenceTimeline } from './role-budget-defence.js';
 import { budgetDefend } from './role-budget-defend.js';
-import { escortGap } from './role-budget-escort.js';
+import { escortGap, guardPosture } from './role-budget-escort.js';
 import { defenderSmokeGeometry, segmentHitsCloud, smokeCell } from './role-budget-smoke.js';
 import { playDefence } from './role-scenes-defence.js';
 import { playDefenderSmoke, playSmoke } from './role-scenes-smoke.js';
@@ -64,6 +64,7 @@ function defenceReadings(config, model) {
         reaction: model.reactionTicks,
         threshold: model.hearThreshold,
         side: escortGap(defender, caller, model),
+        posture: guardPosture(model),
     };
     const shoves = defender.repel.energy > 0 || defender.repel.impulse > 0;
     const run = defenceTimeline(hunter, caller, defender, options);
@@ -83,7 +84,11 @@ function defenceReadings(config, model) {
             scene.outcome.defenderArrivedFirst,
         ]),
     ];
-    readings.push(ticksReading(row, 'kill tick', [run.killTick, scene.ticks.killTick], inTicks(2)));
+    // a `between` guard blocks the model's hunter, which has no path round a blocker and so never kills (an upper bound, in
+    // docs/designs/role-budget.md); the sim's hunter goes round, so the kill tick is read only when the formula has one
+    if (options.posture !== 'between' || run.killTick !== null) {
+        readings.push(ticksReading(row, 'kill tick', [run.killTick, scene.ticks.killTick], inTicks(2)));
+    }
     if (shoves) {
         readings.push(...shoveReadings({ config, model }, { run, scene, lone }));
     }

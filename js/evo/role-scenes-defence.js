@@ -16,6 +16,16 @@ import { MAX_TICKS } from './role-budget-timeline.js';
 const ABSENT_SIDE = 5000;
 
 /**
+ * @typedef {object} DefenceSceneOptions
+ * @property {number} reaction the brains' reaction ticks
+ * @property {number} threshold the loudness the defender acts on
+ * @property {number} side the defender's distance from the caller
+ * @property {boolean} [absent] whether the defender is left out
+ * @property {'side' | 'between'} [posture] where the defender stands: `side` beside the caller facing away (default), or
+ *   `between` on the hunter's line `side` px in front of the caller, facing the hunter
+ */
+
+/**
  * Steps a staged world until `observe` says stop or `MAX_TICKS` pass.
  * @param {{world: Record<string, any>, policy: any}} staged the staged arena
  * @param {{brains: Array<(world: Record<string, any>) => void>, observe: (world: Record<string, any>, n: number) => boolean}} play
@@ -82,18 +92,25 @@ export function stageTrio(config, place) {
 
 /**
  * @param {Readonly<Record<string, any>>} config an `arenaConfig`
- * @param {{reaction: number, threshold: number, side: number, absent?: boolean}} options the brains' reaction ticks, the
- *   loudness the defender acts on, the defender's distance from the caller, and whether it is left out
+ * @param {DefenceSceneOptions} options the options
  * @returns {{brains: Array<(world: Record<string, any>) => void>, staged: ReturnType<typeof stageArena>,
  *   defender: ReturnType<typeof defenderBrain>}} the arena (hunter, caller, defender) and its brains
  */
-function stage(config, { reaction, threshold, side, absent = false }) {
-    const { staged, gap } = stageTrio(config, ({ gap: g }) => ({
-        x: g,
-        y: absent ? ABSENT_SIDE : side,
-        angle: -Math.PI / 2,
-    }));
-    const defender = defenderBrain({ defender: 2, hunter: 0, reaction, threshold });
+function stage(config, { reaction, threshold, side, absent = false, posture = 'side' }) {
+    const { staged, gap } = stageTrio(config, ({ gap: g }) =>
+        posture === 'between' && !absent
+            ? { x: g - side, y: 0, angle: Math.PI }
+            : { x: g, y: absent ? ABSENT_SIDE : side, angle: -Math.PI / 2 },
+    );
+    // the guard at rest aims straight at the hunter, as the formula's `between` does (`guarding` of role-budget-defence.js): the
+    // oracle's lead on a pursuer at rest is 30 ticks of the hunter's motion, which aims behind the guard
+    const defender = defenderBrain({
+        defender: 2,
+        hunter: 0,
+        reaction,
+        threshold,
+        lead: posture === 'between' ? 0 : undefined,
+    });
     const brains = [
         pursuerBrain({ pursuer: 0, evader: 1, sprint: true }),
         callerBrain({ caller: 1, hunter: 0, seeGap: gap, reaction }),
@@ -123,8 +140,7 @@ export function noteMeeting(ticks, world, { n, shove }) {
  * Plays the defence: the hunter creeps up on the standing caller from its awareness gap at cruise speed, the caller calls
  * alarm `reaction` ticks after it sees the hunter, and the defender, beside the caller, runs at the hunter once it hears.
  * @param {Readonly<Record<string, any>>} config an `arenaConfig` (the shove is its `defenderRepel*` keys)
- * @param {{reaction: number, threshold: number, side: number, absent?: boolean}} options the brains' reaction ticks, the
- *   loudness the defender acts on, the defender's distance from the caller and whether it is left out
+ * @param {DefenceSceneOptions} options the options
  * @returns {DefenceScene} the ticks and the outcome, from the real sim
  */
 export function playDefence(config, options) {
