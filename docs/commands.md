@@ -110,6 +110,18 @@ The digest under its `✗` line, then `.checklogs/<gate>.log` (kept until the ne
 
 ## Tests
 
+### Run the tests and read only the failures (the default for an agent)
+
+`npm run test:report -- [--scope fast|slow|affected|all] [--base <ref>] [--full] [files...]` (`scripts/test-failures.sh`). `fast` is `TEST_SCOPE=fast`; `slow` the `*.slow.test.js` files only (a named file maps to its slow sibling); `affected` (the default) the tests a PR would run (`scripts/affected.mjs` against `--base`, default `origin/main`; the whole suite when the change reaches everything); `all` everything. Files narrow the scope. Prints one summary line (passed, failed, skipped, time), then per failure the test, its first assertion, expected/received lines and `file:line` (`TIMEOUT` when a timeout was the cause), then passing tests over half the default limit (explicit timeouts are not read), about 40 lines (`--full` lifts the cap); exits 1 on failure. `scripts/test-failures.sh --log <file>` digests a saved vitest log (the `test` gate of `check.sh` prints it)
+
+### Read a failed CI run
+
+`scripts/ci-failures.sh <pr-number|run-id> [--full]`: the newest failed run (a PR's head commit), per failed job the failing tests with their first assertion and `file:line`, `TIMEOUT` lines, perf `FAIL` lines; ANSI stripped, about 40 lines per job. Replaces `gh run view --log-failed` and the raw jobs-logs API
+
+### Wait for a PR's checks
+
+`scripts/ci-wait.sh <pr-number> [--interval <s>] [--timeout <s>]`: polls `gh pr checks` every 120 s (an interval below 120 is refused; the API limit is 5000 an hour, so never `gh run watch` loops), one call waits at most 510 s. Prints `green` (exit 0), the `ci-failures` summary (exit 1), or how to resume (exit 124). No checks yet counts as pending. Never loop it faster by hand
+
 ### Tests
 
 `npm test`; one file: `npx vitest run <file>`; one test: `npx vitest run -t '<name>'`
@@ -117,6 +129,8 @@ The digest under its `✗` line, then `.checklogs/<gate>.log` (kept until the ne
 ### Only the fast tests (no `*.slow.test.js`)
 
 `TEST_SCOPE=fast npx vitest run`
+
+Timeouts: the default test limit and `scaleTimeout` stretch x3 on CI (`CI` set), x6 under coverage, up to x4 on a busy machine; `TEST_TIMEOUT_FACTOR=<n>` sets the factor by hand (`scripts/lib/test-timeout.mjs`)
 
 ## Bench
 

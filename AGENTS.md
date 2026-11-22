@@ -46,7 +46,7 @@ The ones used in every session:
 - Ship a chunk: `scripts/ship.sh --title <subject> --body <file> [--base main] [--no-merge]`.
 - Pre-push check (what an agent runs): `scripts/check.sh --fix --quick`; CI is the PR gate: a pull request runs the tests its change reaches (`scripts/affected.mjs`), the push to `main` all of them.
 - Docs-only change: `scripts/check.sh --fix --docs`.
-- Tests: `npm test`; one file `npx vitest run <file>`; one test `npx vitest run -t '<name>'`; fast only
+- Tests: `npm run test:report -- [--scope fast|slow|affected|all]` (failures only); `npm test`; one file `npx vitest run <file>`; one test `npx vitest run -t '<name>'`; fast only
   `TEST_SCOPE=fast npx vitest run`.
 - Replay a world: `npm run replay -- --seed <n> --ticks <n>`.
 - Budget a role from the config (no world): `npm run role:budget -- --rows predator:forager [--config <arm.json>] [--search] [--check]`.

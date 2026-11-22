@@ -141,7 +141,7 @@ commit.
 
 A rerun after a fix commit resumes at step 2 on the same PR. The run is logged to `.checklogs/ship.jsonl`.
 
-On a red `check` (exit 1) the digest names the job; for more, `gh run view <run-id> --log-failed`.
+On a red `check` (exit 1) run `scripts/ci-failures.sh <pr>` (failed tests, assertions, timeouts, about 40 lines); wait for checks with `scripts/ci-wait.sh <pr>`, never a `gh run watch` loop. Run tests with `npm run test:report`.
 
 - `static`: the "Local gate" step shows the digest under each `✗` line; for more, `gh run download <run-id> -n
 check-logs` (`.checklogs/` and `TestResults/`). A `format` or `designs-index` failure is fixed by `scripts/check.sh --fix`.

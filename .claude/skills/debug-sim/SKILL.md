@@ -51,7 +51,8 @@ For a champion that fails a drill and needs neural-path evidence, follow the [in
 
 4. **Write the failing test.** Put the seed, config overrides and tick count in a test under `test/sim/` or
    `test/evo/` that asserts the correct behaviour and fails today. Prefer a minimal world (a few agents, scripted
-   positions) over the full replay once the cause is understood.
+   positions) over the full replay once the cause is understood. Run it with `npm run test:report -- <file>` (failures
+   only); read a red CI run with `scripts/ci-failures.sh <pr|run-id>`, not the raw logs.
 
 5. **Performance problems.** For `bench.*`, run `npm run bench` and read the per-phase split (`environment`, `hash`, `sense`,
    `brain`, `physics`, `lifecycle`, `field`, `merit`). For the browser, open DevTools Performance, record 10 s, and look for long tasks on the main
