@@ -57,10 +57,11 @@ describe('playDefenderSmoke', () => {
     });
 
     it('the calculator reads the caller as the scene does: it escapes behind a facing-hunter cloud only when the hunter sees short', () => {
-        for (const [extra, escapes] of [
+        const arms = /** @type {Array<[Record<string, any>, boolean]>} */ ([
             [{}, false],
             [BLIND, true],
-        ]) {
+        ]);
+        for (const [extra, escapes] of arms) {
             const config = arenaConfig(extra);
             const bodies = ['predator', 'forager', 'defender'].map((s) => roleParams(config, s));
             const geometry = defenderSmokeGeometry(bodies, { ...MODEL_DEFAULTS, guardPosture: 'between' });
