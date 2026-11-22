@@ -8,6 +8,8 @@
   "rallyBurn": 4,
   "staggerThrust": 0.5,
   "staggerTicks": 30,
+  "defenderRepelEnergy": 40,
+  "defenderRepelImpulse": 4,
   "specialisations": {
     "predator": {
       "sprintDrainMultiplier": 0.5,
