@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createConfig } from '../../js/sim/config.js';
 import {
     bestRangeSpeed,
+    coldStep,
     contextOf,
     eatingSpeeds,
     forageCycle,
@@ -11,6 +12,9 @@ import {
     patchFoodDensity,
     splitGate,
 } from '../../js/evo/role-budget-forage.js';
+import { stepChilled } from '../../js/sim/effect-chilled.js';
+import { allocBody } from '../sim/helpers/body.js';
+import { smallWorld } from '../sim/helpers/small-world.js';
 import { roleParams } from '../../js/evo/role-budget-params.js';
 
 /** @param {Record<string, any>} overrides @param {string} spec @returns {ReturnType<typeof contextOf>} */
@@ -46,7 +50,8 @@ describe('the cost of a gait', () => {
         expect(gaitCost(ctx, { speed: 0, energy: 1000, heat: 2 })).toBeCloseTo(2 * still, 9);
         expect(gaitCost(ctx, { speed: 0, energy: 1000, stacks: 5 })).toBeCloseTo(still, 9);
         const cold = { ...ctx, cold: { ...ctx.cold, rate: 0.1 } };
-        expect(gaitCost(cold, { speed: 0, energy: 1000, stacks: 5 })).toBeCloseTo(1.5 * still, 9);
+        // the stack scales the passive term only (the sim's `passiveLoss` lane), not the size term
+        expect(gaitCost(cold, { speed: 0, energy: 1000, stacks: 5 })).toBeCloseTo(still + 0.5 * ctx.p.cost.passive, 9);
     });
 
     it('reads the heat factor through the sim: 1 in the band, 2 at temperature 0', () => {
@@ -148,5 +153,30 @@ describe('forageCycle', () => {
         const thick = forageCycle(ctx, { density: 1e-3 });
         expect(thin.net).toBeLessThan(thick.net);
         expect(thin.grazeTicks).toBeGreaterThan(0);
+    });
+});
+
+describe('coldStep against the sim', () => {
+    it('keeps the stacks stepChilled keeps, tick by tick, through warm, cold and back (a warm start keeps no clock)', () => {
+        const over = { coldStackTicks: 5, coldRecoverTicks: 3, coldStackRate: 0.4 };
+        const w = smallWorld(over);
+        const slot = allocBody(w, 0);
+        w.alive[slot] = 1;
+        const min = w.lanes.temperatureOptimalMin[slot];
+        const ctx = { cold: { rate: 0.4, max: 10, ticks: 5, recover: 3 } };
+        const pattern = [
+            ...Array(7).fill(false),
+            ...Array(23).fill(true),
+            ...Array(5).fill(false),
+            ...Array(12).fill(true),
+        ];
+        let at = { stacks: 0, clock: 0 };
+        for (const cold of pattern) {
+            w.temperature[slot] = cold ? min - 1 : min + 1;
+            stepChilled(w, slot);
+            at = coldStep(ctx, { ...at, cold });
+            expect(at.stacks).toBe(w.effectStacks[0][slot]);
+        }
+        expect(at.stacks).toBeGreaterThan(0);
     });
 });
