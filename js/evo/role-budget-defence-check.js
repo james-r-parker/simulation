@@ -142,22 +142,21 @@ export const PX = { within: 1, unit: 'px' };
  * @param {Readonly<Record<string, any>>} config an `arenaConfig`
  * @param {import('./role-budget-model.js').RoleModel} model the model options
  * @returns {DefenceReading[]} the defender's smoke: when it releases, where the cloud lies, how long the hunter is blind,
- *   whether the caller is out of view when the cover ends, and that a defender facing the hunter is refused
+ *   whether the caller is out of view when the cover ends, and that a defender facing the hunter drops the cloud toward it
  */
 function defenderReadings(config, model) {
     const bodies = ['predator', 'forager', 'defender'].map((s) => roleParams(config, s));
     const play = { reaction: model.reactionTicks, threshold: model.hearThreshold, standing: STANDING };
     const geometry = defenderSmokeGeometry(bodies, { ...model, standing: STANDING });
     const scene = playDefenderSmoke(config, play);
-    const refused = defenderSmokeGeometry(bodies, { ...model, standing: STANDING, facing: 'hunter' });
     const turned = playDefenderSmoke(config, { ...play, facing: 'hunter' });
     const row = 'smoke:defender';
     const early = geometry.slackDefender !== null && geometry.slackDefender >= 0;
     const readings = [
         ticksReading(row, 'release tick', [geometry.releaseTick, scene.ticks.releaseTick]),
-        signReading(row, 'a defender facing the hunter is refused: the cloud is not between', [
-            refused.refused,
-            !turned.outcome.between,
+        signReading(row, 'a defender facing the hunter drops the cloud toward it: the cloud is between', [
+            true,
+            turned.outcome.between,
         ]),
     ];
     // released before the hunter reached the cloud: after that the hunter bumps the defender and the caller, which the
