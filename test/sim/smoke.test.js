@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ageSmoke, releaseSmoke } from '../../js/sim/smoke.js';
 import { addAgent, addCloud } from './helpers/sense-world.js';
-import { SPEC } from '../../js/sim/specs.js';
+import { CH_THREAT, RAY_CHANNELS } from '../../js/sim/brain-layout.js';
 import { smallWorld } from './helpers/small-world.js';
 
 const OVERRIDES = { smokeRadius: 80, smokeTicks: 10, maxClouds: 4 };
@@ -119,60 +119,58 @@ describe('ageSmoke', () => {
     });
 });
 
-describe('releaseSmoke aimed at a hunter', () => {
-    /** @returns {{w: ReturnType<typeof build>, me: number}} a releaser at (500, 500) facing +x */
+describe('releaseSmoke aimed at a seen threat', () => {
+    /** @returns {{w: ReturnType<typeof build>, me: number}} a releaser at (500, 500) facing +x with 16 rays */
     function releaser() {
-        const w = build();
+        const w = smallWorld({ ...OVERRIDES, rayCount: 16 });
         const me = addAgent(w, 500, 500, 20);
         w.angle[me] = 0;
         return { w, me };
     }
 
-    /** @param {ReturnType<typeof build>} w @param {number} x @param {number} y @returns {number} a hunter's slot */
-    function hunterAt(w, x, y) {
-        const h = addAgent(w, x, y, 20);
-        w.spec[h] = SPEC.PREDATOR;
-        return h;
+    /** @param {ReturnType<typeof build>} w @param {number} slot @param {number} ray @param {number} value @returns {void} */
+    function seeThreat(w, slot, ray, value) {
+        w.inputs[slot * w.layout.rawInputCount + ray * RAY_CHANNELS + CH_THREAT] = value;
     }
 
-    it('drops the cloud toward a hunter in front, size + smokeRadius from the releaser', () => {
+    it('drops the cloud along the ray of a threat in front, size + smokeRadius from the releaser', () => {
         const { w, me } = releaser();
-        hunterAt(w, 650, 500);
+        seeThreat(w, me, 0, 0.4);
         releaseSmoke(w, me);
-        expect([w.cloudX[0], w.cloudY[0]]).toEqual([600, 500]);
+        expect(w.cloudX[0]).toBeCloseTo(600, 4);
+        expect(w.cloudY[0]).toBeCloseTo(500, 4);
     });
 
-    it('aims at the bearing of the hunter, not the heading', () => {
+    it('aims along the ray, which turns with the heading', () => {
         const { w, me } = releaser();
-        hunterAt(w, 600, 560);
-        releaseSmoke(w, me);
-        const d = Math.hypot(w.cloudX[0] - 500, w.cloudY[0] - 500);
-        expect(d).toBeCloseTo(100, 4);
-        expect(Math.atan2(w.cloudY[0] - 500, w.cloudX[0] - 500)).toBeCloseTo(Math.atan2(60, 100), 4);
-    });
-
-    it('keeps the behind drop when the hunter is behind', () => {
-        const { w, me } = releaser();
-        hunterAt(w, 350, 500);
-        releaseSmoke(w, me);
-        expect([w.cloudX[0], w.cloudY[0]]).toEqual([400, 500]);
-    });
-
-    it('keeps the behind drop with no hunter, or one that is not a hunter, or one out of sight', () => {
-        const { w, me } = releaser();
-        const prey = addAgent(w, 600, 500, 20);
-        w.spec[prey] = SPEC.FORAGER;
-        hunterAt(w, 500 + w.lanes.visionRange[me] + 50, 500);
-        releaseSmoke(w, me);
-        expect([w.cloudX[0], w.cloudY[0]]).toEqual([400, 500]);
-    });
-
-    it('picks the nearest hunter in front', () => {
-        const { w, me } = releaser();
-        hunterAt(w, 700, 500);
-        hunterAt(w, 560, 540);
+        w.angle[me] = Math.PI / 2;
+        seeThreat(w, me, 1, 0.4);
         releaseSmoke(w, me);
         const bearing = Math.atan2(w.cloudY[0] - 500, w.cloudX[0] - 500);
-        expect(bearing).toBeCloseTo(Math.atan2(40, 60), 4);
+        expect(bearing).toBeCloseTo(Math.PI / 2 + (2 * Math.PI) / 16, 4);
+        expect(Math.hypot(w.cloudX[0] - 500, w.cloudY[0] - 500)).toBeCloseTo(100, 4);
+    });
+
+    it('keeps the behind drop when the threat is behind or outside the arc', () => {
+        const { w, me } = releaser();
+        seeThreat(w, me, 8, 0.9);
+        seeThreat(w, me, 4, 0.9);
+        releaseSmoke(w, me);
+        expect([w.cloudX[0], w.cloudY[0]]).toEqual([400, 500]);
+    });
+
+    it('keeps the behind drop when no ray holds a threat', () => {
+        const { w, me } = releaser();
+        releaseSmoke(w, me);
+        expect([w.cloudX[0], w.cloudY[0]]).toEqual([400, 500]);
+    });
+
+    it('picks the strongest (nearest) threat in front', () => {
+        const { w, me } = releaser();
+        seeThreat(w, me, 0, 0.2);
+        seeThreat(w, me, 1, 0.7);
+        releaseSmoke(w, me);
+        const bearing = Math.atan2(w.cloudY[0] - 500, w.cloudX[0] - 500);
+        expect(bearing).toBeCloseTo((2 * Math.PI) / 16, 4);
     });
 });
