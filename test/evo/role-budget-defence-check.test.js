@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { arenaConfig } from '../../js/evo/chase-arena.js';
 import { defenceCheck } from '../../js/evo/role-budget-defence-check.js';
@@ -102,5 +103,26 @@ describe('defenceCheck with other models', () => {
         const far = defenceCheck(arenaConfig(), { ...MODEL_DEFAULTS, escortGap: 300 });
         expect(far.drift).toBe(0);
         expect([far.readings[1].formula, far.readings[1].scene]).toEqual([-1, -1]);
+    });
+});
+
+describe('defenceCheck with the guard posture', () => {
+    /** The step 5 candidate: the shove on (`defenderRepelEnergy` 40, `defenderRepelImpulse` 4) and the rest of its settings. */
+    const STEP5 = JSON.parse(readFileSync('evals/role-budget/step5-d.json', 'utf8'));
+    const BETWEEN = { ...MODEL_DEFAULTS, guardPosture: /** @type {const} */ ('between') };
+
+    it('plays the scene in the posture the formula reads: the shove lands and breaks the bite in both', () => {
+        const run = defenceCheck(arenaConfig(STEP5), BETWEEN);
+        const read = (/** @type {string} */ what) => run.readings.find((r) => r.what === what);
+        expect(run.readings.filter((r) => r.row === 'defender:predator' && r.drift)).toEqual([]);
+        expect(read('first shove tick')?.scene).not.toBeNull();
+        expect(read('shove breaks the bite')).toMatchObject({ formula: true, scene: true });
+        expect(read('bite energy prevented')?.scene).toBeGreaterThan(0);
+    });
+
+    it('does not read the kill tick of a hunter the guard blocks: the formula has no path round a blocker, the sim does', () => {
+        const run = defenceCheck(arenaConfig(), BETWEEN);
+        expect(run.readings.find((r) => r.what === 'kill tick')).toBeUndefined();
+        expect(run.drift).toBe(0);
     });
 });

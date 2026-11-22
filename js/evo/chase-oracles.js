@@ -97,15 +97,16 @@ export function storeAboveFloor(world, slot) {
 /**
  * The pursuer's brain: aims at where the evader will be after the time it needs to cover the gap, thrusts, bites, and
  * sprints when asked; with the sprint store on, only while its store is above `sprintFloor` and the evader is in view.
- * @param {{pursuer: number, evader: number, sprint: boolean}} slots the two bodies and whether the pursuer sprints
+ * @param {{pursuer: number, evader: number, sprint: boolean, lead?: number}} slots the two bodies, whether the pursuer
+ *   sprints and the most ticks of the evader's motion it leads its aim (default `LEAD_MAX`; 0 aims at the evader where it is)
  * @returns {(world: Record<string, any>) => void} a `brain` phase body
  */
-export function pursuerBrain({ pursuer, evader, sprint }) {
+export function pursuerBrain({ pursuer, evader, sprint, lead: leadMax = LEAD_MAX }) {
     return (world) => {
         const dx = world.x[evader] - world.x[pursuer];
         const dy = world.y[evader] - world.y[pursuer];
         const speed = Math.max(length(world.vx[pursuer], world.vy[pursuer]), 1);
-        const lead = Math.min(length(dx, dy) / speed, LEAD_MAX);
+        const lead = Math.min(length(dx, dy) / speed, leadMax);
         const aim = { x: dx + lead * world.vx[evader], y: dy + lead * world.vy[evader] };
         const inView = world.sprintStore === undefined || length(dx, dy) <= world.lanes.visionRange[pursuer];
         const burst = sprint && inView && storeAboveFloor(world, pursuer);
@@ -218,12 +219,13 @@ function hearerBrain({ slot, reaction, threshold, act }) {
 /**
  * The defender's brain: it stands until it hears the alarm, then runs at the hunter as the pursuer does and holds `BITE` (the
  * shove needs it).
- * @param {{defender: number, hunter: number, reaction: number, threshold: number}} slots the defender, the hunter, the ticks
- *   from hearing to moving and the loudness it acts on
+ * @param {{defender: number, hunter: number, reaction: number, threshold: number, lead?: number}} slots the defender, the
+ *   hunter, the ticks from hearing to moving, the loudness it acts on and the most ticks it leads its aim (as `pursuerBrain`;
+ *   a guard at rest facing a hunter that comes straight at it aims at it where it is, 0)
  * @returns {ReturnType<typeof hearerBrain>} a `brain` phase body and its readings
  */
-export function defenderBrain({ defender, hunter, reaction, threshold }) {
-    const act = pursuerBrain({ pursuer: defender, evader: hunter, sprint: true });
+export function defenderBrain({ defender, hunter, reaction, threshold, lead }) {
+    const act = pursuerBrain({ pursuer: defender, evader: hunter, sprint: true, lead });
     return hearerBrain({ slot: defender, reaction, threshold, act });
 }
 

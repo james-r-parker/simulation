@@ -36,6 +36,15 @@ describe('wrap', () => {
 });
 
 describe('pursuerBrain', () => {
+    it('with a lead of 0 aims at the evader where it is, not where it will be', () => {
+        const w = pair({ x: 4100, y: 4000 });
+        w.vy[1] = 5;
+        pursuerBrain({ pursuer: 0, evader: 1, sprint: false, lead: 0 })(w);
+        expect(out(w, 0, OUTPUT_INDEX.TURN)).toBe(0);
+        pursuerBrain({ pursuer: 0, evader: 1, sprint: false })(w);
+        expect(out(w, 0, OUTPUT_INDEX.TURN)).toBeGreaterThan(0);
+    });
+
     it('turns towards an evader on its positive side, thrusts, sprints and bites', () => {
         const w = pair({ x: 4100, y: 4100 });
         pursuerBrain({ pursuer: 0, evader: 1, sprint: true })(w);
