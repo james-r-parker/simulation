@@ -208,7 +208,9 @@ digest() {
   case "$gate" in
     test|docs-tests)
       # Each failed test's name, its assertion and the first frame in the repo, then the totals.
-      out="$(grep -E '^\s*(FAIL |AssertionError|Error:|TypeError|ReferenceError|❯ (test|js|scripts)/|Test Files |Tests )' "$log" \
+      # scripts/test-report.mjs --log prints the same compact form as `npm run test:report` (timeouts labelled).
+      out="$(node "$ROOT/scripts/test-report.mjs" --log "$log" --full 2>/dev/null | sed -E "s#${ROOT}/##g"; grep -E '^\s*(Test Files |Tests )' "$log")"
+      [[ "$out" == *"no failing test"* ]] && out="$(grep -E '^\s*(FAIL |AssertionError|Error:|TypeError|ReferenceError|❯ (test|js|scripts)/|Test Files |Tests )' "$log" \
         | sed -E "s#${ROOT}/##g" | awk '!seen[$0]++')" ;;
     typecheck)
       out="$(grep -E '\([0-9]+,[0-9]+\): error TS[0-9]+' "$log" | awk '!seen[$0]++')" ;;
