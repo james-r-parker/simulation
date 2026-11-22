@@ -14,15 +14,13 @@ import { busyScale, testTimeoutFor } from './lib/test-timeout.mjs';
 
 const root = resolve(fileURLToPath(import.meta.url), '../..');
 const args = process.argv.slice(2);
+/** @param {string} name a flag @returns {string | undefined} its value */
 const flag = (name) => (args.includes(name) ? args[args.indexOf(name) + 1] : undefined);
 const full = args.includes('--full');
 
-if (flag('--log')) {
-    console.log(
-        summariseJob('test', readFileSync(flag('--log'), 'utf8'), { full })
-            .slice(1)
-            .join('\n'),
-    );
+const logFile = flag('--log');
+if (logFile) {
+    console.log(summariseJob('test', readFileSync(logFile, 'utf8'), { full }).slice(1).join('\n'));
     process.exit(0);
 }
 

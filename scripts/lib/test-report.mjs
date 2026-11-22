@@ -54,7 +54,7 @@ export function readFailure(message, root) {
 }
 
 /**
- * @param {object} a one failed assertion result
+ * @param {any} a one failed assertion result
  * @param {string} rel the test file, relative
  * @param {string} root the repo root
  * @returns {string[]} its report lines
@@ -70,7 +70,7 @@ function failedLines(a, rel, root) {
 }
 
 /**
- * @param {object} file one Vitest file result
+ * @param {any} file one Vitest file result
  * @param {{ root: string, defaultTimeoutMs: number }} opts the repo root and the default limit
  * @returns {{ lines: string[], slow: string[] }} the failure lines and the passing tests over half the limit
  */
@@ -78,7 +78,7 @@ function fileLines(file, { root, defaultTimeoutMs }) {
     const rel = file.name.replace(`${root}/`, '');
     const lines = [];
     const slow = [];
-    if (file.status === 'failed' && file.assertionResults.every((a) => a.status !== 'failed')) {
+    if (file.status === 'failed' && file.assertionResults.every((/** @type {any} */ a) => a.status !== 'failed')) {
         lines.push(`FAIL ${rel} (the file did not run)`, `  ${(file.message || '').split('\n')[0]}`);
     }
     for (const a of file.assertionResults) {
@@ -92,7 +92,7 @@ function fileLines(file, { root, defaultTimeoutMs }) {
 }
 
 /**
- * @param {object} json the Vitest `--reporter=json` result
+ * @param {any} json the Vitest `--reporter=json` result
  * @param {{ root: string, defaultTimeoutMs: number, wallMs: number, full?: boolean, cap?: number }} opts the repo root, the
  *   default per-test limit, the wall time and the cap
  * @returns {string[]} the summary line, each failure, then tests over half the default limit

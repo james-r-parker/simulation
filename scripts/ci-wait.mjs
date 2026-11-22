@@ -6,6 +6,7 @@ import { execFileSync } from 'node:child_process';
 import { ciFailures } from './ci-failures.mjs';
 import { callBudget, classifyChecks, parseInterval } from './lib/ci-checks.mjs';
 
+/** @param {string[]} args argv @param {string} name a flag @returns {string | undefined} its value */
 const flag = (args, name) => (args.includes(name) ? args[args.indexOf(name) + 1] : undefined);
 
 /**
@@ -20,7 +21,7 @@ function checks(pr) {
     } catch (error) {
         // gh exits 8 while checks are pending and 1 with "no checks reported"; stdout holds the JSON when there is any.
         try {
-            return JSON.parse(error.stdout || '[]');
+            return JSON.parse(/** @type {any} */ (error).stdout || '[]');
         } catch {
             return [];
         }
@@ -37,7 +38,7 @@ let interval;
 try {
     interval = parseInterval(flag(args, '--interval'));
 } catch (error) {
-    console.error(error.message);
+    console.error(/** @type {Error} */ (error).message);
     process.exit(2);
 }
 const timeout = flag(args, '--timeout');

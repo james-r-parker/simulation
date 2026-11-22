@@ -3,7 +3,9 @@ import { classifyChecks, callBudget, MAX_CALL_S, MIN_POLL_S, parseInterval } fro
 import { cleanLines, DEFAULT_CAP, parsePerfFails, parseTestFailures, summariseJob } from '../scripts/lib/ci-log.mjs';
 
 const E = '\u001b';
+/** @type {(i: number, text: string) => string} */
 const stamp = (i, text) => `\uFEFF2026-11-22T10:06:57.${String(i).padStart(7, '0')}Z ${text}`;
+/** @type {(rows: string[]) => string} */
 const fixture = (rows) => rows.map((r, i) => stamp(i, r)).join('\n');
 
 const TIMEOUT_LOG = fixture([

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { formatReport, readFailure, selectTests } from '../scripts/lib/test-report.mjs';
 
 const ROOT = '/repo';
+/** @type {(assertionResults: any[], extra?: any) => any} */
 const result = (assertionResults, extra = {}) => ({
     numPassedTests: 5,
     numFailedTests: assertionResults.filter((a) => a.status === 'failed').length,

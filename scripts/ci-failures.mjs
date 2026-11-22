@@ -6,8 +6,10 @@ import { execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import { summariseJob } from './lib/ci-log.mjs';
 
+/** @param {string[]} args gh arguments @returns {string} stdout */
 const gh = (args) =>
     execFileSync('gh', args, { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] });
+/** @param {string[]} args gh arguments @returns {any} parsed stdout */
 const json = (args) => JSON.parse(gh(args));
 
 /**
@@ -29,8 +31,8 @@ function resolveRun(id) {
         '--json',
         'databaseId,conclusion,headSha',
     ]);
-    const failed = runs.filter((r) => r.conclusion === 'failure');
-    const run = failed.find((r) => r.headSha === pr.headRefOid) ?? failed[0];
+    const failed = runs.filter((/** @type {any} */ r) => r.conclusion === 'failure');
+    const run = failed.find((/** @type {any} */ r) => r.headSha === pr.headRefOid) ?? failed[0];
     if (!run) {
         throw new Error(`no failed run for PR ${id}`);
     }
@@ -45,14 +47,14 @@ function resolveRun(id) {
 export function ciFailures(id, { full = false } = {}) {
     const run = resolveRun(id);
     const { jobs } = json(['api', `repos/{owner}/{repo}/actions/runs/${run}/jobs?per_page=100`]);
-    const bad = jobs.filter((j) => j.conclusion === 'failure');
+    const bad = jobs.filter((/** @type {any} */ j) => j.conclusion === 'failure');
     const out = [`run ${run}: ${bad.length} failed job(s)`];
     for (const job of bad) {
         let log;
         try {
             log = gh(['api', `repos/{owner}/{repo}/actions/jobs/${job.id}/logs`, '--allow-escape-sequences']);
         } catch (error) {
-            log = `##[error]could not read the log: ${String(error.message).split('\n')[0]}`;
+            log = `##[error]could not read the log: ${String(/** @type {Error} */ (error).message).split('\n')[0]}`;
         }
         out.push(...summariseJob(job.name, log, { full }));
     }
@@ -69,7 +71,7 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
     try {
         console.log(ciFailures(id, { full: args.includes('--full') }).join('\n'));
     } catch (error) {
-        console.error(error.message);
+        console.error(/** @type {Error} */ (error).message);
         process.exit(1);
     }
 }

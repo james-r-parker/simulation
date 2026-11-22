@@ -49,6 +49,7 @@ export function readBlock(lines) {
  */
 export function parseTestFailures(lines) {
     const seen = new Set();
+    /** @type {{ file: string, name: string, message: string, detail: string[], where: string, timeout: number | null }[]} */
     const out = [];
     lines.forEach((line, i) => {
         const m = TEST_FAIL.exec(line);
@@ -87,6 +88,7 @@ export function parseErrorLines(lines) {
         .map((line) => line.slice('##[error]'.length).trim());
 }
 
+/** @param {string} s a line @returns {string} the line cut to MAX_LINE */
 const clip = (s) => (s.length > MAX_LINE ? `${s.slice(0, MAX_LINE - 1)}...` : s);
 
 /**
@@ -94,6 +96,7 @@ const clip = (s) => (s.length > MAX_LINE ? `${s.slice(0, MAX_LINE - 1)}...` : s)
  * @returns {string[]} its lines: header, first assertion, expected/received, where
  */
 export function failureLines(f) {
+    /** @type {string[]} */
     const out = [`${f.timeout === null ? 'FAIL' : 'TIMEOUT'} ${f.file}${f.name ? ` > ${f.name}` : ''}`];
     if (f.timeout !== null) {
         out.push(`  timed out in ${f.timeout} ms (not an assertion: a slow runner, or a slow test)`);
