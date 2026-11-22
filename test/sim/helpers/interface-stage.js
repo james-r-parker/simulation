@@ -64,7 +64,8 @@ function putRock(w, x, y) {
  * @returns {any} an empty `ARENA` square world with 16 rays and the subject (slot 0) at `CENTRE`
  */
 export function stageSubject(over = {}) {
-    const w = senseWorld({ rayCount: 16, worldWidth: ARENA, worldHeight: ARENA, ...over });
+    // smokeDecoyTicks 0: the scenes map each kind to its own channel; a fresh cloud as a body is read in ray-march-decoy.test.js
+    const w = senseWorld({ rayCount: 16, worldWidth: ARENA, worldHeight: ARENA, smokeDecoyTicks: 0, ...over });
     return w;
 }
 

@@ -10,9 +10,9 @@ const { cases } = JSON.parse(readFileSync(new URL('../sim/golden.json', import.m
 const byName = Object.fromEntries(cases.map((/** @type {any} */ c) => [c.name, c]));
 const TIMEOUT_MS = scaleTimeout(300_000);
 
-/** The FNV hash of the busy golden world's effect stream (every effect record, in order). A self-pin; re-pinned by the one kill rule (metric-trust T14), which drops one HunterKill record, again by the eat choice becoming the default (eat-choice T13), by the graze hold (eat-choice T18), by grazeThrust 0.6 (eat-choice T28), by the hunter's eyes (senses-and-motor T20), by killGorgeShare 0.4 (honest-budgets T37), and by smoke aimed at a hunter in front (role-budget, 2026-11-22), which lands more blinding records, and by smoke aimed along the sensed threat ray (perf/smoke-aim-local-sensing), which lands fewer (823 records). */
-const BUSY_EFFECT_HASH = 'f8f005be21d387ea';
-const BUSY_EFFECT_RECORDS = 823;
+/** The FNV hash of the busy golden world's effect stream (every effect record, in order). A self-pin; re-pinned by the one kill rule (metric-trust T14), which drops one HunterKill record, again by the eat choice becoming the default (eat-choice T13), by the graze hold (eat-choice T18), by grazeThrust 0.6 (eat-choice T28), by the hunter's eyes (senses-and-motor T20), by killGorgeShare 0.4 (honest-budgets T37), and by smoke aimed at a hunter in front (role-budget, 2026-11-22), which lands more blinding records, and by smoke aimed along the sensed threat ray (perf/smoke-aim-local-sensing), which lands fewer (823 records), then by the smoke decoy (docs/designs/smoke-decoy.md): a hunter whose rays meet a fresh cloud acts on it (910 records). */
+const BUSY_EFFECT_HASH = '9ff9b83696e639ef';
+const BUSY_EFFECT_RECORDS = 910;
 
 describe('the golden world through the host', () => {
     it(

@@ -94,7 +94,7 @@ describe('the sensory schema', () => {
     });
 
     it('fills the food, obstacle and smoke channels at their indices, with every value in [-1, 1]', () => {
-        const w = senseWorld({ rayCount: 16 });
+        const w = senseWorld({ rayCount: 16, smokeDecoyTicks: 0 }); // plain smoke: a decoy is pooled as prey
         const me = addAgent(w, 500, 500, 20);
         addFood(w, 600, 500, 20);
         w.obsX[0] = 500;

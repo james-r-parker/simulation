@@ -78,8 +78,8 @@ async function run(name, workers) {
 
 /** What the run wrote before T27 to T32 (recorded on the unchanged code). */
 const PINNED = {
-    archives: '36a6bc5fe892cee8a6a11a1af8cdb8b57cfb781aefa6cf72031d8afee9c2d1f5', // the pin with the rulesHash of smokeAimArc (the archives carry it; the curve did not move)
-    curve: '84cef7fe49be681a119648d72dcc6175149528d4471a2546a19ce89c59bf82d4',
+    archives: 'b4ca8ff736cd43d2765c6b8e574eba788fd65d8a888a73a14a09a76e6bcbc5b3', // the pin with the rulesHash of smokeDecoyTicks (the archives carry it)
+    curve: 'd2c482106d746362232a7cb9f250d9e4fa1316c97169ed18e085abeeb3279f40', // moved with the smoke decoy: a hunter whose rays meet a fresh cloud sees a body in it
 };
 
 describe('archive files at checkpoints only', () => {

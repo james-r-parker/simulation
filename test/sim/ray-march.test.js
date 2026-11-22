@@ -218,9 +218,10 @@ describe('castRays classes', () => {
     });
 });
 
+// smokeDecoyTicks 0: a cloud reads on the smoke channel alone; the decoy is in ray-march-decoy.test.js
 describe('castRays smoke', () => {
     it('stops at a cloud, writing proximity and the smoke flag on channel 8', () => {
-        const w = senseWorld();
+        const w = senseWorld({ smokeDecoyTicks: 0 });
         const me = addAgent(w, 200, 500, 20);
         addCloud(w, 400, 500);
         cast(w, me);
@@ -231,7 +232,7 @@ describe('castRays smoke', () => {
     });
 
     it('sees nothing behind a cloud', () => {
-        const w = senseWorld();
+        const w = senseWorld({ smokeDecoyTicks: 0 });
         const me = addAgent(w, 200, 500, 20);
         addCloud(w, 300, 500);
         addFood(w, 400, 500, 20);
@@ -241,7 +242,7 @@ describe('castRays smoke', () => {
     });
 
     it('still sees an agent in front of a cloud', () => {
-        const w = senseWorld();
+        const w = senseWorld({ smokeDecoyTicks: 0 });
         const me = addAgent(w, 200, 500, 20);
         addCloud(w, 400, 500);
         addAgent(w, 280, 500, 20);
@@ -251,7 +252,7 @@ describe('castRays smoke', () => {
     });
 
     it('hits a cloud at distance 0 when the ray starts inside it', () => {
-        const w = senseWorld();
+        const w = senseWorld({ smokeDecoyTicks: 0 });
         const me = addAgent(w, 400, 500, 20);
         addCloud(w, 420, 500);
         cast(w, me);
@@ -262,7 +263,7 @@ describe('castRays smoke', () => {
     });
 
     it('leaves the rays beside a cloud unchanged', () => {
-        const w = senseWorld();
+        const w = senseWorld({ smokeDecoyTicks: 0 });
         const me = addAgent(w, 200, 500, 20);
         addFood(w, 200, 600, 20);
         cast(w, me);
@@ -276,7 +277,7 @@ describe('castRays smoke', () => {
     });
 
     it('ignores a cloud beyond the vision range', () => {
-        const w = senseWorld();
+        const w = senseWorld({ smokeDecoyTicks: 0 });
         const me = addAgent(w, 100, 500, 20);
         addCloud(w, 100 + VISION + w.config.smokeRadius + 10, 500);
         cast(w, me);
@@ -284,7 +285,7 @@ describe('castRays smoke', () => {
     });
 
     it('ranks smoke after the wall at an equal distance', () => {
-        const w = senseWorld({ smokeRadius: 100 });
+        const w = senseWorld({ smokeRadius: 100, smokeDecoyTicks: 0 });
         const me = addAgent(w, 700, 500, 20);
         addCloud(w, 1100, 500);
         cast(w, me);
@@ -293,7 +294,7 @@ describe('castRays smoke', () => {
     });
 
     it('writes no smoke flag without clouds', () => {
-        const w = senseWorld();
+        const w = senseWorld({ smokeDecoyTicks: 0 });
         const me = addAgent(w, 200, 500, 20);
         cast(w, me);
         for (let k = 0; k < 4; k++) {
@@ -438,9 +439,9 @@ describe('castRays against a brute-force caster', () => {
                 const range = w.visionBySpec[w.spec[me]];
                 const expected = ref.t === Infinity ? 0 : 1 - ref.t / range;
                 expect(got[0]).toBeCloseTo(expected, 5);
-                const kinds = [[1], [2, 3, 4, 5], [7], [6], [8]][ref.kind];
+                const kinds = [[1], [2, 3, 4, 5], [7], [6], [3, 8]][ref.kind]; // a fresh cloud is a decoy: prey and smoke
                 const hot = got.slice(1).flatMap((v, n) => (v !== 0 ? [n + 1] : []));
-                expect(hot.length).toBe(ref.t === Infinity ? 0 : 1);
+                expect(hot.length).toBe(ref.t === Infinity ? 0 : ref.kind === 4 ? 2 : 1);
                 expect(hot.every((c) => kinds.includes(c))).toBe(true);
                 if (ref.kind === 1) {
                     expect(hot[0]).toBe(bruteAgentClass(w, me, ref.idx));

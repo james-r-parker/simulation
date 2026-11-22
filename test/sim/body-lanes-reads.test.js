@@ -12,6 +12,8 @@ const SIM_DIR = new URL('../../js/sim/', import.meta.url);
 const ALLOWED = {
     // Waiting on a kernel change.
     'world.js antennaAngle': 'the scent kernel reads one antenna cone for the world (`antennaCos`, `antennaSin`)',
+    'ray-march.js smokeTicks':
+        'a cloud is a decoy by its age, smokeTicks less its ttl; the cloud does not hold its releaser, so the life is the config value as in snapshot.js (smoke-decoy.md)',
     'snapshot.js smokeTicks': 'waits on a per-slot cloud radius and life in the sense kernel (T42, Phase 7)',
     'wasm-sense.js smokeRadius': 'the sense kernel takes one `D_SMOKE_RADIUS` for the world (T42, Phase 7)',
     'wasm-brain.js hebbianRate': 'a scalar of the WASM brain kernel; waits on a kernel change',
