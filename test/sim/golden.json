@@ -23,7 +23,7 @@
         "coldMarginWidth": 0
       },
       "ticks": 5000,
-      "worldHash": "6334674c03f94b93"
+      "worldHash": "7e0c356979faca91"
     },
     {
       "name": "disease",
@@ -43,7 +43,7 @@
         "diseaseSeedRate": 0.01
       },
       "ticks": 5000,
-      "worldHash": "e2ac30c6eba01992"
+      "worldHash": "f328728ccf75e225"
     },
     {
       "name": "sprint-store",
@@ -78,7 +78,7 @@
         "coldMarginWidth": 0
       },
       "ticks": 300,
-      "worldHash": "ddf0637d0bc4cc37"
+      "worldHash": "fbca76f4afea5c7d"
     },
     {
       "name": "disease",
@@ -98,7 +98,7 @@
         "diseaseSeedRate": 0.01
       },
       "ticks": 300,
-      "worldHash": "ed2c0fd27381df4c"
+      "worldHash": "3d6a870b9e43dc2c"
     },
     {
       "name": "sprint-store",
