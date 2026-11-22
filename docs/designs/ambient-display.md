@@ -2,7 +2,7 @@
 
 **Status:** In progress - Phases 1, 3, 5 and 6 are built; Phase 7 (a calm camera) is built except T40 (`perf:browser` at 240 Hz with `?tv=1`, the OLED walk); open: T6, T10b, T11 and T22 need the real GPU with the user watching, and T40 owes a 240 Hz `tv=1` run. Phase 8 verifies playable scene clips and records their world settings.
 **Validated:** e3549629 (2026-11-22)
-**Priority:** 5 - App lead. Phases 1, 3, 5, 6 and most of 7 (director, follow, far-screen look, insights drawer, scene reel, calm camera) are built; remaining work is the real-GPU OLED walks and 240 Hz `?tv=1` run (T6, T10b, T11, T22, T40), then playable, reproducible scene reels (T41 to T44)
+**Priority:** 7 - App lead (does not gate training). Phases 1, 3, 5, 6 and most of 7 (director, follow, far-screen look, insights drawer, scene reel, calm camera) are built; remaining work is the real-GPU OLED walks and 240 Hz `?tv=1` run (T6, T10b, T11, T22, T40), then playable, reproducible scene reels (T41 to T44)
 **Depends on:** [crisp-renderer.md](crisp-renderer.md), [continuous-follow.md](continuous-follow.md), [worker-and-renderer.md](worker-and-renderer.md), [pack-worker.md](pack-worker.md)
 
 > Companion to [crisp-renderer.md](crisp-renderer.md), which owns the layers, the models, the clips and the frame budgets, and to [continuous-follow.md](continuous-follow.md), which owns follow as built. This doc owns the unattended experience: what the camera does with nobody at the keyboard, how a life ends on screen, what follow shows, the far-screen look, and the insights drawer.

@@ -2,7 +2,7 @@
 
 **Status:** In progress - Phases 1 and 4 are built. Phase 2 has a terminal hunter count candidate. Phase 6 role metrics are built and reviewed (T24); gate 2 is NOT met: fix detector bugs (T25) and scene tags (T26), then run a fresh 128-seed season-12 baseline after step 5 (T27; scout metrics wait on alarm-calls.md). Phase 5 follows.
 **Validated:** 80f10d18 (2026-11-22)
-**Priority:** 1 - Measurement lead. Phases 1, 4 and 6 code are built (registries.md Phases 1 and 3 built). Next: close gate 2 (T25 detector fixes, T26 scene tags, T27 fresh 128-seed season-12 baseline after step 5, live defender metric; scout waits on alarm-calls.md), then Phase 5 (headline metrics)
+**Priority:** 2 - Measurement lead (needed to judge every balance read after it). Phases 1, 4 and 6 code are built (registries.md Phases 1 and 3 built). Next: close gate 2 (T25 detector fixes, T26 scene tags, T27 fresh 128-seed season-12 baseline after step 5, live defender metric; scout waits on alarm-calls.md), then Phase 5 (headline metrics)
 **Depends on:** [metric-trust.md](metric-trust.md)
 
 Active plans need detectors that can judge their Targets, done criteria and predictions. This work serves every scene

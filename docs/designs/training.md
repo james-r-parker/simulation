@@ -5,7 +5,7 @@
 **Scheduled by:** [training-loop.md](training-loop.md) step 4 - the world gate and the champions' adoption, after a ladder run passes `hunt`
 **Depends on:** [evolution-rework.md](evolution-rework.md), [evolution-evals.md](evolution-evals.md)
 
-> Companion to [evolution-rework.md](evolution-rework.md), whose Phases 1 and 2 built the genome, the archive and the live policy. This doc replaces its Phase 3. [training-stages.md](training-stages.md) plans the gated stage ladder, cross-play, the opponent pool and the exam that judges a champion set.
+**Depends on:** [evolution-rework.md](evolution-rework.md), [evolution-evals.md](evolution-evals.md), [fair-chase.md](fair-chase.md) ("Before any training": no run of this doc starts before its seven gates are met)
 
 Training runs locally, headless, on every core. A genome is trained by natural selection in whole worlds: the trainer runs many short worlds on fixed seeds, offers every agent that lived to the archive by the live policy's fitness, and starts the next worlds from the archive. Drills are the exam. Each drill stages one situation (food in view, prey in reach, a hunter closing) in a small arena and counts how often a genome does the thing a viewer would expect. A drill score is a detector: it never enters fitness, merit, mate rank or archive rank ([principles.md](../principles.md), Measure scenes, reward them almost never). Easier worlds come first in a curriculum, so a skill is reachable before the full world tests it; selection in every stage is still survival and offspring.
 

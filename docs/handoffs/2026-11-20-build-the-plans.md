@@ -292,3 +292,9 @@ Batch `batch/2026-11-22-steps` (one PR):
 Next per lane: B - the defender caller's escape (the caller side, not the release) needs a design call; step 5 T18
 path (predator corner reads at the final spans, then E-BG-3 64-seed keep rule) now that `--check` passes;
 status-effects Phase 5 speed steps (generated readers, lazy `liveIn`). A - agent-workflow Phase 7.
+
+### Re-ranked queue (user rule, 2026-11-22)
+
+Before any training (lane B step 8) every change to the world is built and adopted, every new feature is on by default, tested and balanced, the sim runs fast and the dev tooling is done. The Build queue now reads: 1 agent workflow, 2 metric noise, 3 fair chase (body-genes and status-effects adoption, role budget, chase), 4 world balance, 5 throughput, 6 training loop, 7 ambient display. fair-chase.md "Before any training" holds seven gates (4 features on, 5 balance, 6 speed, 7 dev tooling added), and training.md and training-loop.md depend on them. Merged today: role-budget T24b (PR 634). Open: PR 635 (agent-workflow T46 partly built there), agent-workflow T49 (`gate-validity.slow` at 119.5 s of 120 s), fair-chase T7d (the features-on audit).
+
+Next per lane: A - agent-workflow Phase 7 (T42 to T49), then metric-noise gate 2 (T25 to T27). B - step 5 adoption (body-genes and status-effects Phase 3, the defender caller's escape), then world-balance, then the speed gate (status-effects T31, throughput Targets). Step 8 training waits for all seven gates. C - ambient-display real-GPU items; they do not gate training.

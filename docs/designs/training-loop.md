@@ -2,8 +2,8 @@
 
 **Status:** In progress - Phases 1 and 2 built; Phases 3 and 4 code built, adaptive difficulty untested (E207, E251; T16b, T16c) and tuning nights read no verdict. Phase 5: T24 to T27, T29 to T32 and T34 built; T35 to T37 are open for config propagation, role wiring and screen reuse. T33 waits for Step 8.
 **Validated:** e3549629 (2026-11-22)
-**Priority:** 4 - Training lead. Phase 5 verdicts and throughput code (T24 to T27, T29 to T32) are built; T35 to T37 close drill, role and run-reuse gaps before Step 8. T33 waits for Step 8
-**Depends on:** [training-stages.md](training-stages.md), [training.md](training.md)
+**Priority:** 6 - Training lead (last of the gated work: step 8 waits for the gates of fair-chase.md "Before any training"). Phase 5 verdicts and throughput code (T24 to T27, T29 to T32) are built; T35 to T37 close drill, role and run-reuse gaps before Step 8. T33 waits for Step 8
+**Depends on:** [training-stages.md](training-stages.md), [training.md](training.md), [fair-chase.md](fair-chase.md) ("Before any training": its seven gates precede step 8 and every real ladder run)
 
 > Companion to [training-stages.md](training-stages.md), which holds the stages, gates, reviews and the exam. This doc owns how a ladder run is scored, when it stops, and how the ladder itself is improved.
 
@@ -13,7 +13,7 @@ A ladder run is an experiment on the training process. Each run gets one score, 
 
 This doc is a lead: it holds a rank in the Build queue, and the docs below are built as its steps, in order, after its own next work. A step doc keeps its own phases, tasks and status line.
 
-Phase 5 pre-training work is T35 to T37. The three gates in [fair-chase.md](fair-chase.md) precede T33, T16c and other real ladder runs. T28 closes Phase 5 after T33, then T16b to T18 close the adaptive retest.
+Phase 5 pre-training work is T35 to T37. The seven gates in [fair-chase.md](fair-chase.md) ("Before any training") precede T33, T16c and other real ladder runs. T28 closes Phase 5 after T33, then T16b to T18 close the adaptive retest.
 
 | Step | Doc                                                          | Built when                                                                                                                                                                                                                               |
 | ---- | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

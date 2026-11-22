@@ -2,7 +2,7 @@
 
 **Status:** In progress - Phase 3 T6, T7a and T7b are built (`grazeHerds` +432%, the field phase +136% at 500 agents); T7, T7c and the review T8 are open. Phase 1 (measure, T1, T1a and T2 to T5), Phase 2 and Phases 4 to 6 are not started.
 **Validated:** e3549629 (2026-11-22)
-**Priority:** 6 - Speed lead. Every eval and screen waits on ticks per second; Phases 1 to 4 change no behaviour, and Phase 3 (the loops over what is alive) has measured prototypes
+**Priority:** 5 - Speed lead (the sim runs fast before any training). Every eval and screen waits on ticks per second; Phases 1 to 4 change no behaviour, and Phase 3 (the loops over what is alive) has measured prototypes; gate 6 of fair-chase.md "Before any training" needs its Targets and status-effects.md T31
 **Depends on:** [wasm-kernels.md](wasm-kernels.md)
 
 > Companion to [wasm-kernels.md](wasm-kernels.md), which moved the brain, the ray march, the spatial hash, the pheromone update and physics to Rust and squeezed each kernel under a bit-identical contract. This doc does not repeat a squeeze that doc tried and reverted.

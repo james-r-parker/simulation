@@ -1,8 +1,8 @@
 # Agent workflow
 
-**Status:** In progress - Phases 1 to 5 are built and reviewed; Phase 6 is built except T40 (it needs 30 pull requests of history); Phase 7 T41 is built.
+**Status:** In progress - Phases 1 to 5 are built and reviewed; Phase 6 is built except T40 (it needs 30 pull requests of history); Phase 7 T41 is built; T42 to T49 are open (gate 7 before any training).
 **Validated:** 80f10d18 (2026-11-22)
-**Priority:** 3 - Workflow lead. Tooling that changes no sim rule; every session and every subagent pays the Phase 1 cost on its first token and every chunk ships through Phase 5, so both are built before the next training chunk
+**Priority:** 1 - Workflow lead (dev tooling: cheap, and it speeds every step after it). Tooling that changes no sim rule; every session and every subagent pays the Phase 1 cost on its first token and every chunk ships through Phase 5, so both are built before the next training chunk
 **Depends on:** [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md)
 
 > Companion to [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md), which owns the gates and CI jobs, and [dev-workflow-and-gate.md](dev-workflow-and-gate.md), which owns the workflow. This doc owns the files an agent reads, the experiment ledger, the pre-push checks that mirror CI's most common failures, and the commands that show what is running.
@@ -13,7 +13,7 @@ The repo is built by coding agents: a coordinator, its subagents, and outside st
 
 This doc is a lead: it holds a rank in the Build queue, and the docs below are built as its steps, in order, after its own next work. A step doc keeps its own phases, tasks and status line.
 
-Own work first: Phases 1 to 5 are built; Phase 6 is built except T40. Next: the open reviews (T15 among them).
+Own work first: Phases 1 to 5 are built; Phase 6 is built except T40. Next: Phase 7 (T42 to T49, gate 7 of fair-chase.md "Before any training"; T46 is part built in PR 635, open), then the open reviews (T15 among them).
 
 | Step | Doc                                                                | Built when                                                                               |
 | ---- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
@@ -348,7 +348,7 @@ Where the time went on 2026-11-21: `docs/designs/README.md`, `docs/designs/metri
 | Chunk | Tasks      | Builder |
 | ----- | ---------- | ------- |
 | H     | T41        | Opus    |
-| I     | T42 to T47 | Sonnet  |
+| I     | T42 to T49 | Sonnet  |
 
 - T41 (built): `scripts/lib/regen.mjs` lists every generator that writes a committed file and reruns them; `scripts/lib/merge-base.mjs` settles a merge whose conflicted paths are all generated files (take our side, regenerate), the prose of `sim-notes.md` (three-way merge, regenerate the index) or a notes month file that both sides only appended to (both entries kept, date order); `scripts/sync-main.sh` (`npm run sync`) is the standalone command and `ship.sh` step 2 calls the same function. Any other conflicted path still stops with exit 3.
 - T42: one file per notes entry removes the notes conflict for good, and the index is the only generated part left.
@@ -478,6 +478,7 @@ Where the time went on 2026-11-21: `docs/designs/README.md`, `docs/designs/metri
 | T46 | Scale the default test timeout and `TEST_TIMEOUT_FACTOR` on CI in `scripts/lib/test-timeout.mjs` (x3 when `CI` is set; the 2026-11-21 and 2026-11-22 shard timeouts), and add a gate that flags a test using more than half its limit so it moves to `.slow.test.js`; tests in `test/scripts/test-timeout.test.js`                                                                                                                                                                                                                                                                                                                       | [judgement]  | -          |
 | T47 | Write the coordinator merge order for parallel lanes in `js/sim` into `docs/agent-reference.md` and the handoff `TEMPLATE.md`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | [mechanical] | -          |
 | T48 | **What:** add a green-run auto-close path for `red-main` issues in `scripts/miss-ledger.mjs` and `.github/workflows/check.yml`, and close stale issue 582. **Why:** `check.yml` opens a `red-main` issue on failure (`miss-ledger.mjs report`) but never closes it when a subsequent full run on `main` is green. **How:** add a `close` subcommand to `scripts/miss-ledger.mjs` that lists open `red-main` issues via `gh issue list`, comments with the green commit SHA and closes them; add a unit test beside the existing `miss-ledger` tests and call it on `if: success()` for `push` to `main` in `.github/workflows/check.yml` | [judgement]  | T38        |
+| T49 | **What:** `test/evo/gate-validity.slow.test.js` takes 119.5 s of its explicit 120 s limit (2026-11-22), so speed it up or split it into several `.slow.test.js` files that each run well under half their limit. **Why:** a test at 99.6% of its limit fails on any slower runner, and gate 6 of [fair-chase.md](fair-chase.md) "Before any training" asks for headroom. **How:** time each condition of `gateValidity` and split by condition or reference tier, or cache a shared setup, keeping every condition, trial count (64) and assertion; no limit is lowered and no case dropped.                                             | [judgement]  | T46        |
 
 ## Verification
 

@@ -2,7 +2,7 @@
 
 **Status:** In progress - Phases 1 to 4, Phase 5 round 1 and Phase 6 (the mating-edge screen, E145, E146: roaming range deleted, T103) are built. The post-feature queue was not run as written; natural-selection.md Phase 4 replaced it. Left: the disease value screen (T94 to T96) and any new balance round, which needs a fresh plan; the next lever is a refuge ([habitat-cover.md](habitat-cover.md)).
 **Validated:** 80f10d18 (2026-11-22)
-**Priority:** 7 - World lead. The world plans wait on the measurement fixes (metric-noise.md Phase 4) and on a fair chase (fair-chase.md Phase 3): every one of them is judged by a keep-rule read and most by a hunter metric
+**Priority:** 4 - World lead (every feature on by default, tested and balanced before any training). The world plans wait on the measurement fixes (metric-noise.md Phase 4) and on the bodies a fair chase adopts (fair-chase.md gate 4, the Step 5 adoption), not on its trained rung: every one of them is judged by a keep-rule read and most by a hunter metric
 **Depends on:** [predator-prey.md](predator-prey.md), [worker-and-renderer.md](worker-and-renderer.md), [evolution-evals.md](evolution-evals.md), [natural-selection.md](natural-selection.md), [flora.md](flora.md), [megafauna.md](megafauna.md), [disease.md](disease.md)
 
 The world is tuned until it passes the world gate in [evolution-rework.md](evolution-rework.md) Phase 3, then the
@@ -15,7 +15,7 @@ Phases 1 and 2; the renderer is needed from Phase 2, whose tuning is judged by w
 
 This doc is a lead: it holds a rank in the Build queue, and the docs below are built as its steps, in order, after its own next work. A step doc keeps its own phases, tasks and status line.
 
-Own work first: its own Phase 6 onward, after metric-noise.md Phase 4 and fair-chase.md Phase 3.
+Own work first: its own Phase 6 onward, after metric-noise.md Phase 4 and the adoption of the Step 5 world (fair-chase.md gate 4). This lead is built before any training (user, 2026-11-22), so a step that needs a trained chase (honest-budgets.md Phases 3 and 5) stays parked and gate 5 reads the world as it is with every feature on.
 
 | Step | Doc                                          | Built when                                                                                                                                                          |
 | ---- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
