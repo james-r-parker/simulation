@@ -1,0 +1,19 @@
+{
+  "id": "E274",
+  "plan": "body-genes.md",
+  "task": "T14d",
+  "stream": "body-genes",
+  "date": "2026-11-22",
+  "branch": "eval/body-genes-t14-followups",
+  "kind": "diagnosis",
+  "hypothesis": "E273 read gene_edge_share 0 and gene_spread 0.002 to 0.006 either because the trait genes do not move under traitMutationSigma, or because the detector misreads them.",
+  "prediction": "Written before the run. The genes move but stay near 0 (|gene| well under 1.47, where |tanh| reaches 0.9), so the edge detector reads right and 200000 ticks are too short for drift to reach an edge; if instead the genes sit at exactly 0 in the living agents, the lanes do not inherit them.",
+  "targets": ["eval.gene_edge_share", "eval.gene_spread"],
+  "before": "E273: gene_edge_share 0 and gene_spread 0.002 to 0.006 on every arm",
+  "after": "Seed 313056, arms no-cost and fat-only, 200000 ticks, living agents read at 1000, 50000, 100000 and 200000 through runReplay's stepFn: genes are 0 at tick 1000, then drift. Largest |gene| 0.39 (no-cost) and 0.33 (fat-only), largest gene sd 0.14 and 0.10, largest ratio sd 0.017 on size, vision, speed and fat (ratio = span x tanh(gene), spans 0.05 to 0.15). The edge needs |gene| of 1.47, so no agent comes near it.",
+  "verdicts": {},
+  "effect": "no-difference",
+  "note": "The detector is not why E273 read zeros. A separate real fault was found: binOf in metrics-body.js used the 0.3 span for every menu, so bins 0 and 4 of eval.body_plan_coverage were unreachable at span 0.15 (fixed in T14c; it does not touch gene_edge_share or gene_spread, so the E273 verdicts stand and need no re-read). For the coordinator: the genes have no selection pressure strong enough to reach an edge in 200000 ticks, and eval.gene_spread in ratio units scales with the span, so E-BG-3's spread leg needs a gene-unit spread or a lower target.",
+  "outcome": "finding",
+  "reports": ["evals/decisions/E274-body-genes-drift/results.md"]
+}

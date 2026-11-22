@@ -306,3 +306,32 @@ Next per lane: A - agent-workflow Phase 7 (T42 to T49), then metric-noise gate 2
 ### Shove-bite check drift (2026-11-22, branch fix/shove-bite-check)
 
 The `shove breaks the bite` drift of `role:budget --check` with `between` was the check's, not the calculator's or the sim's: the scene was played at `side` while the formula read `between`. `playDefence` now takes `posture` and its defender aims straight at the hunter (`lead` 0); no sim rule moved, `rulesHash` stays `93d5ee3e014475ae`. `defender:predator --check` reads 0 drift at `side` and `between` on the defaults and `step5-d.json` (the `between` kill tick of a hunter the guard blocks is not read: the formula has no path round a blocker). Detail in role-budget.md Decisions.
+
+### Progress - 2026-11-22 evening
+
+**Merged today:** PR 631 (smoke aims at a hunter, calculator cold stack, speed reads), 632 (pre-training audit tasks, queue sync),
+634 (smoke aimed along the nearest threat ray), 635 (agent dev tools: `ci-failures`, `ci-wait`, `test:report`, CI timeout scale,
+parallel-agent safety), 636 (defender caller escape, shove on in step 5), 637 (a fresh smoke cloud reads as a body on the hunter's prey
+rays), 638 (defence check scene in the guard posture), 639 (body-genes T14, E-BG-2, E273 falsified: `fat-only` is the finalist). This
+PR (`eval/body-genes-t14-followups`): T14d (E274), T14c and T14b.
+
+**This PR:** T14d - the body genes do move but only as drift (largest gene 0.39 in 200000 ticks, an edge is 1.47), so
+`eval.gene_edge_share` reads 0 truthfully; `eval.gene_spread` is in ratio units and the predator `speed` span 0.05 caps it at 0.05,
+so the E-BG-3 target "above 0.05" cannot be met. T14c - `binOf` now bins by each spec's span (a real fault in
+`eval.body_plan_coverage`; the edge and spread detectors were not affected, so E273 stands). T14b - `step5-d.json` now has `fatSlow`,
+`sizeTurn`, `burnThrust` 1 and the heat and sense costs at 0.5 (`sprintHeat` 0.0025); the corner table is unchanged because
+`role:budget --genes` plays every effect off, so only T15 judges the costs. No screen was re-run: the changed detector is not one E273
+read.
+
+**Open items:**
+
+- Release PR 633 (12.0.0) waits on the user's word.
+- `gate-validity.slow` (T49) is still open.
+- Smoke is never released in live worlds, so the decoy (PR 637) is unmeasured live.
+- The perf advisory is red on `signal@500merit` after the decoy.
+- T15 needs a gene-unit spread leg (or a lower target) before it can pass; decide with the user.
+
+**Next per lane (Build queue order):** 1 agent workflow - Phase 7 (T42 to T49, the `gate-validity.slow` T49). 2 metric noise - close
+gate 2 (T25 to T27). 3 fair chase - body-genes T15 (E-BG-3, 64 matched floor-on seeds, `fat-only` against `control`) then T18, and the
+status-effects adoption. 4 world balance - after fair chase. 5 throughput - the speed gate (status-effects T31, throughput Targets).
+6 training loop - waits. 7 ambient display - waits. Training waits on the fair-chase "Before any training" seven gates.
