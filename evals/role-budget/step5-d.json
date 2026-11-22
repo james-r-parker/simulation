@@ -92,5 +92,14 @@
         "smokeSight": 0.3
       }
     }
-  }
+  },
+  "sizeTurn": 1,
+  "fatSlow": 1,
+  "burnThrust": 1,
+  "speedHeat": 0.5,
+  "sprintHeat": 0.0025,
+  "sprintStoreHeat": 0.5,
+  "hearingCost": 0.5,
+  "noseCost": 0.5,
+  "smokeSightRange": 0.5
 }
