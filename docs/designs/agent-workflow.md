@@ -355,7 +355,7 @@ Where the time went on 2026-11-21: `docs/designs/README.md`, `docs/designs/metri
 - T43: generated docs built in CI or at release, not committed, removes the other half; the fallback is a merge driver in `.gitattributes`, which a fresh clone needs set up and a hook cannot ship, so it is the second choice.
 - T44: two pins move for unrelated reasons: the carcass metrics digest covers every metric, and the throughput archive pin carries the `rulesHash` stamp. Each narrows to what its test is about.
 - T45: a chunk branches from `main` after the previous one merges; no stacked pull requests.
-- T46: every test over about 1 s gets an explicit `scaleTimeout`, and a local gate warns when a test uses more than half its limit.
+- T46: every test over about 1 s gets an explicit `scaleTimeout`, and a local gate warns when a test uses more than half its limit. Partly built: the default limit and `scaleTimeout` stretch x3 on CI (`CI_TIMEOUT_FACTOR`, `TEST_TIMEOUT_FACTOR` overrides), so the 5 s default no longer reddens a slow runner; `npm run test:report` lists passing tests over half the default limit. Left: a gate that fails or warns on explicit timeouts, which Vitest's JSON does not expose.
 - T47: a coordinator merge order for parallel lanes in `js/sim`. Cancelling superseded runs is already in place: `concurrency` in `.github/workflows/check.yml` cancels a pull request's older run on a push, so no task is needed.
 
 ## Decisions
