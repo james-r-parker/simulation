@@ -262,7 +262,7 @@ Findings to carry:
 - **Step 5.** E272 (16 seeds): step5-b and step5-d both do no harm to the keep rule's seed guards; step5-d is the
   finalist (1 better, 3 worse: `body_plan_coverage` 0.18 to 0.055 from the narrowed spans, the defender's fitness). No
   rally was raised on step5-d although `rallyThrust` is 0.1. Before T18: correct the calculator's cold-stack formula
-  (`--check` exits 1 on step5-d, 3.9% short on `forager:idle`), re-run the predator corner reads at the final spans,
+  (`--check` exited 1 on step5-d, 3.9% short on `forager:idle`; fixed 2026-11-22 on `feat/coldstack-defender-release`: `chilled` scales the passive term only, and `coldStep` keeps the sim's signed clock; it now exits 0), re-run the predator corner reads at the final spans,
   then the 64-seed keep-rule pair (E-BG-3).
 - **Process.** `gh run watch` polling from many watchers exhausted the GitHub API (5000 an hour) once; poll at
   `-i 120` or slower. A stacked PR closes when its base branch is deleted: retarget it first. Coverage timeouts were

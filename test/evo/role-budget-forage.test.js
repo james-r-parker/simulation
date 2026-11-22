@@ -163,7 +163,7 @@ describe('coldStep against the sim', () => {
         const slot = allocBody(w, 0);
         w.alive[slot] = 1;
         const min = w.lanes.temperatureOptimalMin[slot];
-        const ctx = { cold: { rate: 0.4, max: 10, ticks: 5, recover: 3 } };
+        const ctx = /** @type {any} */ ({ cold: { rate: 0.4, max: 10, ticks: 5, recover: 3 } });
         const pattern = [
             ...Array(7).fill(false),
             ...Array(23).fill(true),
@@ -178,5 +178,26 @@ describe('coldStep against the sim', () => {
             expect(at.stacks).toBe(w.effectStacks[0][slot]);
         }
         expect(at.stacks).toBeGreaterThan(0);
+    });
+});
+
+describe('the cold stack numbers', () => {
+    it('read the config keys, and fall back to the off setting and the registry defaults where a config has none', () => {
+        expect(ctxOf({ coldStackRate: 0.4, coldStackTicks: 30, coldRecoverTicks: 9 }).cold).toEqual({
+            rate: 0.4,
+            max: 10,
+            ticks: 30,
+            recover: 9,
+        });
+        const config = /** @type {any} */ ({ ...createConfig({}) });
+        for (const key of ['coldStackRate', 'coldStackTicks', 'coldRecoverTicks']) {
+            delete config[key];
+        }
+        expect(contextOf(config, 'forager', roleParams(createConfig({}), 'forager')).cold).toEqual({
+            rate: 0,
+            max: 10,
+            ticks: 60,
+            recover: 15,
+        });
     });
 });
