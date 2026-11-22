@@ -126,7 +126,6 @@ describe('defenderSmokeGeometry', () => {
         expect(g.releasePoint).toBeCloseTo(length - (prey.size + defender.size), 9);
         expect(g.cloud.x).toBeCloseTo(g.releasePoint - (defender.size + R), 9);
         expect(g.cloud.y).toBe(0);
-        expect(g.refused).toBe(false);
     });
 
     it('a standing defender turns the short way round: a quarter turn either side takes as long', () => {
@@ -142,7 +141,6 @@ describe('defenderSmokeGeometry', () => {
         expect(g.cloud.x).toBeCloseTo(g.releasePoint - (defender.size + R), 9);
         expect(g.cloud.y).toBeCloseTo(g.offLine, 9);
         expect(g.coast).toBeGreaterThan(200);
-        expect(g.refused).toBe(false);
     });
 
     it('latestRelease is the last tick the near edge is ahead of the hunter after its reaction ticks of travel', () => {
@@ -165,10 +163,12 @@ describe('defenderSmokeGeometry', () => {
         expect(near.runTicks).toBeLessThan(g.runTicks);
     });
 
-    it('refuses a defender that faces the hunter: the cloud would land behind it, on the caller side', () => {
-        const g = defenderSmokeGeometry(bodies, { ...MODEL_DEFAULTS, facing: 'hunter' });
-        expect(g.refused).toBe(true);
-        expect(g.cell.status).toBe('impossible');
+    it('a guard between the hunter and the caller, facing the hunter, releases with no turn: the cloud drops toward the hunter', () => {
+        const g = defenderSmokeGeometry(bodies, { ...MODEL_DEFAULTS, guardPosture: 'between' });
+        expect(g.facingTicks).toBe(0);
+        expect(g.runTicks).toBe(0);
+        expect(g.releaseTick).toBe(2 * MODEL_DEFAULTS.reactionTicks + 1);
+        expect(g.cloud.x).toBeCloseTo(g.releasePoint - (defender.size + R), 9);
     });
 
     it('is n/a inside the cooldown, and takes the smaller of the defender and the caller slack', () => {

@@ -174,6 +174,7 @@ export const DEFAULTS = deepFreeze({
     smokeRadius: 80, // new
     smokeTicks: 180, // new
     smokeCooldown: 600, // new
+    smokeAimArc: 0.785, // smoke-toward-hunter: a hunter within this half-angle (radians) of the heading and in vision draws the cloud toward it; else the cloud drops behind
     smokeThreshold: 0.8, // new: the smoke output must exceed it
     packWindow: 120, // new: ticks between two biters for a shared kill
     maxClouds: 32, // new

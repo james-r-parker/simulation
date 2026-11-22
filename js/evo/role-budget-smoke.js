@@ -143,7 +143,7 @@ export function smokeCell(hunter, prey, model) {
     });
     const state = mayRelease(prey, model, model);
     const margin = hiddenTicks - escapeNeed - model.reactionTicks;
-    const slack = smokeMargin({ refused: false, state, slacks: [margin >= 0 ? margin : null] });
+    const slack = smokeMargin({ state, slacks: [margin >= 0 ? margin : null] });
     return {
         cell: cell(slack, model),
         hiddenTicks,
@@ -164,8 +164,6 @@ function spread(a) {
 
 /**
  * @typedef {object} DefenderSmoke
- * @property {boolean} refused whether the geometry refuses the release: the defender faces the hunter, so the cloud lands
- *   behind it on the caller's side and the hunter's rays meet the defender first
  * @property {number} releasePoint where the defender stands along the hunter-to-caller segment when it releases (hunter at 0):
  *   the spot, or where its stop leaves it (`walkAndStop` of role-budget-walk.js)
  * @property {number} offLine how far it stands off that segment, px (0 for a defender standing on the spot)
@@ -200,17 +198,17 @@ function latestRelease(xs, { cloud, reaction, speed }) {
 }
 
 /**
- * @param {{refused: boolean, state: 'ready' | 'cooling' | 'broke', slacks: Array<number | null>}} read whether the geometry
- *   refuses, whether the defender may release, and the defender's and the caller's slack
+ * @param {{state: 'ready' | 'cooling' | 'broke', slacks: Array<number | null>}} read whether the defender may release and the
+ *   defender's and the caller's slack
  * @returns {number | null | undefined} the cell's margin: undefined (`n/a`) inside the cooldown, null (impossible) when
- *   refused, broke or either slack is negative or missing, else the smaller slack
+ *   broke or either slack is negative or missing, else the smaller slack
  */
-function smokeMargin({ refused, state, slacks }) {
+function smokeMargin({ state, slacks }) {
     if (state === 'cooling') {
         return undefined;
     }
     const worst = slacks.includes(null) ? null : Math.min(.../** @type {number[]} */ (slacks));
-    return refused || state === 'broke' || worst === null || worst < 0 ? null : worst;
+    return state === 'broke' || worst === null || worst < 0 ? null : worst;
 }
 
 /**
@@ -219,7 +217,8 @@ function smokeMargin({ refused, state, slacks }) {
  * @param {{length: number, spot: number}} line the hunter-to-caller length and the release spot's x
  * @returns {{ticks: number, x: number, y: number, angle: number, turned: boolean}} where the defender releases from, the
  *   ticks it walks there and whether it must turn to face the caller: a defender already `standing` on the spot, or guarding
- *   between the hunter and the caller (on its post, facing the hunter), has walked nothing and turns; one beside the caller
+ *   between the hunter and the caller (on its post, facing the hunter), has walked nothing and does not turn (the cloud
+ *   drops toward the hunter in front of it); one beside the caller
  *   walks to the spot, stopped
  */
 function defenderWalk([, caller, defender], model, { length, spot }) {
@@ -227,7 +226,8 @@ function defenderWalk([, caller, defender], model, { length, spot }) {
         return { ticks: 0, x: spot, y: 0, angle: model.standing, turned: true };
     }
     if (guardPosture(model) === 'between') {
-        return { ticks: 0, x: length - escortGap(defender, caller, model), y: 0, angle: Math.PI, turned: true };
+        // The guard faces the hunter and `releaseSmoke` drops the cloud toward a hunter in front, so it needs no turn.
+        return { ticks: 0, x: length - escortGap(defender, caller, model), y: 0, angle: Math.PI, turned: false };
     }
     const to = { x: spot, y: 0 };
     const from = { x: length, y: escortGap(defender, caller, model) };
@@ -236,9 +236,8 @@ function defenderWalk([, caller, defender], model, { length, spot }) {
 
 /**
  * @param {Array<import('./role-budget-params.js').RoleParams>} bodies the hunter, the caller and the defender
- * @param {import('./role-budget-model.js').RoleModel & {sinceRelease?: number, facing?: 'caller' | 'hunter',
- *   gap?: number, standing?: number}} model the model options; `facing` is where the defender faces when it releases
- *   (default the caller); `standing` is the heading of a defender already on the spot at rest (it walked there; default:
+ * @param {import('./role-budget-model.js').RoleModel & {sinceRelease?: number,
+ *   gap?: number, standing?: number}} model the model options; `standing` is the heading of a defender already on the spot at rest (it walked there; default:
  *   it walks from beside the caller)
  * @returns {DefenderSmoke} where and when the defender must release so that the cloud lies on the hunter-to-caller line
  */
@@ -263,11 +262,9 @@ export function defenderSmokeGeometry([hunter, caller, defender], model) {
     const slackDefender = Number.isFinite(releaseTick) ? latest - releaseTick : null;
     const margin = hidden.hiddenTicks - hidden.escapeNeed - model.reactionTicks;
     const slackCaller = Number.isFinite(margin) ? margin : null;
-    const refused = model.facing === 'hunter';
     const state = mayRelease(defender, model, model);
-    const slack = smokeMargin({ refused, state, slacks: [slackDefender, slackCaller] });
+    const slack = smokeMargin({ state, slacks: [slackDefender, slackCaller] });
     return {
-        refused,
         releasePoint: walk.x,
         offLine: walk.y,
         coast: (defender.cap.sprint * defender.damping) / (1 - defender.damping),

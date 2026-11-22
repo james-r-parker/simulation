@@ -102,24 +102,12 @@ describe('the guard posture', () => {
         expect(read(SHOVED).budget.run.repelTick).toBeNull();
     });
 
-    it('is not rescued by body speed: a defender with 20 times the turn still cannot release in time (the guard faces the hunter)', () => {
-        const fast = {
-            ...SHOVED,
-            specialisations: {
-                ...STEP5_D.specialisations,
-                defender: {
-                    ...STEP5_D.specialisations.defender,
-                    turnMultiplier: 20,
-                    sprintBoost: 2,
-                    body: { maxThrust: 2 },
-                },
-            },
-        };
-        const slow = read(SHOVED, BETWEEN).budget.smoke;
-        const { smoke } = read(fast, BETWEEN).budget;
-        expect(smoke.releaseTick).toBeLessThan(slow.releaseTick);
-        expect(smoke.latestRelease).toBe(slow.latestRelease);
-        expect(smoke.releaseTick).toBeGreaterThan(smoke.latestRelease);
+    it('releases without the turn (the cloud drops toward the hunter in front) and the caller is still too slow to leave the view', () => {
+        const { smoke } = read(SHOVED, BETWEEN).budget;
+        expect(smoke.facingTicks).toBe(0);
+        expect(smoke.releaseTick).toBe(smoke.latestRelease);
+        expect(smoke.slackDefender).toBe(0);
+        expect(smoke.slackCaller).toBeLessThan(0);
         expect(smoke.cell.status).toBe('impossible');
     });
 });
