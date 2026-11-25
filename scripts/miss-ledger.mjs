@@ -3,11 +3,15 @@
 //
 //   node scripts/miss-ledger.mjs report   # on a red full run on main: open (or add to) the red-main issue
 //   node scripts/miss-ledger.mjs check    # fail while an open miss is still not reached by the selection
+//   node scripts/miss-ledger.mjs close    # on a green full run on main: comment on and close the open red-main issues
 //
 // `report` reads GITHUB_REPOSITORY, GITHUB_SHA, GITHUB_RUN_ID and a GH_TOKEN for `gh`. It names the merge commit, the
 // failed jobs and test files (from the JUnit reports the failed jobs uploaded), finds the merged pull request and its
 // `affected` artifact, and records each failed test the pull request did not reach as a miss. `check` reads the open
-// issues labelled `affected-miss` and runs the selection on this tree for each recorded miss.
+// issues labelled `affected-miss` and runs the selection on this tree for each recorded miss. `close` reads the same
+// variables, comments with the green commit and closes every open `red-main` issue except one labelled `affected-miss`:
+// a green run does not show the selection now reaches that test, so `check` keeps failing pull requests until a person
+// declares the edge and closes it.
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -194,6 +198,45 @@ export function check({ run, root, log }) {
     return problems.length === 0 ? 0 : 1;
 }
 
+/**
+ * The `close` command: a green full run on main closes the `red-main` issues a red run opened.
+ * @param {{run: (args: string[]) => string, env: Record<string, string | undefined>, log: (line: string) => void}} io the `gh` runner, the environment and a logger
+ * @returns {number} 0 (an issue list or close that fails is logged: a green main is not turned red by its bookkeeping)
+ */
+export function close({ run, env, log }) {
+    const { GITHUB_REPOSITORY: repo = '', GITHUB_SHA: sha = '', GITHUB_RUN_ID: id = '' } = env;
+    const comment = `main is green at ${sha.slice(0, 7)} (https://github.com/${repo}/actions/runs/${id}); closing.`;
+    try {
+        const open = JSON.parse(
+            run([
+                'issue',
+                'list',
+                '--label',
+                'red-main',
+                '--state',
+                'open',
+                '--json',
+                'number,labels',
+                '--limit',
+                '100',
+            ]),
+        );
+        for (const issue of open) {
+            const held = issue.labels.some((/** @type {{name: string}} */ label) => label.name === 'affected-miss');
+            if (held) {
+                log(`kept #${issue.number} open: it records an affected-test miss`);
+                continue;
+            }
+            run(['issue', 'comment', String(issue.number), '--body', comment]);
+            run(['issue', 'close', String(issue.number)]);
+            log(`closed #${issue.number}`);
+        }
+    } catch (error) {
+        log(`red-main: could not close the open issues (${error instanceof Error ? error.message : String(error)})`);
+    }
+    return 0;
+}
+
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
     const root = fileURLToPath(new URL('..', import.meta.url));
     const command = process.argv[2];
@@ -201,8 +244,10 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
         process.exitCode = report({ run: gh, env: process.env, log: console.log });
     } else if (command === 'check') {
         process.exitCode = check({ run: gh, root, log: console.log });
+    } else if (command === 'close') {
+        process.exitCode = close({ run: gh, env: process.env, log: console.log });
     } else {
-        console.log('usage: node scripts/miss-ledger.mjs report | check');
+        console.log('usage: node scripts/miss-ledger.mjs report | check | close');
         process.exitCode = 2;
     }
 }

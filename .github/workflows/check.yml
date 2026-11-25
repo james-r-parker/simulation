@@ -369,6 +369,29 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: node scripts/miss-ledger.mjs report
 
+  # A green full run on main closes the red-main issues a red run opened, each with a comment naming the green commit
+  # (scripts/miss-ledger.mjs close); one that records an affected-test miss stays open until its edge is declared.
+  green-main:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && success() && needs.check.result == 'success'
+    needs: [check]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+
+      - name: Close the red-main issues
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: node scripts/miss-ledger.mjs close
+
   # The browser smoke runs in the official Playwright image (about 2 GB), whose version is the exact @playwright/test
   # pin in package.json: scripts/browser-smoke.sh derives the tag from that pin and `docker run`s the image. The job has
   # no `container:`, because a job container is pulled before the first step even when every step is skipped. The job
