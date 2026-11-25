@@ -13,6 +13,9 @@ The plan doc, the task ids, and the reading that ends the stream (a PR merged, a
 The paths the stream may edit. Two live streams own no path in common; a path two streams need goes to one of them and
 the other waits for its branch to be merged into the batch.
 
+Order in `js/sim`: when other lanes also edit `js/sim`, say this lane's place in the coordinator's merge order (shared
+state, `config.js` keys or `rulesHash` first, then readers; `docs/agent-reference.md`, "Merge order for parallel lanes").
+
 ## Worker budget
 
 The `--workers` number for the stream's long runs, taken from `npm run state` (workers free) when the stream starts.
