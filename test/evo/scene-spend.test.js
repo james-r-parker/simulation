@@ -76,6 +76,19 @@ describe('eval.mother_wait_by_condition', () => {
         expect(s.waitCount).toBe(0);
     });
 
+    it('clears the ready sample of a mother who bears before burn-in, so her first later birth is not timed from it', () => {
+        const r = observed({ maxAgents: 16 });
+        const mother = addBlob(r.world, { energy: 5000 });
+        const s = r.observer.scenes.spend;
+        r.world.tick = 100;
+        sampleSpend(s, r.world);
+        expect(s.readySince[mother]).toBe(100);
+        const child = addBlob(r.world);
+        birth(r, mother, child);
+        expect(s.readySince[mother]).toBe(-1);
+        expect(s.waitCount).toBe(0);
+    });
+
     it('is null below the least number of waits', () => {
         const r = observed();
         expect(MIN_WAIT_PAIRS).toBe(6);
