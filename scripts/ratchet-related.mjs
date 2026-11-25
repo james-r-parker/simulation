@@ -1,12 +1,13 @@
-// The `ratchet-related` gate: runs the tests related to the files this branch changed with coverage, and holds each
-// changed source file in a 100% directory to 100% (scripts/lib/ratchet-files.mjs). It never edits the baseline.
-// Exit 0 passes, 1 fails, 3 skips (no changed file is under a 100% baseline).
+// The `ratchet-related` gate: runs the tests related to the files this branch changed with coverage, holds each
+// changed source file in a 100% directory to 100%, and each new source file in a lower scope (`scripts`) to that
+// scope's baseline (scripts/lib/ratchet-files.mjs). It never edits the baseline.
+// Exit 0 passes, 1 fails, 3 skips (no changed file has a limit).
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { fileMisses, strictSources } from './lib/ratchet-files.mjs';
+import { fileMisses, measuredSources } from './lib/ratchet-files.mjs';
 
 /**
  * Lists the files changed against the merge base with `base`: committed, staged, unstaged and new.
@@ -20,6 +21,21 @@ export function changedFiles(root, base) {
     const [mergeBase] = git(['merge-base', base, 'HEAD']);
     const tracked = git(['diff', '--name-only', '--diff-filter=ACMR', mergeBase ?? base]);
     return [...new Set([...tracked, ...git(['ls-files', '--others', '--exclude-standard'])])];
+}
+
+/**
+ * Lists the files the branch adds against the merge base with `base`: committed or staged additions and new untracked
+ * files.
+ * @param {string} root repo root
+ * @param {string} base ref to compare with
+ * @returns {Set<string>} repo-relative paths of added files
+ */
+export function addedFiles(root, base) {
+    /** @param {string[]} args git arguments @returns {string[]} output lines */
+    const git = (args) => spawnSync('git', args, { cwd: root, encoding: 'utf8' }).stdout.split('\n').filter(Boolean);
+    const [mergeBase] = git(['merge-base', base, 'HEAD']);
+    const tracked = git(['diff', '--name-only', '--diff-filter=A', mergeBase ?? base]);
+    return new Set([...tracked, ...git(['ls-files', '--others', '--exclude-standard'])]);
 }
 
 /**
@@ -51,9 +67,12 @@ export function main(argv, { root, vitest = join(root, 'node_modules/.bin/vitest
     const { base } = parseArgs(argv);
     const baseline = readOptional(join(root, 'scripts/quality-baseline.json'));
     const changed = changedFiles(root, base);
-    const sources = strictSources(changed, baseline);
+    const added = addedFiles(root, base);
+    const sources = measuredSources(changed, added, baseline);
     if (sources.length === 0) {
-        console.log(`no changed file under a 100% coverage baseline (against ${base})`);
+        console.log(
+            `no changed file under a 100% coverage baseline and no new file in a lower scope (against ${base})`,
+        );
         return 3;
     }
     const dir = mkdtempSync(join(tmpdir(), 'ratchet-related-'));
@@ -70,16 +89,18 @@ export function main(argv, { root, vitest = join(root, 'node_modules/.bin/vitest
         }
         const summary = readOptional(join(dir, 'coverage-summary.json'));
         const final = readOptional(join(dir, 'coverage-final.json'));
-        const misses = fileMisses(summary, final, baseline, { root, files: sources });
+        const misses = fileMisses(summary, final, baseline, { root, files: sources, added });
         if (misses.length > 0) {
-            console.error(`changed files below 100% where the baseline is 100% (${sources.length} measured):`);
+            console.error(
+                `changed files below their limit (100% under a 100% baseline; a new file its scope's baseline) (${sources.length} measured):`,
+            );
             misses.forEach((line) => console.error(line));
             console.error(
                 'only the related tests ran, without *.slow.test.js; a file covered by a slow test needs it run',
             );
             return 1;
         }
-        console.log(`${sources.length} changed file(s) at 100%: ${sources.join(', ')}`);
+        console.log(`${sources.length} changed file(s) at their limits: ${sources.join(', ')}`);
         return 0;
     } finally {
         rmSync(dir, { recursive: true, force: true });
