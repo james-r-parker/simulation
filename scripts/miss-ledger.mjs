@@ -115,7 +115,7 @@ export function pullRequestOf({ run, repo, sha, dir }) {
 }
 
 /**
- * Opens the red-main issue, or adds to the one that is open.
+ * Opens the red-main issue, or adds to the one that is open; a miss labels either one `affected-miss`.
  * @param {(args: string[]) => string} run the `gh` runner
  * @param {{title: string, body: string, misses: boolean}} issue what to write
  * @param {string} dir a scratch directory for the body file
@@ -127,13 +127,18 @@ export function writeIssue(run, { title, body, misses }, dir) {
     const open = JSON.parse(
         run(['issue', 'list', '--label', 'red-main', '--state', 'open', '--limit', '1', '--json', 'number']),
     );
-    if (open.length > 0) {
-        run(['issue', 'comment', String(open[0].number), '--body-file', file]);
-        return `commented on #${open[0].number}`;
-    }
     const labels = misses ? ['red-main', 'affected-miss'] : ['red-main'];
     for (const label of labels) {
         run(['label', 'create', label, '--force', '--color', label === 'red-main' ? 'B60205' : 'FBCA04']);
+    }
+    if (open.length > 0) {
+        const number = String(open[0].number);
+        run(['issue', 'comment', number, '--body-file', file]);
+        // `check` lists open issues labelled affected-miss, so a miss added to the open issue must label it too.
+        if (misses) {
+            run(['issue', 'edit', number, '--add-label', 'affected-miss']);
+        }
+        return `commented on #${number}`;
     }
     run(['issue', 'create', '--title', title, '--label', labels.join(','), '--body-file', file]);
     return `opened ${title}`;
