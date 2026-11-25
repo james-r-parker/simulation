@@ -84,11 +84,9 @@ function defenceReadings(config, model) {
             scene.outcome.defenderArrivedFirst,
         ]),
     ];
-    // a `between` guard blocks the model's hunter, which has no path round a blocker and so never kills (an upper bound, in
-    // docs/designs/role-budget.md); the sim's hunter goes round, so the kill tick is read only when the formula has one
-    if (options.posture !== 'between' || run.killTick !== null) {
-        readings.push(ticksReading(row, 'kill tick', [run.killTick, scene.ticks.killTick], inTicks(2)));
-    }
+    // the hunter bites the defender it meets, which shoves it or not, and rests after a kill of it (`feed` of
+    // role-budget-defence-contact.js), so the kill tick is read with the shove on as well as off
+    readings.push(ticksReading(row, 'kill tick', [run.killTick, scene.ticks.killTick], inTicks(2)));
     if (shoves) {
         readings.push(...shoveReadings({ config, model }, { run, scene, lone }));
     }

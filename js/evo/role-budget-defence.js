@@ -4,7 +4,8 @@
 // cannot step differently from the chase. The defender's shove is `tryDefenderRepel` of js/sim/defender-repel.js.
 
 import { norm, turnCircle } from './role-budget-kinematics.js';
-import { bite, charge, collide, costOf, createBody, inJaws, mayBite, speedOf, stepBody } from './role-budget-body.js';
+import { charge, costOf, createBody, inJaws, speedOf, stepBody } from './role-budget-body.js';
+import { collisions, fadeStagger, feed, lying, touching } from './role-budget-defence-contact.js';
 import { HUNTER_PERFECT, hunterOut } from './role-budget-play.js';
 import { gapAtAwareness } from './role-budget-frame.js';
 import { hearLoudness } from './role-budget-senses.js';
@@ -42,35 +43,12 @@ const STILL = Object.freeze({ turn: 0, sprint: 0, thrust: 0 });
  * @property {number | null} interceptTick the tick the defender first touches the hunter
  * @property {number | null} repelTick the tick the first shove lands, null for none
  * @property {number} repels the shoves landed
+ * @property {number | null} defenderKillTick the tick the hunter bites the defender dead, null for none (the hunter then rests
+ *   `predatorRestTicks`)
  * @property {number} bites the bites the hunter landed on the caller
  * @property {number} hunterEnergy the hunter's energy at the end
  * @property {boolean} faced whether the defender had the hunter in its jaws at the first touch
  */
-
-/**
- * @param {import('./role-budget-body.js').Body} a one body
- * @param {import('./role-budget-body.js').Body} b another
- * @returns {boolean} whether their centres are closer than their sizes
- */
-const touching = (a, b) => norm(b.x - a.x, b.y - a.y) < a.size + b.size;
-
-/**
- * Lands the defender's shove on the hunter, as `tryDefenderRepel` does: the defender pays, the hunter loses energy and is
- * knocked back along the defender-to-hunter line.
- * @param {import('./role-budget-body.js').Body} d the defender
- * @param {import('./role-budget-body.js').Body} h the hunter
- * @returns {void}
- */
-function shove(d, h) {
-    const { repel } = d.p;
-    const dist = Math.max(norm(h.x - d.x, h.y - d.y), 1e-9);
-    const nx = (h.x - d.x) / dist;
-    const ny = (h.y - d.y) / dist;
-    d.energy = Math.max(0, d.energy - repel.cost);
-    h.energy = Math.max(0, h.energy - repel.energy);
-    h.vx += nx * repel.impulse;
-    h.vy += ny * repel.impulse;
-}
 
 /** @param {DefenceOptions} options the options @returns {boolean} whether the defender stands between the hunter and the caller */
 const guarding = (options) => options.posture === 'between';
@@ -112,6 +90,10 @@ function stage(hunter, caller, defender, options) {
  * @property {{hear: number, turn: number, run: number}} delays the delays
  * @property {import('./role-budget-play.js').HunterPlay} play the hunter's play
  * @property {{sawAt: number}} memo the tick the caller first saw the hunter
+ * @property {{bites: number, income: number, kick: number}} mauled the hunter's bites on the defender
+ * @property {boolean} dead whether the hunter has killed the defender
+ * @property {number} rest the ticks the hunter still lies up after that kill
+ * @property {{stacks: number, ticks: number}} stagger the stacks of `staggered` on the hunter and the ticks they last
  */
 
 /**
@@ -141,9 +123,9 @@ function observe(s, tick) {
  */
 function move(s, tick) {
     const { h, c, d, out, p, delays } = s;
-    const ho = hunterOut(h, c, s.play, tick);
+    const ho = lying(s, hunterOut(h, c, s.play, tick));
     const dout = defenderOut(s, tick);
-    const factors = [stepBody(h, ho), stepBody(c, STILL), stepBody(d, dout)];
+    const factors = [stepBody(h, ho), stepBody(c, STILL), s.dead ? 0 : stepBody(d, dout)];
     const turn = p.defender.turnRate.start;
     const slow = turnCircle(p.defender.thrust.cruise, p.defender.damping, turn, p.defender.cap.cruise).speed;
     if (out.startTick >= 0 && tick - out.startTick < delays.turn && speedOf(d) > slow) {
@@ -155,53 +137,13 @@ function move(s, tick) {
 }
 
 /**
- * The defender bumps the caller if they overlap, and touches the hunter: they collide, and with the shove on and the hunter in its jaws the defender shoves.
- * @param {State} s the run, updated in place
- * @param {number} tick the tick
- * @returns {void}
- */
-function meet(s, tick) {
-    const { h, c, d, out, p, options } = s;
-    if (!options.absent && touching(c, d)) {
-        collide(c, d);
-    }
-    if (options.absent || !touching(h, d)) {
-        return;
-    }
-    out.interceptTick ??= tick + 1;
-    out.faced = out.interceptTick === tick + 1 ? inJaws(d, h) : out.faced;
-    collide(h, d);
-    if (p.defender.repel.energy > 0 || p.defender.repel.impulse > 0) {
-        landShove(out, { d, h, tick });
-    }
-}
-
-/**
- * The hunter touches the caller: they collide and, past the size gate as the sizes stand on this bite, the hunter bites.
- * @param {State} s the run, updated in place
- * @param {number} tick the tick
- * @returns {boolean} whether the bite killed the caller
- */
-function strike(s, tick) {
-    const { h, c, out, p, tally } = s;
-    if (!touching(h, c)) {
-        return false;
-    }
-    out.contactTick ??= tick + 1;
-    const may = mayBite(h, c);
-    collide(h, c);
-    const alarmed = out.alarmTick >= 0 && tick < out.alarmTick + p.caller.call.ticks;
-    return may && bite(h, c, tally, alarmed);
-}
-
-/**
  * @param {State} s the run
  * @returns {boolean} whether the hunter has the caller or the defender in its jaws; with neither, a hunter holding `BITE`
  *   pays `strikeMissCost` this tick, as `chaseTimeline` charges it
  */
-function inContact({ h, c, d, options }) {
+function inContact({ h, c, d, options, dead }) {
     const held = (/** @type {import('./role-budget-body.js').Body} */ b) => touching(h, b) && inJaws(h, b);
-    return held(c) || (!options.absent && held(d));
+    return held(c) || (!options.absent && !dead && held(d));
 }
 
 /**
@@ -221,6 +163,7 @@ export function defenceTimeline(hunter, caller, defender, options) {
         startTick: -1,
         interceptTick: null,
         repelTick: null,
+        defenderKillTick: null,
         repels: 0,
         bites: 0,
         hunterEnergy: 0,
@@ -235,12 +178,16 @@ export function defenceTimeline(hunter, caller, defender, options) {
         delays: { hear: 0, turn: 0, run: 0, ...options.delays },
         play: { ...VIEW_PLAY, ...options.hunter, sprint: 'view' },
         memo: { sawAt: -1 },
+        mauled: { bites: 0, income: 0, kick: 0 },
+        dead: false,
+        rest: 0,
+        stagger: { stacks: 0, ticks: 0 },
     });
     for (let tick = 0; tick < MAX_TICKS; tick++) {
         observe(s, tick);
         const { ho, dout, factors } = move(s, tick);
-        meet(s, tick);
-        if (strike(s, tick)) {
+        const meetings = collisions(s, tick);
+        if (feed(s, { tick, meetings })) {
             out.killTick = tick + 1;
             break;
         }
@@ -249,23 +196,12 @@ export function defenceTimeline(hunter, caller, defender, options) {
         }
         charge(s.h, costOf(s.h, ho, factors[0]));
         charge(s.c, costOf(s.c, STILL, factors[1]));
-        charge(s.d, costOf(s.d, dout, factors[2]));
+        if (!s.dead) {
+            charge(s.d, costOf(s.d, dout, factors[2]));
+        }
+        fadeStagger(s);
     }
     return { ...out, bites: s.tally.bites, hunterEnergy: s.h.energy };
-}
-
-/**
- * @param {Defence} out the run, updated in place
- * @param {{d: import('./role-budget-body.js').Body, h: import('./role-budget-body.js').Body, tick: number}} at the
- *   defender, the hunter and the tick
- * @returns {void}
- */
-function landShove(out, { d, h, tick }) {
-    if (inJaws(d, h)) {
-        out.repelTick ??= tick + 1;
-        out.repels += 1;
-        shove(d, h);
-    }
 }
 
 /**
