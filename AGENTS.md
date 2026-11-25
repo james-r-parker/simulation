@@ -148,7 +148,7 @@ Full text: [docs/agent-reference.md](docs/agent-reference.md). The rules:
 - Every change ships with tests for the behaviour it adds, and a bug fix starts with a failing test.
 - A change claiming to improve evolution or performance carries the measurement (`run-evolution-loop`); "it looks
   better" is not a result.
-- Library and platform surprises go into `docs/notes/<YYYY-MM>.md` as `### YYYY-MM-DD - <topic>` entries (not into design
+- Library and platform surprises go into their own file `docs/notes/<YYYY-MM>/<YYYY-MM-DD>-<slug>.md`, headed `### YYYY-MM-DD - <topic>` (not into design
   docs), and `node scripts/notes-index.mjs --write` updates the index in `docs/designs/sim-notes.md` in the same commit.
 - Search with `rg` and `fd`, not `grep -r` and `find`; use `ast-grep` (`sg`) for structural matches.
 - Use `-` rather than em dashes in docs.

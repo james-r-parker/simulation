@@ -59,7 +59,7 @@ scripts/browser-perf.mjs` (v6 by default; `--viewport 3840x2160` and `2560x1440`
     - move the **Status:** line and mark the phase `(built)`; drop `**Validated:**` and `**Priority:**` (or `**Scheduled by:**`, with its row in the lead's `## Order` table) once
       `Implemented`
     - regenerate the index: `node scripts/designs-index.mjs --write`
-    - append learnings to `docs/notes/<YYYY-MM>.md` as a dated `### YYYY-MM-DD - <topic>` entry, then run
+    - add each learning as its own file `docs/notes/<YYYY-MM>/<YYYY-MM-DD>-<slug>.md` headed `### YYYY-MM-DD - <topic>`, then run
       `node scripts/notes-index.mjs --write` (it updates the index in `docs/designs/sim-notes.md`)
 7. **Write the PR body** to a file (the template under Ship); `ship.sh` checks it (step 4) before it pushes.
    A branch checked out in another worktree (a harness-made `worktree-agent-*` branch) cannot be pushed under its own

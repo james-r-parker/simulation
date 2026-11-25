@@ -2,19 +2,15 @@
 // call it. A conflict is settled only when every conflicted path is one of these, and then the merge completes:
 //   - a file a generator owns whole (scripts/lib/regen.mjs): take our side and regenerate;
 //   - the prose above the generated index of docs/designs/sim-notes.md: a three-way merge of the prose, then regenerate;
-//   - docs/notes/<YYYY-MM>.md where both sides only appended `### ` entries: keep both in date order (notes-merge.mjs).
 // Any other conflicted path leaves the merge in progress, exactly as a plain `git merge` does.
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { mergeNotes } from './notes-merge.mjs';
 import { GENERATORS, regenerate } from './regen.mjs';
-
-const NOTES_FILE = /^docs\/notes\/\d{4}-\d{2}\.md$/;
 
 /**
  * @typedef {import('./regen.mjs').Sh} Sh
- * @typedef {{status: 'up-to-date' | 'clean'} | {status: 'resolved', regenerated: string[], notes: string[]} |
+ * @typedef {{status: 'up-to-date' | 'clean'} | {status: 'resolved', regenerated: string[]} |
  *   {status: 'conflict', paths: string[], message?: string}} MergeResult
  */
 
@@ -66,52 +62,45 @@ function mergeProse(sh, texts, heading) {
  * @param {Sh} sh runs a command in the repo
  * @param {string} path a conflicted path
  * @param {typeof GENERATORS} generators the generators
- * @returns {{text: string | null, notes: boolean} | null} the text to write (null = take our side), or null when
- *   regenerating does not settle the path
+ * @returns {{text: string | null} | null} the text to write (null = take our side), or null when regenerating does
+ *   not settle the path
  */
 function settle(sh, path, generators) {
     const gen = generators.find((g) => g.path === path);
     if (gen?.whole) {
-        return { text: null, notes: false };
+        return { text: null };
     }
-    const texts = gen || NOTES_FILE.test(path) ? stages(sh, path) : null;
-    if (!texts) {
-        return null;
-    }
-    const text = gen?.tail ? mergeProse(sh, texts, gen.tail) : mergeNotes(texts);
-    return text === null ? null : { text, notes: !gen };
+    const texts = gen?.tail ? stages(sh, path) : null;
+    const text = texts && gen?.tail ? mergeProse(sh, texts, gen.tail) : null;
+    return text === null ? null : { text };
 }
 
 /**
  * @param {Sh} sh runs a command in the repo
  * @param {string[]} paths the conflicted paths
  * @param {typeof GENERATORS} generators the generators
- * @returns {{writes: Map<string, string | null>, notes: string[]} | null} what to write per path (null = take our
- *   side), or null when any path is not settled by regenerating
+ * @returns {Map<string, string | null> | null} what to write per path (null = take our side), or null when any path
+ *   is not settled by regenerating
  */
 function plan(sh, paths, generators) {
     const writes = new Map();
-    const notes = [];
     for (const path of paths) {
         const settled = settle(sh, path, generators);
         if (!settled) {
             return null;
         }
         writes.set(path, settled.text);
-        if (settled.notes) {
-            notes.push(path);
-        }
     }
-    return { writes, notes };
+    return writes;
 }
 
 /**
  * @param {Sh} sh runs a command in the repo
  * @param {string} ref the merged ref
- * @param {{regenerated: string[], notes: string[]}} what what the resolution did
+ * @param {string[]} regenerated the generated files the resolution rewrote
  * @returns {import('./regen.mjs').Outcome} the merge commit
  */
-function commitMerge(sh, ref, { regenerated, notes }) {
+function commitMerge(sh, ref, regenerated) {
     const branch = sh('git', ['rev-parse', '--abbrev-ref', 'HEAD']).stdout.trim();
     const lines = [
         `Merge remote-tracking branch '${ref}' into ${branch}`,
@@ -119,9 +108,6 @@ function commitMerge(sh, ref, { regenerated, notes }) {
         'Conflicts only in generated files, settled by scripts/lib/merge-base.mjs.',
         `Regenerated: ${regenerated.join(', ') || 'none'}`,
     ];
-    if (notes.length > 0) {
-        lines.push(`Notes entries kept from both sides: ${notes.join(', ')}`);
-    }
     return sh('git', ['commit', '-m', lines.join('\n')]);
 }
 
@@ -167,15 +153,15 @@ export function mergeBase(sh, base, { generators = GENERATORS, cwd = '.' } = {})
     if (!settled) {
         return { status: 'conflict', paths };
     }
-    const changed = applyAndRegenerate(sh, settled.writes, { generators, cwd });
+    const changed = applyAndRegenerate(sh, settled, { generators, cwd });
     if (typeof changed === 'string') {
         return { status: 'conflict', paths, message: changed };
     }
     const owned = generators.filter((g) => paths.includes(g.path)).map((g) => g.path);
     const regenerated = [...new Set([...owned, ...changed])];
-    const commit = commitMerge(sh, ref, { regenerated, notes: settled.notes });
+    const commit = commitMerge(sh, ref, regenerated);
     if (commit.status !== 0) {
         return { status: 'conflict', paths, message: `git commit failed: ${commit.stderr.trim()}` };
     }
-    return { status: 'resolved', regenerated, notes: settled.notes };
+    return { status: 'resolved', regenerated };
 }

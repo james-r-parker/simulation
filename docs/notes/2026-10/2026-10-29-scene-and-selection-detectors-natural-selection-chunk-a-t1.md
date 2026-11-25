@@ -1,0 +1,7 @@
+### 2026-10-29 - Scene and selection detectors (natural-selection Chunk A, T1 to T2)
+
+- No event carries the food kind (`FOOD_KIND` in `js/sim/carcass.js`): `AgentDied` and the food arrays are all there is. `eval.carcass_meal_share` therefore watches the food arrays: a meat item alive at the end of the last observed tick and gone now before `carcassTicks` ran out was eaten, by the lowest alive slot that overlaps its last place and gained food energy (`feed` walks the slots in order).
+- Mate births are seen too late for candidates: pregnancy lasts `pregnancyTicks` (480), so the males in range at the birth are not the ones the mother chose from. `eval.mate_skill_gap` and `eval.mate_hunter_lean` are read at the tick a mother turns pregnant (`pregnancy` rises from 0), when `fatherId` and the candidates are in place.
+- `parentSlotA` and `parentSlotB` (merit-state arrays) are set by `giveBirth` whether or not `meritEnabled` is on, and the parent's meal counters (`mealsTotal`, `mealsDeliberate`) exist but stay 0 with it off, so `eval.skill_heritability` is `null` there.
+- `obsX` and `obsY` are `Float32Array`: a refuge rock sits a ring radius from its centre only to about 2e-5, so tests of the ring geometry compare to two decimals.
+- A within-lineage regression of a quantity that does not vary still has a rounding-noise variance; `eval.childshare_by_condition` ignores a lineage whose summed squared spread is under 1e-9.

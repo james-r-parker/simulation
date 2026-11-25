@@ -1,0 +1,11 @@
+### 2026-10-31 - Flora Phase 3 source identity and local spread
+
+The fixed patch pool holds live, banked and free slots. Stored item `foodPatchSerial` and carrier `pollenSerial` distinguish a source generation, including same-species slot reuse. Uint16 carrier indices are necessary because slot255 is encoded as256. Expired banks never restore themselves; two independent expected RNG draws pin bank slot order. Local seed placement first tries the configured ring, then bounded disc retries within the visited basin; blocked placement refuses instead of falling back anywhere.
+
+All ecological draws use the named, seed-forked `flora` stream: pollen, placement, fixed five-Gaussian mutation and one float per banked slot/tick. Replay fixtures compare worlds and stream states; Node and Chromium reproduce the long goldens (`7baac24daf291215`, `f5dc335ad5176e99`). The worker busy effect stream stays at1410 records, `be9383a3e0039426`, with no drops. No new brain layout or feature flag was introduced.
+
+Trait means stay in reusable Float64 scratch until mutation and Float32 storage. Year starts blend as offsets about their archetype; a Float32 phase rounding to1 is canonical zero. The config domain rejects inherited energy/life bounds that do not fit positive Float32, and rejects variation greater than the smallest stored energy, preventing a negative plant item without changing the inheritance formula.
+
+The migration visit denominator is now pool capacity (`floraPatchMax`), not initial patch count, so a lower index across this revision is not by itself a behavioural regression. With no live patch ever observed the metric is null; unvisited available patches give zero once mature deaths supply a denominator. Seeding refusal logs are deduplicated per carrier/tick, first reason wins, while subsequent state decisions and draws still execute. The event budget reserves `8 x maxAgents + 2 x floraPatchMax`.
+
+The family survival gate now names the genetic-family detector adopted by world-balance, keeping the same6/8 screen and12/16 confirmation thresholds; maternal line coalescence is a separate diagnostic. E72, detector power, survival comparisons and standalone performance measurements remain owed while the CPU is reserved; no screen value or evolutionary verdict was adopted.

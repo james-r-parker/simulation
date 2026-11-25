@@ -494,9 +494,9 @@
     ],
     "test/merge-base.test.js": [
         ".git",
-        "docs/notes/2026-11.md",
+        "docs/notes/2026-11",
+        "docs/notes/2026-11/",
         "scripts/lib/merge-base.mjs",
-        "scripts/lib/notes-merge.mjs",
         "scripts/lib/regen.mjs",
         "test"
     ],

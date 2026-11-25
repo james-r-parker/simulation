@@ -1,0 +1,3 @@
+### 2026-11-20 - Leak-gene knockout matches brain-inspection silence trial for trial (E-UK-0, E252)
+
+On T2's commit (`302e85aa`), setting `leak[13]` or `leak[14]` to `KNOCKOUT_LEAK_GENE` (-8) on `archive-159-predator-cell94` (`prey-ahead`, seed 1, 128 trials) lifted wins from 6/128 (`0.046875`) to 24/128 (`0.187500`, `beforeOnly=[113]`, `afterOnly=[1,2,21,22,39,47,48,61,69,76,78,79,88,89,100,111,117,119,123]`, `p=0.000040`) and 25/128 (`0.195313`, `beforeOnly=[11,86,113]`, `afterOnly=[4,7,9,12,15,18,22,27,32,39,46,67,68,79,80,85,92,102,104,107,114,125]`, `p=0.000157`), matching the 2026-11-19 `silence` rows trial for trial.
