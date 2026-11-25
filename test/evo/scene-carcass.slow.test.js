@@ -7,7 +7,9 @@
 // cost round differently; carcass meal share 0.148 and scavenge events 0.378 per 1k as before), and for the 13 effect
 // metrics of status-effects T12 and main's defender_bite_break_share (two causes: with the 13 removed the digest is main's
 // pin, e37bdd9b; the world hash is unchanged), and again when the huddle pass stopped counting at huddleWarmth 0 (the
-// huddled share reads 0).
+// huddled share reads 0). The digest then covered every metric and moved for unrelated ones (agent-workflow.md T44), so
+// it now covers only the carcass and scavenge metrics (CARCASS_KEY): what the skip can change. Their entries are
+// unchanged since the whole-set pin, which the world hash (every world state) still backs.
 
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
@@ -16,7 +18,8 @@ import { runSeed } from '../../scripts/eval-worker.mjs';
 import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 
 const RECORDED_WORLD_HASH = 'af220e7209361ae7';
-const RECORDED_METRICS_SHA256 = '4ff159404b9b680a3638d762d74fce3110883cf149152db8781d2a4d6b649bc2';
+const CARCASS_KEY = /carcass|scavenge/;
+const RECORDED_METRICS_SHA256 = '1fa0edb77afc5dda66ccdc1fef5c41e1d72ba7c69b48790b42e3ad8deaf3dd7c';
 
 describe('trackCarcasses skipping empty slots', () => {
     it(
@@ -27,7 +30,11 @@ describe('trackCarcasses skipping empty slots', () => {
             expect(result.metrics['eval.carcass_meal_share'].value).toBeGreaterThan(0);
             expect(result.metrics['eval.reward_events_per_1k.scavenge'].value).toBeGreaterThan(0);
             expect(result.worldHash).toBe(RECORDED_WORLD_HASH);
-            const digest = createHash('sha256').update(JSON.stringify(result.metrics)).digest('hex');
+            const carcass = Object.entries(result.metrics).filter(([key]) => CARCASS_KEY.test(key));
+            expect(carcass.length).toBeGreaterThanOrEqual(10);
+            const digest = createHash('sha256')
+                .update(JSON.stringify(Object.fromEntries(carcass)))
+                .digest('hex');
             expect(digest).toBe(RECORDED_METRICS_SHA256);
         },
     );
