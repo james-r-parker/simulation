@@ -37,6 +37,23 @@ const NAMES = [
     'eval.gene_spread.gut',
     'eval.gene_spread.nerve',
     'eval.gene_edge_share',
+    'eval.gene_sd.size',
+    'eval.gene_sd.vision',
+    'eval.gene_sd.childShare',
+    'eval.gene_sd.speed',
+    'eval.gene_sd.sprintStore',
+    'eval.gene_sd.fat',
+    'eval.gene_sd.heatBand',
+    'eval.gene_sd.burn',
+    'eval.gene_sd.hearing',
+    'eval.gene_sd.nose',
+    'eval.gene_sd.smokeSight',
+    'eval.gene_sd.eyesOrEars',
+    'eval.gene_sd.clearOrSmoke',
+    'eval.gene_sd.agileOrFast',
+    'eval.gene_sd.wideOrFar',
+    'eval.gene_sd.gut',
+    'eval.gene_sd.nerve',
 ];
 
 const WEIGHTS = 40;
@@ -220,7 +237,9 @@ describe('the genes detector', () => {
     });
 
     it('has a metric for every trait of the registry and the edge share, all watch metrics', () => {
-        const names = TRAITS.map((trait) => `eval.gene_spread.${trait.name}`).concat('eval.gene_edge_share');
+        const names = TRAITS.map((trait) => `eval.gene_spread.${trait.name}`)
+            .concat(TRAITS.filter((trait) => trait.kind !== 'raw').map((trait) => `eval.gene_sd.${trait.name}`))
+            .concat('eval.gene_edge_share');
         expect([...NAMES].sort()).toEqual([...names].sort());
         expect(Object.keys(genesMetrics(createGenesScene())).sort()).toEqual([...NAMES].sort());
         expect(namesOf('js/evo/scene-genes.js')).toEqual([...NAMES].sort());
@@ -233,5 +252,49 @@ describe('the genes detector', () => {
     it('is a detector that runs every 1000 ticks and gives each run its own scene', () => {
         expect(genesDetector.every).toBe(1000);
         expect(genesDetector.create({}, { runTicks: 0 })).not.toBe(genesDetector.create({}, { runTicks: 0 }));
+    });
+});
+
+describe('eval.gene_sd.<trait>', () => {
+    const PAIR = [
+        { spec: 0, genes: { [SPEED]: 0.5 } },
+        { spec: 0, genes: { [SPEED]: -0.3 } },
+    ];
+
+    it('is the standard deviation of the gene, whatever the span', () => {
+        for (const span of [0.05, 0.3]) {
+            const scene = createGenesScene();
+            sampleGenes(scene, world(PAIR, { 0: { [SPEED]: span } }));
+            // The genes are 0.5 and -0.3: half the gap is 0.4, and the span does not enter.
+            expect(read(scene, 'eval.gene_sd.speed')).toBeCloseTo(0.4, 6);
+        }
+    });
+
+    it('reads above the span where the ratio spread cannot', () => {
+        const scene = createGenesScene();
+        sampleGenes(scene, world(PAIR, { 0: { [SPEED]: 0.05 } }));
+        expect(read(scene, 'eval.gene_spread.speed')).toBeLessThan(0.05);
+        expect(read(scene, 'eval.gene_sd.speed')).toBeGreaterThan(0.05);
+    });
+
+    it('averages over the specs that have the trait and two agents, and over the checkpoints', () => {
+        const scene = createGenesScene();
+        const menus = { 0: { [SIZE]: 0.3 }, 1: { [SIZE]: 0.3 } };
+        const spec0 = [
+            { spec: 0, genes: { [SIZE]: 1 } },
+            { spec: 0, genes: { [SIZE]: -1 } },
+        ];
+        sampleGenes(scene, world([...spec0, { spec: 1 }, { spec: 1 }], menus));
+        expect(read(scene, 'eval.gene_sd.size')).toBeCloseTo(0.5, 6);
+        sampleGenes(scene, world([{ spec: 0 }, { spec: 0 }], menus, BURN_IN_TICKS + 1000));
+        expect(read(scene, 'eval.gene_sd.size')).toBeCloseTo(0.25, 6);
+    });
+
+    it('is null for a trait in no menu and has no entry for a raw trait', () => {
+        const scene = createGenesScene();
+        sampleGenes(scene, world(PAIR, { 0: { [SPEED]: 0.3 } }));
+        expect(read(scene, 'eval.gene_sd.sprintStore')).toBeNull();
+        expect(genesSummary(scene).geneSd.learn).toBeDefined();
+        expect(Object.hasOwn(genesMetrics(scene), `eval.gene_sd.${'learn'}`)).toBe(false);
     });
 });

@@ -19,7 +19,7 @@ const REPORT_NAMES = JSON.parse(readFileSync(new URL('../../fixtures/metric-name
 describe('METRICS', () => {
     it('is frozen and keyed by exactly the names of the live report', () => {
         expect(Object.isFrozen(METRICS)).toBe(true);
-        expect(REPORT_NAMES).toHaveLength(413);
+        expect(REPORT_NAMES).toHaveLength(430);
         expect(Object.keys(METRICS).sort()).toEqual(REPORT_NAMES);
     });
 
@@ -107,7 +107,11 @@ describe('withPower', () => {
  *   (js/evo/compare-seeds.js) held when they were deleted for the registry (metric-trust T8)
  */
 /** The body-gene metrics of body-genes.md T9: a spread for each trait of the registry and the edge share. */
-const GENE_METRICS = [...TRAITS.map((trait) => `eval.gene_spread.${trait.name}`), 'eval.gene_edge_share'];
+const GENE_METRICS = [
+    ...TRAITS.map((trait) => `eval.gene_spread.${trait.name}`),
+    ...TRAITS.filter((trait) => trait.kind !== 'raw').map((trait) => `eval.gene_sd.${trait.name}`),
+    'eval.gene_edge_share',
+];
 /** Metrics registered after the snapshot was taken (T25 added the mean beside the renamed median). */
 const ADDED_AFTER_T8 = [
     'eval.hunter_catches_per_1k_settled',

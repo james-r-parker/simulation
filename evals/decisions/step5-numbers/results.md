@@ -248,3 +248,37 @@ predator `size` at 0.1. `predator:average` and `predator:best` (a performer corn
 at every corner at the `size` 0.1 span (least slack: see 108, turn 8 for `average`; see 144, turn 13 for `best`). `defender:predator`
 is `impossible` at every corner including the centre (`repel: off`), so it is no span result. The scout row's least slack of 0 ticks is
 the one tight corner: a scout at its slowest corner against a hunter at its fastest.
+
+## T14a: the cold stack re-chosen after the calculator fix (2026-11-25)
+
+PR 631 changed the calculator's cold stack (`chilled` scales the passive loss lane alone), so the table above, read before it, no longer holds:
+on today's `step5-d` at `coldStackRate` 0.4 the forager, reproducer and defender idle rows read `tight` (ratios 1.01, 1.01, 1.02; scout 0.98
+`ok`; predator 1.10 `tight`). `npm run role:budget -- --config evals/role-budget/step5-d.json --set entrantEnergy=<e> --set coldStackRate=<c>
+--rows <the four first-meal and the five idle rows>`, entrant energy 700 to 900, rate 0.4 to 0.6 (f = first-meal, i = idle; every first-meal
+row of forager, reproducer, scout and defender `ok` unless named):
+
+| `entrantEnergy` | rate 0.4                               | 0.45              | 0.5                 | 0.55                            | 0.6                             |
+| --------------- | -------------------------------------- | ----------------- | ------------------- | ------------------------------- | ------------------------------- |
+| 700             | i: forager, reproducer, defender tight | i: defender tight | all ok (**chosen**) | f: defender `impossible` (find) | f: defender `impossible` (find) |
+| 750             | the same                               | the same          | all ok              | all ok                          | all ok                          |
+| 800 and 900     | the same                               | the same          | all ok              | all ok                          | all ok                          |
+
+The predator's idle row is `tight` in every cell (ratio 1.10 at 0.4, 1.05 at 0.6): a hunter that sits outlives one that searches because
+`predator:living` is red at the catch share (net -362.9 a chase), which a cold stack cannot cure. Chosen: `entrantEnergy` 700 (unchanged; a
+higher birth energy lengthens a sitter's life as much as a searcher's, so 750 buys first-meal margin the idle rows do not need) and
+`coldStackRate` 0.5, the smallest rate at which all four idle rows are `ok` and the four first meals stay `ok`. At 700 and 0.5:
+
+| row                   | status | reading                                | idle ratio (founder / entrant / child) |
+| --------------------- | ------ | -------------------------------------- | -------------------------------------- |
+| forager:first-meal    | ok     | reach 200+, find share 0.69 (entrant)  | -                                      |
+| reproducer:first-meal | ok     | reach 200+                             | -                                      |
+| scout:first-meal      | ok     | reach 200+                             | -                                      |
+| defender:first-meal   | ok     | find 39 (the least margin of the four) | -                                      |
+| forager:idle          | ok     | sit 72                                 | 0.98 / 0.97 / 0.97                     |
+| reproducer:idle       | ok     | sit 72                                 | the same                               |
+| scout:idle            | ok     | sit 157                                | 0.94 / 0.94 / 0.93                     |
+| defender:idle         | ok     | sit 22                                 | 0.99 / 0.99 / 0.98                     |
+| predator:idle         | tight  | sit -773                               | 1.07 / 1.07 / 1.06                     |
+
+`npm run role:budget -- --config evals/role-budget/step5-d.json --check` exits 0 (the plays of 256 seeded births and the sitter's and walker's
+lives agree with the formulas within their tolerances).
