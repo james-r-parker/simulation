@@ -77,9 +77,8 @@ describe('check.yml release scope', { timeout: scaleTimeout(30_000) }, () => {
         expect(scopeStep('release', 'pull_request', 'release-please--branches--main')).toBe('scope=release');
     });
 
-    it('keeps the full gate for a release-shaped diff on any other branch, in the queue and on a push', () => {
+    it('keeps the full gate for a release-shaped diff on any other branch and on a push', () => {
         expect(scopeStep('release', 'pull_request', 'dependabot/npm_and_yarn/vite-9')).toBe('scope=full');
-        expect(scopeStep('release', 'merge_group', '')).toBe('scope=full');
         expect(scopeStep('release', 'push', '')).toBe('scope=full');
     });
 
@@ -94,7 +93,7 @@ describe('check.yml release scope', { timeout: scaleTimeout(30_000) }, () => {
         expect(smoke('release', 'pull_request', 'release-please--branches--main')).toBe('scope=none');
         expect(smoke('release', 'pull_request', 'dependabot/npm_and_yarn/vite-9')).toBe('scope=browser');
         expect(smoke('full', 'pull_request', 'release-please--branches--main')).toBe('scope=browser');
-        expect(smoke('release', 'merge_group', '')).toBe('scope=browser');
+        expect(smoke('release', 'push', '')).toBe('scope=browser');
     });
 
     it('skips every other job for release, and no job for another scope', () => {

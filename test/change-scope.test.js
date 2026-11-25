@@ -149,7 +149,7 @@ describe('change-scope.sh --browser', { timeout: scaleTimeout(15_000) }, () => {
         expect(scope(['--browser'], [])).toBe('browser');
     });
 
-    it('takes a base sha, as the merge queue passes it, and fails on an unknown one', () => {
+    it('takes a base sha as well as a ref, and fails on an unknown one', () => {
         // An empty diff (HEAD against itself) is unclassifiable, so it runs the smoke.
         const same = spawnSync('scripts/change-scope.sh', ['--browser', 'HEAD'], { encoding: 'utf8' });
         expect(same.stdout.trim()).toBe('browser');

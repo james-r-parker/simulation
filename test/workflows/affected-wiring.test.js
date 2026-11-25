@@ -93,8 +93,8 @@ if (fail === 'any' || (fail === 'selection' && !args.includes('--full'))) proces
         expect(result.status).toBe(0);
     });
 
-    it('runs the whole suite on a push and in the merge queue', () => {
-        for (const event of ['push', 'merge_group']) {
+    it('runs the whole suite on a push and a manual run', () => {
+        for (const event of ['push', 'workflow_dispatch']) {
             const result = runStep({ event, scope: 'full' });
             expect(result.calls, event).toEqual(['--full --out affected.json --github-output OUT']);
         }
