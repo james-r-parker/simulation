@@ -182,6 +182,7 @@ export const HUNTERS_2 = {
     }),
     'eval.chase_giveup_share': entry('hunters', {
         module: 'js/evo/scene-approach.js',
+        scenes: ['Abort'],
         meaning: 'The share of resolved hunter chases the hunter lets lapse (lower is intended).',
         counts: 'Approaches that lapse with no closing tick for INTENT_WINDOW ticks, over resolved chases.',
         unit: 'share',
@@ -192,6 +193,7 @@ export const HUNTERS_2 = {
     }),
     'eval.hunt_abort_rate': entry('hunters', {
         module: 'js/evo/scene-approach.js',
+        scenes: ['Abort'],
         meaning: 'The share of approaches that end without a bite.',
         counts: 'Aborted approaches over committed (ended in a bite or kill) plus aborted, ended after burn-in.',
         unit: 'share',

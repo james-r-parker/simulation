@@ -211,6 +211,7 @@ export const SCENES_SOCIAL = {
     }),
     'eval.style_separation': entry('scenes-social', {
         module: 'js/evo/style.js',
+        scenes: ['Same spec, different custom'],
         meaning: 'How far lineages of one specialisation differ in style.',
         counts: 'Within one specialisation, the largest difference between lineage means of the style at death (hunters: chase chain length over STYLE_CHAIN_CAP; others: share of life spent slowly inside a ring while threatened), over lineages with MIN_STYLE_DEATHS deaths or more after burn-in.',
         unit: 'style units',
@@ -222,6 +223,7 @@ export const SCENES_SOCIAL = {
     }),
     'eval.condition_gait_shift': entry('scenes-social', {
         module: 'js/evo/scene-condition.js',
+        scenes: ['Condition changes the walk'],
         meaning: 'How much body condition (pregnant, cold, starving) changes how an agent moves.',
         counts: 'Mean over agents with neutral and condition samples (every 100 ticks after burn-in) of |speed in condition - neutral speed| over maxVelocity and |turn rate difference| over maxTurn, averaged over conditions.',
         unit: 'share',
@@ -233,6 +235,7 @@ export const SCENES_SOCIAL = {
     }),
     'eval.mother_wait_by_condition': entry('scenes-social', {
         module: 'js/evo/scene-spend.js',
+        scenes: ['Parent spends'],
         meaning: 'Whether poor mothers wait longer than rich ones to mate (positive).',
         counts: 'Mean wait (birth tick minus the readiness sample minus pregnancyTicks) of the poorest third of mother-pairs minus that of the richest third, by energy over store, at mate births after burn-in; needs MIN_WAIT_PAIRS pairs.',
         unit: 'ticks',

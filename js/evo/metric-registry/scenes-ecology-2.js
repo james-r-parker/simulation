@@ -5,6 +5,7 @@ import { entry } from './entry.js';
 export const SCENES_ECOLOGY_2 = {
     'eval.carcass_hunter_share': entry('scenes-ecology', {
         module: 'js/evo/scene-herd-metrics.js',
+        scenes: ['Scavenge'],
         meaning: 'How much of the carcass energy eaten is eaten by hunters.',
         counts: 'Carcass energy (herd and other) eaten by agents of hunting specialisations over all carcass energy eaten, after burn-in.',
         unit: 'share',
@@ -15,6 +16,7 @@ export const SCENES_ECOLOGY_2 = {
     }),
     'eval.herd_carcass_share.forager': entry('scenes-ecology', {
         module: 'js/evo/scene-herd-metrics.js',
+        scenes: ['Scavenge'],
         meaning: "How much of a forager's food is carcass meat (lower is intended).",
         counts: 'Herd-carcass energy stored by agents of the specialisation after burn-in (herdCarcassEatenBySpec) over all food energy that specialisation stored (foodEatenBySpec).',
         unit: 'share',
@@ -25,6 +27,7 @@ export const SCENES_ECOLOGY_2 = {
     }),
     'eval.herd_carcass_share.predator': entry('scenes-ecology', {
         module: 'js/evo/scene-herd-metrics.js',
+        scenes: ['Scavenge'],
         meaning: "How much of a predator's food is carcass meat (lower is intended).",
         counts: 'Herd-carcass energy stored by agents of the specialisation after burn-in (herdCarcassEatenBySpec) over all food energy that specialisation stored (foodEatenBySpec).',
         unit: 'share',
@@ -35,6 +38,7 @@ export const SCENES_ECOLOGY_2 = {
     }),
     'eval.herd_carcass_share.reproducer': entry('scenes-ecology', {
         module: 'js/evo/scene-herd-metrics.js',
+        scenes: ['Scavenge'],
         meaning: "How much of a reproducer's food is carcass meat (lower is intended).",
         counts: 'Herd-carcass energy stored by agents of the specialisation after burn-in (herdCarcassEatenBySpec) over all food energy that specialisation stored (foodEatenBySpec).',
         unit: 'share',
@@ -45,6 +49,7 @@ export const SCENES_ECOLOGY_2 = {
     }),
     'eval.herd_carcass_share.scout': entry('scenes-ecology', {
         module: 'js/evo/scene-herd-metrics.js',
+        scenes: ['Scavenge'],
         meaning: "How much of a scout's food is carcass meat (lower is intended).",
         counts: 'Herd-carcass energy stored by agents of the specialisation after burn-in (herdCarcassEatenBySpec) over all food energy that specialisation stored (foodEatenBySpec).',
         unit: 'share',
@@ -55,6 +60,7 @@ export const SCENES_ECOLOGY_2 = {
     }),
     'eval.herd_carcass_share.defender': entry('scenes-ecology', {
         module: 'js/evo/scene-herd-metrics.js',
+        scenes: ['Scavenge'],
         meaning: "How much of a defender's food is carcass meat (lower is intended).",
         counts: 'Herd-carcass energy stored by agents of the specialisation after burn-in (herdCarcassEatenBySpec) over all food energy that specialisation stored (foodEatenBySpec).',
         unit: 'share',
@@ -107,6 +113,7 @@ export const SCENES_ECOLOGY_2 = {
     }),
     'eval.winter_basin_density': entry('scenes-ecology', {
         module: 'js/evo/scene-season.js',
+        scenes: ['Season changes the map'],
         meaning: 'How basin populations differ in winter against the other seasons.',
         counts: 'Per basin, mean alive count at winter checkpoints over the mean at other checkpoints, then the mean of the two basins, from burn-in on the basins world.',
         unit: 'ratio',
@@ -120,11 +127,12 @@ export const SCENES_ECOLOGY_2 = {
     }),
     'eval.winter_shelter_distance': entry('scenes-ecology', {
         module: 'js/evo/scene-season.js',
+        scenes: ['Season changes the map'],
         meaning: 'Whether agents move towards shelter in winter (negative).',
         counts: 'Mean distance of an alive agent to the nearest refuge ring edge or cold-margin edge at winter checkpoints minus the same mean at other checkpoints.',
         unit: 'px',
         direction: 'watch',
-        intended: 'higher',
+        intended: 'lower',
         nullWhen: [
             'no winter checkpoint and no other checkpoint after burn-in with eras on',
             'no winter and no other checkpoint with an alive agent after burn-in',
@@ -133,6 +141,7 @@ export const SCENES_ECOLOGY_2 = {
     }),
     'eval.winter_band_shift': entry('scenes-ecology', {
         module: 'js/evo/scene-season.js',
+        scenes: ['Season changes the map'],
         meaning: 'Whether agents leave the snowline in winter (negative; lower is intended).',
         counts: 'Share of alive agents inside the snow margin at winter checkpoints minus the share at other checkpoints.',
         unit: 'share difference',
@@ -146,6 +155,7 @@ export const SCENES_ECOLOGY_2 = {
     }),
     'eval.winter_patch_proximity': entry('scenes-ecology', {
         module: 'js/evo/scene-season.js',
+        scenes: ['Season changes the map'],
         meaning: 'Whether winter concentrates agents on the patches that fruit.',
         counts: 'Share of alive agents within foodPatchRadius of an alive patch with positive weight at winter checkpoints minus the share at other checkpoints.',
         unit: 'share difference',
@@ -159,6 +169,7 @@ export const SCENES_ECOLOGY_2 = {
     }),
     'eval.season_map_distance': entry('scenes-ecology', {
         module: 'js/evo/scene-season-map.js',
+        scenes: ['Season changes the map'],
         meaning: 'How far the agent map moves with the season.',
         counts: 'Total variation distance between the winter and summer agent grids minus the distance between two interleaved summer halves (the noise floor), at 1000-tick checkpoints after burn-in.',
         unit: 'share difference',
@@ -169,6 +180,7 @@ export const SCENES_ECOLOGY_2 = {
     }),
     'eval.herd_season_shift': entry('scenes-ecology', {
         module: 'js/evo/scene-season-map.js',
+        scenes: ['Season changes the map'],
         meaning: 'How far the herd group map moves with the season.',
         counts: 'The same distance as season_map_distance on herd group centroids.',
         unit: 'share difference',
@@ -189,6 +201,7 @@ export const SCENES_ECOLOGY_2 = {
     }),
     'eval.basin_recolonisations': entry('scenes-ecology', {
         module: 'js/evo/scene-basin.js',
+        scenes: ['Boom and bust'],
         meaning: 'How many times a basin was repopulated after dying out.',
         counts: 'Basin extinctions (a basin seen at 0, every 10 ticks) followed by RECOLONISED_MIN alive agents with no floor or immigrant entrant spawned there since.',
         unit: 'count',
@@ -235,6 +248,7 @@ export const SCENES_ECOLOGY_2 = {
     }),
     'eval.refuge_prey_use_under_threat': entry('scenes-ecology', {
         module: 'js/evo/scene-refuge.js',
+        scenes: ['Refuge'],
         meaning: 'How much more threatened prey are inside a refuge ring than calm prey.',
         counts: 'Every 10 ticks after burn-in, over alive non-hunters: share of threatened (a can-bite-me ray hit at THREAT_PROXIMITY or more) inside a ring minus the share of calm ones.',
         unit: 'share difference',
@@ -245,6 +259,7 @@ export const SCENES_ECOLOGY_2 = {
     }),
     'eval.refuge_episode_entry': entry('scenes-ecology', {
         module: 'js/evo/scene-refuge.js',
+        scenes: ['Refuge'],
         meaning: 'How much more often a threat episode ends with the prey in a ring than a calm episode does.',
         counts: 'Share of threatened episodes with the agent inside a ring at a sample within REFUGE_WINDOW ticks, minus the same share for control episodes opened at the first calm sample after a threatened one.',
         unit: 'share difference',
@@ -255,6 +270,7 @@ export const SCENES_ECOLOGY_2 = {
     }),
     'eval.refuge_dwell_ticks': entry('scenes-ecology', {
         module: 'js/evo/scene-refuge.js',
+        scenes: ['Refuge'],
         meaning: 'How long prey stay in a ring per visit.',
         counts: 'Median ticks from a ring entry to the following exit, over visits whose entry was sampled.',
         unit: 'ticks',
@@ -265,6 +281,7 @@ export const SCENES_ECOLOGY_2 = {
     }),
     'eval.refuge_exit_fed': entry('scenes-ecology', {
         module: 'js/evo/scene-refuge.js',
+        scenes: ['Refuge'],
         meaning: 'How often prey eat shortly after leaving a ring.',
         counts: "Ring exits followed by a meal within REFUGE_WINDOW ticks over all ring exits (an open watch at the agent's death counts as a miss).",
         unit: 'share',
@@ -272,27 +289,5 @@ export const SCENES_ECOLOGY_2 = {
         intended: 'higher',
         nullWhen: ['fewer than 20 ring exits after burn-in'],
         arithmetic: 'test/evo/scene-refuge.test.js',
-    }),
-    'eval.refuge_crowding': entry('scenes-ecology', {
-        module: 'js/evo/scene-refuge-outcome.js',
-        meaning: 'How many prey share a ring that holds a threatened prey.',
-        counts: 'Mean prey inside a ring over rings that hold a threatened prey, sampled every 10 ticks after burn-in.',
-        unit: 'prey',
-        direction: 'watch',
-        intended: 'higher',
-        nullWhen: ['no ring held a threatened prey'],
-        expectedFlat:
-            'Null unless a refuge ring holds a threatened prey, which happened on 107 of 128 floor-on seeds (E188); it moves with prey sheltering under threat.',
-        arithmetic: 'test/evo/scene-refuge-outcome.test.js',
-    }),
-    'eval.refuge_eligible_share': entry('scenes-ecology', {
-        module: 'js/evo/scene-refuge-outcome.js',
-        meaning: 'The share of prey small enough to get through the gap into a ring.',
-        counts: 'Prey-samples whose body radius is REFUGE_CLEARANCE_PX or more under refugeSizeMax, over all prey-samples, every 10 ticks after burn-in.',
-        unit: 'share',
-        direction: 'watch',
-        intended: 'higher',
-        nullWhen: ['no prey sample after burn-in'],
-        arithmetic: 'test/evo/scene-refuge-outcome.test.js',
     }),
 };
