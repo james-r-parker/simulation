@@ -19,7 +19,7 @@ const registry = {
     'eval.food_energy_per_1k': {
         ...unverified,
         tests: { arithmetic: 'a', source: 's' },
-        liveness: { nullShare: 0, distinct: 2, report: 'r' },
+        liveness: { nullShare: 0, distinct: 2, offModeShare: 0.5, report: 'r' },
         power: {},
         minSeeds: 16,
     },

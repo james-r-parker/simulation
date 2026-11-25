@@ -46,8 +46,8 @@ afterEach(() => {
 describe('measureLiveness', () => {
     it('counts null seeds and distinct non-null values', () => {
         expect(measureLiveness(REPORT, 'evals/sample.json', METRICS)).toEqual({
-            [FLAT]: { nullShare: 0.5, distinct: 1, report: 'evals/sample.json' },
-            [SAMPLE]: { nullShare: 0.25, distinct: 2, report: 'evals/sample.json' },
+            [FLAT]: { nullShare: 0.5, distinct: 1, offModeShare: 0, report: 'evals/sample.json' },
+            [SAMPLE]: { nullShare: 0.25, distinct: 2, offModeShare: 1 / 3, report: 'evals/sample.json' },
         });
     });
 
@@ -64,8 +64,8 @@ describe('measureLiveness', () => {
             'x.added_later': { renamedFrom: [] },
         };
         expect(measureLiveness(REPORT, 'evals/sample.json', metrics)).toEqual({
-            [FLAT]: { nullShare: 0.5, distinct: 1, report: 'evals/sample.json' },
-            'x.sample_p50': { nullShare: 0.25, distinct: 2, report: 'evals/sample.json' },
+            [FLAT]: { nullShare: 0.5, distinct: 1, offModeShare: 0, report: 'evals/sample.json' },
+            'x.sample_p50': { nullShare: 0.25, distinct: 2, offModeShare: 1 / 3, report: 'evals/sample.json' },
         });
     });
 });
@@ -116,7 +116,7 @@ describe('metric-liveness CLI', () => {
     });
 
     it('sorts the generated readings by name and prints a reading that meets the bar as live, to stdout by default', () => {
-        const live = { nullShare: 0, distinct: 3, report: 'evals/sample.json' };
+        const live = { nullShare: 0, distinct: 3, offModeShare: 0.5, report: 'evals/sample.json' };
         const source = renderLivenessModule({ 'x.zeta': live, 'x.alpha': live });
         expect(source.indexOf("'x.alpha'")).toBeLessThan(source.indexOf("'x.zeta'"));
         const many = { ...REPORT.metrics[SAMPLE], values: [1, 2, 3, 4], reasons: [null, null, null, null] };

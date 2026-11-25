@@ -12,6 +12,18 @@ const OUTPUT = fileURLToPath(new URL('../js/evo/metric-registry/liveness.js', im
 const USAGE = 'usage: metric-liveness <report.json> [--write]';
 
 /**
+ * @param {number[]} present the non-null values of one metric
+ * @returns {number} the share of them that differ from the most common value; 0 when there are none
+ */
+function offModeShare(present) {
+    const counts = new Map();
+    for (const value of present) {
+        counts.set(value, (counts.get(value) ?? 0) + 1);
+    }
+    return present.length === 0 ? 0 : (present.length - Math.max(...counts.values())) / present.length;
+}
+
+/**
  * @param {Record<string, any>} rawReport an eval report, possibly holding old metric names
  * @param {string} reportPath the repo-relative path to record in the registry
  * @param {Readonly<Record<string, any>>} [metrics] the registry (injectable for tests)
@@ -33,6 +45,7 @@ export function measureLiveness(rawReport, reportPath, metrics = METRICS) {
         readings[name] = {
             nullShare: (values.length - present.length) / values.length,
             distinct: new Set(present).size,
+            offModeShare: offModeShare(present),
             report: reportPath,
         };
     }
@@ -52,6 +65,7 @@ export function renderLivenessModule(readings) {
                 `    ${quote(name)}: Object.freeze({\n` +
                 `        nullShare: ${value.nullShare},\n` +
                 `        distinct: ${value.distinct},\n` +
+                `        offModeShare: ${value.offModeShare},\n` +
                 `        report: ${quote(value.report)},\n` +
                 '    }),',
         )

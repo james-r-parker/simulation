@@ -4,6 +4,7 @@
  * @typedef {object} Liveness a metric's behaviour on the defaults runs (docs/designs/metric-trust.md, task T22)
  * @property {number} nullShare the share of seeds on which the metric is `null`
  * @property {number} distinct the number of distinct values it takes over the seeds
+ * @property {number} offModeShare the share of non-null seeds whose value is not the most common one (0 when all agree)
  * @property {string} report the repo path of the report the read came from
  */
 

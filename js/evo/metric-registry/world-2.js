@@ -57,6 +57,8 @@ export const WORLD_2 = {
         unit: 'calls per 1k agent-ticks',
         direction: 'lower',
         nullWhen: ['no agent-ticks'],
+        expectedFlat:
+            'near zero at the defaults: an alarm call fires on 1 or 2 of 128 seeds and nowhere else (E276, alarm-calls.md)',
         arithmetic: 'test/evo/metrics-watchability.test.js',
         source: 'test/evo/metric-source-world-watch.test.js',
     }),

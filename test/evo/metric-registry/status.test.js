@@ -30,7 +30,7 @@ const power = (fpr, mde, referenceMean = 100) => ({
     report: 'r.json',
 });
 
-const LIVE = { nullShare: 0.1, distinct: 2, report: 'r.json' };
+const LIVE = { nullShare: 0.1, distinct: 2, offModeShare: 0.05, report: 'r.json' };
 
 /** @returns {import('../../../js/evo/metric-registry/entry.js').MetricEntry} an entry with every check filled */
 function full() {
@@ -67,20 +67,29 @@ describe('metricStatus', () => {
     });
 
     it('accepts a liveness that misses the bar when expectedFlat says why', () => {
-        const flat = { ...full(), liveness: { nullShare: 1, distinct: 0, report: 'r.json' } };
+        const flat = { ...full(), liveness: { nullShare: 1, distinct: 0, offModeShare: 0, report: 'r.json' } };
         expect(metricStatus(flat)).toBe('unverified');
         expect(metricStatus({ ...flat, expectedFlat: 'needs the herd feature' })).toBe('verified');
     });
 });
 
 describe('meetsLivenessBar', () => {
-    it('holds at null on 10% of seeds and 2 distinct values', () => {
-        expect(meetsLivenessBar({ nullShare: 0.1, distinct: 2, report: 'r' })).toBe(true);
+    it('holds at null on 10% of seeds, 2 distinct values and 5% of seeds off the mode', () => {
+        expect(meetsLivenessBar({ nullShare: 0.1, distinct: 2, offModeShare: 0.05, report: 'r' })).toBe(true);
     });
 
     it('fails above 10% null or below 2 values', () => {
-        expect(meetsLivenessBar({ nullShare: 0.11, distinct: 2, report: 'r' })).toBe(false);
-        expect(meetsLivenessBar({ nullShare: 0, distinct: 1, report: 'r' })).toBe(false);
+        expect(meetsLivenessBar({ nullShare: 0.11, distinct: 2, offModeShare: 0.5, report: 'r' })).toBe(false);
+        expect(meetsLivenessBar({ nullShare: 0, distinct: 1, offModeShare: 0, report: 'r' })).toBe(false);
+    });
+
+    it('fails a metric that differs from its most common value on 1 of 128 seeds', () => {
+        expect(meetsLivenessBar({ nullShare: 0, distinct: 2, offModeShare: 1 / 128, report: 'r' })).toBe(false);
+    });
+
+    it('fails just below 5% off the mode and holds at 5%', () => {
+        expect(meetsLivenessBar({ nullShare: 0, distinct: 2, offModeShare: 0.049, report: 'r' })).toBe(false);
+        expect(meetsLivenessBar({ nullShare: 0, distinct: 2, offModeShare: 0.05, report: 'r' })).toBe(true);
     });
 });
 

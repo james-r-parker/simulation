@@ -18,7 +18,7 @@ const base = METRICS['eval.median_lifespan'];
 const verified = {
     ...base,
     tests: { arithmetic: 'a.test.js', source: 'b.test.js' },
-    liveness: { nullShare: 0, distinct: 5, report: 'r.json' },
+    liveness: { nullShare: 0, distinct: 5, offModeShare: 0.5, report: 'r.json' },
     power: { fpr16: 0.05, fpr32: 0.05, mde16: 0.3, mde32: 0.12, mde64: 0.08, referenceMean: 100, report: 'r.json' },
     minSeeds: /** @type {const} */ (32),
 };
