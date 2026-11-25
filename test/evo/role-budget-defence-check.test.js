@@ -61,11 +61,11 @@ describe('defenceCheck with other models', () => {
         expect(read('bite energy prevented')?.drift).toBe(false);
     });
 
-    it('with the shove on the kill tick drifts: the formula never has the hunter bite the defender and rest, the sim does', () => {
+    it('with the shove on the kill tick agrees: the hunter bites the defender dead, rests, then kills the caller (T12a)', () => {
         const run = defenceCheck(arenaConfig(SLOW), FAR);
-        expect(run.readings.filter((r) => r.drift).map((r) => r.what)).toEqual(['kill tick']);
+        expect(run.readings.filter((r) => r.drift)).toEqual([]);
         const kill = run.readings.find((r) => r.what === 'kill tick');
-        expect([kill?.formula, kill?.scene, kill?.tolerance]).toEqual([116, 201, '2 ticks']);
+        expect([kill?.formula, kill?.scene, kill?.tolerance]).toEqual([201, 201, '2 ticks']);
     });
 
     it('with the shove off the kill tick is read within the plan tolerance of 2 ticks', () => {
@@ -120,9 +120,17 @@ describe('defenceCheck with the guard posture', () => {
         expect(read('bite energy prevented')?.scene).toBeGreaterThan(0);
     });
 
-    it('does not read the kill tick of a hunter the guard blocks: the formula has no path round a blocker, the sim does', () => {
+    it('reads the kill tick of a hunter the guard blocks: it kills the guard, goes round and agrees with the sim', () => {
         const run = defenceCheck(arenaConfig(), BETWEEN);
-        expect(run.readings.find((r) => r.what === 'kill tick')).toBeUndefined();
+        const kill = run.readings.find((r) => r.what === 'kill tick');
+        expect(kill).toMatchObject({ drift: false, tolerance: '2 ticks' });
+        expect(kill?.formula).not.toBeNull();
         expect(run.drift).toBe(0);
+    });
+
+    it('with the shove on and the stagger on neither the formula nor the sim has the hunter through the guard', () => {
+        const run = defenceCheck(arenaConfig(STEP5), BETWEEN);
+        const kill = run.readings.find((r) => r.what === 'kill tick');
+        expect([kill?.formula, kill?.scene, kill?.drift]).toEqual([null, null, false]);
     });
 });

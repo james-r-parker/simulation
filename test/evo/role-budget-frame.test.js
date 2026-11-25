@@ -160,4 +160,44 @@ describe('maxCatchableGap', () => {
         const gap = maxCatchableGap(fast.hunter, fast.prey, { model, bound: 'straight' });
         expect(gap).toBeGreaterThan(1000);
     });
+
+    it('reads a prey that starts at rest and facing away as it always did when no start is given (T15a)', () => {
+        const base = maxCatchableGap(defaults.hunter, defaults.prey, { model, effort: 1 });
+        const rest = maxCatchableGap(defaults.hunter, defaults.prey, {
+            model,
+            effort: 1,
+            preyStart: { speed: 0, offset: 0 },
+        });
+        expect(rest).toBe(base);
+        expect(base).toBeCloseTo(242.7, 1);
+        expect(maxCatchableGap(courser.hunter, courser.prey, { model, effort: 1 })).toBeCloseTo(945.6, 1);
+    });
+
+    it('reaches less far for a prey that is already flying than for one that is standing (T15a)', () => {
+        const flying = { speed: 5, offset: 0 };
+        const at = (/** @type {any} */ preyStart) =>
+            maxCatchableGap(courser.hunter, courser.prey, { model, effort: 1, preyStart });
+        expect(at(flying)).toBeLessThan(at(undefined));
+    });
+
+    it('the oracle hunter, which sprints only with the prey in view, reaches less far than the one that sprints from tick 0 (T15a)', () => {
+        const even = bodies(arenaConfig(JSON.parse(readFileSync('evals/fair-chase/even.json', 'utf8'))));
+        const at = (/** @type {any} */ sprint) => maxCatchableGap(even.hunter, even.prey, { model, effort: 1, sprint });
+        expect(at('view')).toBeLessThan(at('always'));
+        expect(at(undefined)).toBe(at('always'));
+    });
+
+    it('passes the start and the sprint play to the chase, and keeps the sweep of one start apart from another', () => {
+        const aware = gapAtAwareness(defaults.hunter, defaults.prey);
+        const opts = frameOptions(defaults.hunter, defaults.prey, aware, {
+            model,
+            sprint: 'view',
+            preyStart: { speed: 4, offset: 0.1 },
+        });
+        expect(opts.preyStart).toEqual({ speed: 4, offset: 0.1 });
+        expect(opts.hunter.sprint).toBe('view');
+        const a = bestEffort(defaults.hunter, defaults.prey, { model });
+        const b = bestEffort(defaults.hunter, defaults.prey, { model, preyStart: { speed: 5, offset: 0 } });
+        expect(b.gap).toBeLessThan(a.gap);
+    });
 });

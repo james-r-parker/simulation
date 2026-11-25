@@ -29,13 +29,15 @@ export const STORE_SHARE = 0.5;
  * @property {{range: number, rearShare: number, rays: number}} view
  * @property {{on: number, drain: number, refill: number, floor: number, restThrust: number}} store
  * @property {{damage: number, taken: number, arc: number, sizeRatio: number, cost: number, kick: number, miss: number, alarm: number}} bite
- * @property {{line: number, gorgeShare: number, gorgeCap: number}} kill
+ * @property {{line: number, gorgeShare: number, gorgeCap: number, rest: number}} kill
  * @property {{passive: number, size: number, move: number, turn: number, sprint: number, upkeep: number, juvenile: number, standingMult: number, drain: number, heat: number}} cost
  * @property {{restitution: number}} contact the contact impulse of `resolveContacts`
  * @property {{radius: number, ticks: number, threshold: number, cost: number}} call
  * @property {{radius: number, ticks: number, cooldown: number, cost: number, threshold: number, decoy: number}} smoke
- * @property {{energy: number, cost: number, impulse: number}} repel the defender's shove (`tryDefenderRepel`): the energy it drains
- *   from a hunter in its jaws, what it costs the defender, and the knockback; 0 and 0 energy and impulse is off
+ * @property {{energy: number, cost: number, impulse: number, stagger: number, staggerTicks: number}} repel the defender's shove
+ *   (`tryDefenderRepel`): the energy it drains from a hunter in its jaws, what it costs the defender, and the knockback; 0
+ *   and 0 energy and impulse is off. `stagger` is the thrust a `staggered` stack takes off the hunter it shoves (the config's
+ *   `staggerThrust`, 0 for none) and `staggerTicks` how long the stacks last
  * @property {{gainMove: number, lossPassive: number, optimalMax: number, start: number, efficiency: number, optimalMin: number,
  *   max: number, passiveFactor: number, speedCap: number, seasonLoss: number}} heat the heat numbers; `seasonLoss` is the first
  *   season's factor on the passive cooling, `max(0, 1 - temperatureModifier x temperatureSeasonSlope)`
@@ -186,7 +188,12 @@ function combatOf(lane) {
             miss: lane.strikeMissCost,
             alarm: lane.alarmBiteShare,
         },
-        kill: { line: lane.killShare * lane.maxEnergy, gorgeShare: lane.killGorgeShare, gorgeCap: lane.killGorgeCap },
+        kill: {
+            line: lane.killShare * lane.maxEnergy,
+            gorgeShare: lane.killGorgeShare,
+            gorgeCap: lane.killGorgeCap,
+            rest: lane.predatorRestTicks,
+        },
     };
 }
 
@@ -258,6 +265,8 @@ function signalsOf(config, lane) {
             energy: lane.defenderRepelEnergy,
             cost: lane.defenderRepelCost,
             impulse: lane.defenderRepelImpulse,
+            stagger: config.staggerThrust,
+            staggerTicks: config.staggerTicks,
         },
         ...lifeNumbers(config, lane),
     };

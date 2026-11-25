@@ -206,3 +206,24 @@ describe('chaseTimeline', () => {
         expect(run.heat).toBeLessThanOrEqual(run.ticks * defaults.hunter.heat.gainMove);
     });
 });
+
+describe('the prey start (T15a)', () => {
+    const run = (/** @type {any} */ preyStart) =>
+        chaseTimeline(courser.hunter, courser.prey, { gap: 300, prey: { sprint: 'always', jink: 0 }, preyStart });
+
+    it('starts a prey that was standing, facing away, unless told otherwise', () => {
+        expect(run(undefined)).toEqual(run({ speed: 0, offset: 0 }));
+    });
+
+    it('a prey already flying away is reached later than one that was standing', () => {
+        expect(/** @type {number} */ (run({ speed: 6, offset: 0 }).contactTick)).toBeGreaterThan(
+            /** @type {number} */ (run(undefined).contactTick),
+        );
+    });
+
+    it('a prey whose heading is off to the side is reached sooner than one flying straight away', () => {
+        const away = run({ speed: 6, offset: 0 }).contactTick ?? Infinity;
+        const aside = run({ speed: 6, offset: Math.PI / 2 }).contactTick ?? Infinity;
+        expect(aside).toBeLessThan(away);
+    });
+});
