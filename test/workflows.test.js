@@ -28,7 +28,7 @@ describe('workflows', () => {
         }
     });
 
-    describe('check.yml merge queue and scope', () => {
+    describe('check.yml triggers and scope', () => {
         const check = workflows.find(({ name }) => name === 'check.yml')?.text ?? '';
         /** @param {string} id job id */
         const job = (id) => {
@@ -37,10 +37,13 @@ describe('workflows', () => {
             return check.slice(start, next < 0 ? undefined : next);
         };
 
-        it('runs on merge_group, so the required checks report in the merge queue', () => {
-            expect(/^on:[\s\S]*?^ {2}merge_group:/m.test(check)).toBe(true);
-            // The required checks (the main ruleset) have no job-level `if` that can skip them on a pull request or in the
-            // queue: a skipped job reports no check. The only one allowed leaves out the manual noise dispatch (T17); the
+        it('has no merge queue wiring: GitHub offers no merge queue to this user-owned repository', () => {
+            expect(check).not.toContain('merge_group');
+        });
+
+        it('never skips a required check on a pull request', () => {
+            // The required checks (the main ruleset) have no job-level `if` that can skip them on a pull request: a
+            // skipped job reports no check. The only one allowed leaves out the manual noise dispatch (T17); the
             // aggregate `check` also says `always()`, so it reports when a job it needs failed.
             for (const [id, allowed] of [
                 ['check', "github.event_name != 'workflow_dispatch' && always()"],
@@ -60,7 +63,7 @@ describe('workflows', () => {
                 ['browser-smoke', 'browser'],
             ]) {
                 const text = job(id);
-                // No diff against the previous tip: only a pull request or a queue run is classified.
+                // No diff against the previous tip: only a pull request is classified.
                 expect(text).not.toContain('BEFORE');
                 expect(text).not.toContain('git cat-file');
                 expect(text).toContain(`|| echo ${fallback})`);
@@ -68,20 +71,19 @@ describe('workflows', () => {
             }
         });
 
-        it('skips the advisory perf job in the merge queue', () => {
+        it('runs the perf job on pull requests only', () => {
             expect(job('perf')).toContain("if: github.event_name == 'pull_request'");
         });
 
-        it('cancels superseded pull request runs only, never main or the queue', () => {
+        it('cancels superseded pull request runs only, never main', () => {
             expect(check).toMatch(/group: check-\$\{\{ github\.event\.pull_request\.number \|\| github\.ref \}\}/);
             expect(check).toContain("cancel-in-progress: ${{ github.event_name == 'pull_request' }}");
         });
 
-        it('diffs a merge group against its base_sha and a pull request against its base branch', () => {
+        it('diffs a pull request against its base branch', () => {
             for (const id of ['scope', 'browser-smoke']) {
-                expect(job(id), id).toContain('github.event.merge_group.base_sha');
-                expect(job(id), id).toContain("format('origin/{0}', github.base_ref)");
-                expect(job(id), id).toMatch(/EVENT" == pull_request \|\| "\$EVENT" == merge_group/);
+                expect(job(id), id).toContain('BASE: origin/${{ github.base_ref }}');
+                expect(job(id), id).toContain('if [[ "$EVENT" == pull_request ]]; then');
             }
         });
 

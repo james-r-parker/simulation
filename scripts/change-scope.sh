@@ -18,7 +18,7 @@
 # them since test-data moved the fixtures), plus the docs-only paths above. A diff with no ledger or decision path is
 # "docs", not "records", and one path outside both lists makes it "full". Release is tested first, then docs, then records.
 #
-# <base-ref> is any ref or sha: `origin/main` on a pull request, the merge group's `base_sha` in the merge queue.
+# <base-ref> is any ref or sha; on a pull request the workflow passes `origin/<base branch>`.
 #
 # Docs-only paths: Markdown under docs/ (design docs, linted by scripts/designs-index.mjs and the design-doc tests
 # that --docs runs), under .claude/ (Claude Code skills, read by no code or test) and at the repo root (README.md,

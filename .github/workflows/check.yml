@@ -6,9 +6,6 @@ on:
   # request that carries its library/seasons.json entry (docs/designs/deployment-and-community.md).
   push:
     branches: [main]
-  # The merge queue: `check` and `browser-smoke` (the required checks on main) run on the queued merge commit, which is
-  # main plus the PR, so a PR no longer has to be re-run each time main moves.
-  merge_group:
   workflow_dispatch:
     inputs:
       noise:
@@ -19,8 +16,8 @@ on:
 permissions:
   contents: read
 
-# A new push to a pull request cancels that PR's older run. A push to main (preview.yml waits on its result) and a merge
-# group (the queue's verdict) are never cancelled.
+# A new push to a pull request cancels that PR's older run. A push to main (preview.yml waits on its result) is never
+# cancelled.
 concurrency:
   group: check-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -53,15 +50,15 @@ jobs:
         id: scope
         env:
           EVENT: ${{ github.event_name }}
-          BASE: ${{ github.event_name == 'merge_group' && github.event.merge_group.base_sha || format('origin/{0}', github.base_ref) }}
+          BASE: origin/${{ github.base_ref }}
           HEAD_REF: ${{ github.head_ref }}
         run: |
           scope=full
-          if [[ "$EVENT" == pull_request || "$EVENT" == merge_group ]]; then
+          if [[ "$EVENT" == pull_request ]]; then
             scope="$(scripts/change-scope.sh "$BASE" || echo full)"
           fi
           # The release scope needs the Release Please branch: a dependency bump touches the same package files and
-          # must run the whole gate. A push or a queue run has no such branch, so it takes the full path.
+          # must run the whole gate. A push has no such branch, so it takes the full path.
           if [[ "$scope" == release && "$HEAD_REF" != release-please--* ]]; then
             scope=full
           fi
@@ -74,7 +71,7 @@ jobs:
           node-version-file: .node-version
 
       # The tests the `test` job runs and the coverage it takes (docs/designs/agent-workflow.md, Affected tests in CI). A
-      # pull request runs the tests its change can reach; every other event (the push to main, the merge queue) runs the
+      # pull request runs the tests its change can reach; every other event (the push to main) runs the
       # whole suite, and so does a pull request whose diff the script cannot read or classify. The docs, records and release
       # scopes run no test. The reached list is kept as the `affected` artifact, which the full run on main compares with its
       # failures (the miss ledger).
@@ -328,7 +325,7 @@ jobs:
           node scripts/ratchet-related.mjs --base "$BASE" || status=$?
           [[ $status -eq 0 || $status -eq 3 ]]
 
-  # The required check: it reports on every pull request and merge-queue run, whichever jobs ran, and fails when any job
+  # The required check: it reports on every pull request and push, whichever jobs ran, and fails when any job
   # failed or was cancelled. A job skipped by scope (docs, release) or because the change reaches no test counts as passed, so the release
   # pull request, which runs `scope` alone, still reports `check` as success.
   check:
@@ -412,11 +409,11 @@ jobs:
         id: scope
         env:
           EVENT: ${{ github.event_name }}
-          BASE: ${{ github.event_name == 'merge_group' && github.event.merge_group.base_sha || format('origin/{0}', github.base_ref) }}
+          BASE: origin/${{ github.base_ref }}
           HEAD_REF: ${{ github.head_ref }}
         run: |
           scope=browser
-          if [[ "$EVENT" == pull_request || "$EVENT" == merge_group ]]; then
+          if [[ "$EVENT" == pull_request ]]; then
             scope="$(scripts/change-scope.sh --browser "$BASE" || echo browser)"
             # The Release Please pull request changes version files only: its steps are skipped, the job still reports.
             if [[ "$EVENT" == pull_request && "$HEAD_REF" == release-please--* && "$(scripts/change-scope.sh "$BASE" || echo full)" == release ]]; then
@@ -463,7 +460,7 @@ jobs:
   # Alternates the PR base and head on this one runner, so the runner's speed cancels (scripts/bench-compare.mjs). It
   # always runs and reports; its steps are skipped (the job passes) when scripts/perf-scope.sh finds no path that can
   # move the step time. A failure is red at 15%: max(5%, 3 x the largest `--self` spread of 4.8%) (T18 of
-  # docs/designs/quality-gates-and-test-tiers.md). Never in the merge queue: it compares a PR with its base.
+  # docs/designs/quality-gates-and-test-tiers.md). Pull requests only: it compares a PR with its base.
   perf:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
