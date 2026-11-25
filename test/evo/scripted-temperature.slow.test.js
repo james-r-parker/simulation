@@ -12,6 +12,9 @@ import { populationAfter as guardPopulationAfter } from '../../scripts/lib/heat-
 // The scripted sweet-spot world is defined on the numbers before the step 5 adoption: at the step 5 defaults the
 // gentle forager's seed 1 holds at the start population (100; seeds 2 and 3 still grow) as the status effects chill and
 // stagger it, which is a property of the new world, not of the temperature rule this file pins.
+// The guard spreads its overrides over the sweet-spot world, so the specialisations key (the predator's drain, read
+// only with the sprint store on) is left out: it would replace the world's own predator multipliers.
+const PRE_FLAT = Object.fromEntries(Object.entries(preStep5()).filter(([key]) => key !== 'specialisations'));
 const COLD_START = 20;
 const COLD_TICKS = 3000;
 
@@ -19,10 +22,10 @@ const COLD_TICKS = 3000;
  * @param {keyof typeof SCRIPTED_CONTROLLERS} name a `SCRIPTED_CONTROLLERS` key
  * @returns {number} the mean population at the end over seeds 1 to 3
  */
-const pooled = (name) => [1, 2, 3].reduce((sum, seed) => sum + guardPopulationAfter(name, preStep5(), seed), 0) / 3;
+const pooled = (name) => [1, 2, 3].reduce((sum, seed) => sum + guardPopulationAfter(name, PRE_FLAT, seed), 0) / 3;
 
 /** @param {keyof typeof SCRIPTED_CONTROLLERS} name a `SCRIPTED_CONTROLLERS` key @returns {number} the population at the end (shared with the heat guard) */
-const populationAfter = (name) => guardPopulationAfter(name, preStep5());
+const populationAfter = (name) => guardPopulationAfter(name, PRE_FLAT);
 
 // Each run takes about 10 s alone and several times that under the gate's coverage instrumentation, so each case has
 // its own generous timeout.
