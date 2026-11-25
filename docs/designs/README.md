@@ -8,7 +8,7 @@ Add or change a status in the doc itself, then re-run. Conventions: [STYLE.md](S
 Lead docs in priority order - 1 is built next. Set in each doc's `**Priority:**` line; the evolution loop proposes re-ranks. Under a lead, the docs it schedules in step order (each doc's `**Scheduled by:**` line); the lead's own next phase comes first unless its Order section says otherwise.
 
 1. [Agent workflow](agent-workflow.md) - Workflow lead (dev tooling: cheap, and it speeds every step after it). Tooling that changes no sim rule; every session and every subagent pays the Phase 1 cost on its first token and every chunk ships through Phase 5, so both are built before the next training chunk
-    1. [Quality gates and test tiers](quality-gates-and-test-tiers.md) - the rest of Phase 3; its merge-queue step is a user step this lead's `ship.sh` relies on
+    1. [Quality gates and test tiers](quality-gates-and-test-tiers.md) - the rest of Phase 3
     2. [v6 tidy-up and docs](v6-tidy-up-and-docs.md) - the last legacy and docs tasks (T7 to T10), after the context diet has moved the docs
 2. [Metric noise](metric-noise.md) - Measurement lead (needed to judge every balance read after it). Phases 1, 4 and 6 code are built (registries.md Phases 1 and 3 built). Next: close gate 2 (T27 fresh 128-seed season-12 baseline after step 5, live defender metric; scout waits on alarm-calls.md), then Phase 5 (headline metrics)
     1. [Registries](registries.md) - the detector interface is built before metric-noise.md Phase 6 adds the role metrics, since each detector added today touches 12 to 22 files

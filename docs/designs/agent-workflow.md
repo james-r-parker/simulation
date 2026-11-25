@@ -15,10 +15,10 @@ This doc is a lead: it holds a rank in the Build queue, and the docs below are b
 
 Own work first: Phases 1 to 5 are built; Phase 6 is built except T40. Phase 7 is built (gate 7 of fair-chase.md "Before any training"). Next: the open reviews (T15 among them).
 
-| Step | Doc                                                                | Built when                                                                               |
-| ---- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
-| 1    | [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md) | The rest of Phase 3; its merge-queue step is a user step this lead's `ship.sh` relies on |
-| 2    | [v6-tidy-up-and-docs.md](v6-tidy-up-and-docs.md)                   | The last legacy and docs tasks (T7 to T10), after the context diet has moved the docs    |
+| Step | Doc                                                                | Built when                                                                            |
+| ---- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------- |
+| 1    | [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md) | The rest of Phase 3                                                                   |
+| 2    | [v6-tidy-up-and-docs.md](v6-tidy-up-and-docs.md)                   | The last legacy and docs tasks (T7 to T10), after the context diet has moved the docs |
 
 ## Scope
 
