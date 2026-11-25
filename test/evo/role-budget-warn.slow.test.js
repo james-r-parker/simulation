@@ -48,6 +48,11 @@ describe('the scout budget against the scenes', () => {
             const [scout, forager, hunter] = ['scout', 'forager', 'predator'].map((s) => roleParams(c, s));
             return budgetWarn(scout, forager, hunter, MODEL_DEFAULTS).cells.run.status;
         });
+        // Phase 6 reads the reactive hunter: no arm of evals/fair-chase/ closes on the warned forager (stalker has the most slack),
+        // while a scout that sees only 350 px does lose it
+        const c = preStep5Arena({ specialisations: { scout: { visionRange: 350 } } });
+        const [scout, forager, hunter] = ['scout', 'forager', 'predator'].map((s) => roleParams(c, s));
+        status.push(budgetWarn(scout, forager, hunter, MODEL_DEFAULTS).cells.run.status);
         expect(status).toContain('impossible');
         expect(status).toContain('ok');
     });

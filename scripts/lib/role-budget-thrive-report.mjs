@@ -13,7 +13,7 @@ function thriveLines(d) {
     return [
         `  meal cycle: ${n(cycle.cycleTicks)} ticks (digest ${n(cycle.cycleTicks - cycle.searchTicks, 0)}, then walking ${n(cycle.pathPerMeal, 0)} px of new food: ${n(cycle.handleTicks)} at the handling gait, ${n(cycle.grazeTicks)} grazing; density ${cycle.density.toExponential(3)}); income ${n(cycle.income, 0)}, net ${n(cycle.netPerMeal)} a meal, ${n(cycle.net, 2)} a tick`,
         `  split: gate ${n(split.gate, 0)} from ${n(split.birth, 0)} takes ${n(split.ticks, 0)} ticks of an adult life of ${split.life}; slack ${n(split.slack, 0)}`,
-        `  hunters met in a life ${n(hunters.encounters, 0)}; flight slack ${n(hunters.flight, 0)} px`,
+        `  hunters met in a life ${n(hunters.encounters, 0)}; flight slack ${n(hunters.flight, 0)} px; reactive hunter, broken bound ${n(hunters.reactiveBroken, 0)} px (perfect, straight ${n(hunters.perfectStraight, 0)} px, as context)`,
     ];
 }
 

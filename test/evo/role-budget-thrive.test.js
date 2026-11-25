@@ -91,10 +91,16 @@ describe('budgetThrive on a changed world', () => {
         expect(b.cells.breed.status).toBe('impossible');
     });
 
-    it('run is impossible when a hunter that closes on the forager is met in a life', () => {
-        const courser = JSON.parse(readFileSync('evals/fair-chase/courser.json', 'utf8'));
-        const b = thrive(courser);
+    it('run is impossible when a hunter that closes on the forager, the reactive one on the broken bound, is met in a life', () => {
+        // Phase 6 moved the cell from the perfect hunter's margin to the reactive one's, which is open on the courser's
+        // pair too; the same rule is read on a chase whose reactive broken margin is set above the flight slack
+        const config = createPreStep5Config({});
+        const hunter = ctxOf({}, 'predator');
+        const real = budgetChase(hunter.p, roleParams(config, 'forager'), model, { bearings: false });
+        const tiers = { ...real.tiers, reactive: { ...real.tiers.reactive, broken: 100 } };
+        const b = budgetThrive(ctxOf({}, 'forager'), { chase: { ...real, tiers }, hunter, model });
         expect(b.cells.run.status).toBe('impossible');
+        expect(b.cells.run.distance).toBe(100 - b.hunters.flight);
         expect(b.row.binding).toBe('run');
     });
 
