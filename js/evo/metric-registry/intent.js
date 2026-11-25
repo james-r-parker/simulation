@@ -163,6 +163,8 @@ export const INTENT = {
         unit: 'signals per 1k agent-ticks',
         direction: 'lower',
         nullWhen: ['no agent-ticks'],
+        expectedFlat:
+            'near zero at the defaults: an alarm call fires on 1 or 2 of 128 seeds and nowhere else (E276, alarm-calls.md)',
         arithmetic: 'test/evo/metrics-intent.test.js',
         source: 'test/evo/metric-source-intent-calls.test.js',
     }),
@@ -222,6 +224,8 @@ export const INTENT = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no agent-ticks'],
+        expectedFlat:
+            'near zero at the defaults: an alarm call fires on 1 or 2 of 128 seeds and nowhere else (E276, alarm-calls.md)',
         arithmetic: 'test/evo/observer-alarm-reach.test.js',
         source: 'test/evo/metric-source-intent-calls.test.js',
     }),
