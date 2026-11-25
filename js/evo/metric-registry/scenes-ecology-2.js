@@ -124,7 +124,7 @@ export const SCENES_ECOLOGY_2 = {
         counts: 'Mean distance of an alive agent to the nearest refuge ring edge or cold-margin edge at winter checkpoints minus the same mean at other checkpoints.',
         unit: 'px',
         direction: 'watch',
-        intended: 'higher',
+        intended: 'lower',
         nullWhen: [
             'no winter checkpoint and no other checkpoint after burn-in with eras on',
             'no winter and no other checkpoint with an alive agent after burn-in',
