@@ -18,7 +18,7 @@ Lead docs in priority order - 1 is built next. Set in each doc's `**Priority:**`
 3. [Fair chase](fair-chase.md) - Hunting lead (the world changes first: body-genes and status-effects adoption, the role budget, the chase). The `hunt` rung passes on 0 of 16 offsets after twelve falsified trainer levers (E191 to E232), and the live world's hunters fail the same way; no trainer, recruitment or champion work can pass a chase the bodies do not allow
     1. [Body genes](body-genes.md) - Phase 3 chooses and screens the trait spans and paired cost exponents with the calculator before adoption and training
     2. [Status effects](status-effects.md) - Phase 3 verifies and adopts the chosen effect numbers (`step5-d.json`) alongside body-genes.md Phase 3, and Phase 5 closes the remaining speed regression
-    3. [Role budget](role-budget.md) - gate 1 of fair-chase.md "Before any training": Phases 1 to 5 are built; open formula/defender gaps (T12a, T15a, T24a) and reviews remain before Step 5 adoption
+    3. [Role budget](role-budget.md) - gate 1 of fair-chase.md "Before any training": Phases 1 to 5 are built; open formula/defender gaps (T24a) and reviews remain before Step 5 adoption
     4. [Senses and motor](senses-and-motor.md) - the chase envelope runs (T10 to T12) and Phase 4 are read on the bodies the sprint store leaves
     5. [Chase physics and terrain](chase-physics.md) - heading inertia and terrain, screened on those bodies; `speedTurnDrag` widens the predator's sprint circle
     6. [Stillness](stillness.md) - the ambusher and the freezing prey; it changes the ray march every scene reads, so it follows the store and the turn
