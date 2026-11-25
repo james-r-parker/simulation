@@ -1,7 +1,7 @@
 // `git merge origin/<base>` that settles conflicts in generated files by itself: ship.sh step 2 and `npm run sync` both
 // call it. A conflict is settled only when every conflicted path is one of these, and then the merge completes:
 //   - a file a generator owns whole (scripts/lib/regen.mjs): take our side and regenerate;
-//   - the prose above the generated index of docs/designs/sim-notes.md: a three-way merge of the prose, then regenerate;
+//   - the prose above the generated index of docs/designs/sim-notes.md: a three-way merge of the prose, then regenerate.
 // Any other conflicted path leaves the merge in progress, exactly as a plain `git merge` does.
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
