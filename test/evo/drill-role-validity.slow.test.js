@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { preStep5 } from '../helpers/pre-step5.js';
 import { roleDrillValidity } from '../../js/evo/drill-role-validity.js';
 import { DEFEND_CALLER } from '../../js/evo/drill-role-defend.js';
 import { WARN_HERD } from '../../js/evo/drill-role-warn.js';
@@ -7,15 +8,15 @@ import { MAKE_A_LIVING } from '../../js/evo/drill-role-living.js';
 import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 
 /** The shove on and the damping the row's search found, so the defence is reachable. */
-const REACHABLE = { defenderRepelEnergy: 40, defenderRepelImpulse: 4, damping: 0.7125 };
+const REACHABLE = preStep5({ defenderRepelEnergy: 40, defenderRepelImpulse: 4, damping: 0.7125 });
 /** Bites of 400 and a faster sprint: the hunter's `eat` step is possible. */
-const LIVING = { biteEnergy: 400, specialisations: { predator: { sprintBoost: 2.2 } } };
+const LIVING = preStep5({ biteEnergy: 400, specialisations: { predator: { sprintBoost: 2.2 } } });
 
 describe('role drill validity at the trial count of a gate checkpoint', () => {
     it(
         'defend-caller at the defaults has no passable bar: the row is impossible and the reference wins none of 64',
         () => {
-            const v = roleDrillValidity(DEFEND_CALLER, { trials: 64 });
+            const v = roleDrillValidity(DEFEND_CALLER, { trials: 64, config: preStep5() });
             expect(v.bar.passable).toBe(false);
             expect(v.reference.wins).toBe(0);
             expect(v.agreesWithRow).toBe(true);
@@ -35,7 +36,7 @@ describe('role drill validity at the trial count of a gate checkpoint', () => {
     it(
         'warn-herd at the defaults: the reference wins all 64 and the random brains clearly fewer',
         () => {
-            const v = roleDrillValidity(WARN_HERD, { trials: 64 });
+            const v = roleDrillValidity(WARN_HERD, { trials: 64, config: preStep5() });
             expect(v).toMatchObject({ valid: true, reference: { wins: 64 } });
             expect(v.random.winShare).toBeLessThan(0.5);
             expect(v.random.edgeLow).toBeGreaterThan(0.3);
@@ -46,7 +47,7 @@ describe('role drill validity at the trial count of a gate checkpoint', () => {
     it(
         'make-a-living at the defaults has no passable bar: the row is impossible at breed and the reference wins none of 64',
         () => {
-            const v = roleDrillValidity(MAKE_A_LIVING, { trials: 64 });
+            const v = roleDrillValidity(MAKE_A_LIVING, { trials: 64, config: preStep5() });
             expect(v.bar.passable).toBe(false);
             expect(v).toMatchObject({ agreesWithRow: true, valid: false, reference: { wins: 0 } });
         },
@@ -65,7 +66,8 @@ describe('role drill validity at the trial count of a gate checkpoint', () => {
     it(
         'clear-herd at the defaults: the forager and the scout are valid; the reproducer and the defender rows are impossible at run, yet the reference clears 64 of 64',
         () => {
-            const read = (/** @type {string} */ spec) => roleDrillValidity(CLEAR_HERD_BY_SPEC[spec], { trials: 64 });
+            const read = (/** @type {string} */ spec) =>
+                roleDrillValidity(CLEAR_HERD_BY_SPEC[spec], { trials: 64, config: preStep5() });
             expect(HERD_SPECS).toEqual(['forager', 'reproducer', 'scout', 'defender']);
             for (const spec of ['forager', 'scout']) {
                 const v = read(spec);

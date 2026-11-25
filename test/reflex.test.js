@@ -272,7 +272,7 @@ describe('runReflex', () => {
         const json = JSON.parse(readFileSync(out, 'utf8'));
         expect(json.rows).toHaveLength(2);
         expect(json.bars['flee-threat'].reference).toBeGreaterThanOrEqual(0);
-        expect(json.barSources.find((/** @type {any} */ b) => b.bar === 'role.turnAway.forager').source).toBe('budget');
+        expect(json.barSources.find((/** @type {any} */ b) => b.bar === 'role.herdTurn.forager').source).toBe('budget');
     });
 });
 

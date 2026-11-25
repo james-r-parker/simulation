@@ -53,9 +53,9 @@ describe('check.yml perf job', () => {
     const next = text.slice(start + 1).search(/\n {2}[a-z][a-z-]*:\n/);
     const job = next === -1 ? text.slice(start) : text.slice(start, start + 1 + next);
 
-    it('runs on pull requests only, advisory, and always reports', () => {
+    it('runs on pull requests only and gates (quality-gates T18 removed the advisory flag)', () => {
         expect(job).toContain("if: github.event_name == 'pull_request'");
-        expect(job).toContain('continue-on-error: true');
+        expect(job).not.toContain('continue-on-error');
     });
 
     it('skips its install and compare steps when the scope is none', () => {

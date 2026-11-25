@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { arenaConfig } from '../../js/evo/chase-arena.js';
+import { preStep5Arena } from '../helpers/pre-step5.js';
 import { MODEL_DEFAULTS } from '../../js/evo/role-budget-model.js';
 import { roleParams } from '../../js/evo/role-budget-params.js';
 import { hunterXs } from '../../js/evo/role-budget-smoke.js';
@@ -8,7 +8,7 @@ import { budgetWarn, warnTimeline } from '../../js/evo/role-budget-warn.js';
 
 /** @param {Record<string, any>} overrides @returns {{scout: any, forager: any, hunter: any}} the bodies of the row */
 const bodiesOf = (overrides) => {
-    const config = arenaConfig(overrides);
+    const config = preStep5Arena(overrides);
     const [scout, forager, hunter] = ['scout', 'forager', 'predator'].map((s) => roleParams(config, s));
     return { scout, forager, hunter };
 };
@@ -31,8 +31,19 @@ describe('warnTimeline at the defaults', () => {
         const { hunter } = bodiesOf({});
         const sprint = hunterXs(hunter, { speed: hunter.cap.cruise, ticks: 11 });
         expect(chain.gapAtStart).toBe(445 - 8 * 5);
-        expect(chain.gapAtRun).toBeCloseTo(chain.gapAtStart - sprint[11], 9);
         expect(chain.gapAtRun).toBeLessThan(445 - 8 * 16);
+        expect(chain.gapAtRun).toBeGreaterThan(chain.gapAtStart - sprint[11]);
+    });
+
+    it('has the forager gain about 25 px on the hunter while it turns, and be flying when it runs (T15a)', () => {
+        const { hunter } = bodiesOf({});
+        const sprint = hunterXs(hunter, { speed: hunter.cap.cruise, ticks: 11 });
+        const gain = chain.gapAtRun - (chain.gapAtStart - sprint[11]);
+        expect(gain).toBeGreaterThan(20);
+        expect(gain).toBeLessThan(30);
+        expect(chain.gapAtRun).toBeCloseTo(314.64, 1);
+        expect(chain.flight?.preyStart.speed).toBeCloseTo(5.84, 2);
+        expect(chain.flight?.preyStart.offset).toBeCloseTo(0.075, 3);
     });
 
     it('a tick of delay before the forager acts costs 8 px, one while it turns or waits costs the hunter sprint travel', () => {
@@ -40,9 +51,10 @@ describe('warnTimeline at the defaults', () => {
         const { hunter } = bodiesOf({});
         const xs = hunterXs(hunter, { speed: hunter.cap.cruise, ticks: 13 });
         expect(at({ see: 3 }).gapAtStart).toBe(chain.gapAtStart - 24);
-        expect(at({ hear: 3 }).gapAtRun).toBeCloseTo(chain.gapAtRun - 24, 9);
-        expect(at({ turn: 2 }).gapAtRun).toBeCloseTo(chain.gapAtStart - xs[13], 9);
-        expect(at({ run: 2 }).gapAtRun).toBeCloseTo(chain.gapAtStart - xs[13], 9);
+        expect(at({ hear: 3 }).gapAtRun).toBeCloseTo(chain.gapAtRun - 24, 0);
+        // a delay holds the forager still while the hunter sprints on: the gap closes by the sprint travel of those ticks
+        expect(at({ turn: 2 }).gapAtRun).toBeCloseTo(chain.gapAtRun - (xs[13] - xs[11]), 0);
+        expect(at({ run: 2 }).gapAtRun).toBeCloseTo(at({ turn: 2 }).gapAtRun, 9);
         expect(at({ run: 2 }).gapAtRun).toBeLessThan(chain.gapAtRun - 16);
         expect(at({ hear: 49 }).heardTick).toBe(-1);
         expect(at({ hear: 48 }).heardTick).toBeGreaterThan(0);
@@ -50,12 +62,12 @@ describe('warnTimeline at the defaults', () => {
 });
 
 describe('budgetWarn', () => {
-    it('at the defaults the warning beats the forager own sight by 7 ticks, and the hunter sprinting through the turn leaves it 3', () => {
+    it('at the defaults the warning beats the forager own sight by 7 ticks, and the turned, flying forager leaves 16 more', () => {
         const b = budget();
-        expect(margins(b)).toEqual([12, 5, 7, 3, 3]);
-        expect(b.row.status).toBe('tight');
-        expect(b.binding).toBe('turn');
-        expect(b.gaps).toEqual({ own: 345, catchable: expect.closeTo(242.67, 1), speed: 8 });
+        expect(margins(b)).toEqual([12, 28, 7, 16, 16]);
+        expect(b.row.status).toBe('ok');
+        expect(b.binding).toBe('warn');
+        expect(b.gaps).toEqual({ own: 345, catchable: expect.closeTo(86.3, 0), speed: 8 });
         expect(b.cells.run.distance).toBeCloseTo(b.chain.gapAtRun - b.gaps.catchable, 6);
     });
 

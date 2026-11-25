@@ -294,8 +294,8 @@ describe('spawnAgent entrantEnergy', () => {
 
     it('is poor by default and means initialEnergy at 0', () => {
         const poor = build({ initialAgents: 1 });
-        expect(poor.config.entrantEnergy).toBe(200);
-        expect(energyOf(poor, spawnAgent(poor, testPolicy, BORN_CAUSE.FLOOR))).toBe(200);
+        expect(poor.config.entrantEnergy).toBe(700);
+        expect(energyOf(poor, spawnAgent(poor, testPolicy, BORN_CAUSE.FLOOR))).toBe(700);
         const same = build({ entrantEnergy: 0, initialAgents: 1 });
         expect(energyOf(same, spawnAgent(same, testPolicy, BORN_CAUSE.FLOOR))).toBe(same.config.initialEnergy);
     });

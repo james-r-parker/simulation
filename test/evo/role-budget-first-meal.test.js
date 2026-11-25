@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createConfig } from '../../js/sim/config.js';
+import { createPreStep5Config } from '../helpers/pre-step5.js';
 import { budgetFirstMeal, nearestEdge } from '../../js/evo/role-budget-first-meal.js';
 import { contextOf } from '../../js/evo/role-budget-forage.js';
 import { MODEL_DEFAULTS } from '../../js/evo/role-budget-model.js';
@@ -8,7 +8,7 @@ import { createRng, nextFloat } from '../../js/sim/rng.js';
 
 /** @param {Record<string, any>} overrides @param {string} [spec] @returns {ReturnType<typeof budgetFirstMeal>} */
 function firstMeal(overrides, spec = 'forager') {
-    const config = createConfig(overrides);
+    const config = createPreStep5Config(overrides);
     const p = roleParams(config, spec, {}, { age: 'juvenile' });
     return budgetFirstMeal(contextOf(config, spec, p), { model: MODEL_DEFAULTS });
 }
@@ -102,7 +102,7 @@ describe('the first meal where the numbers move', () => {
     });
 
     it('a hunter hunts prey: the source is the prey alive, with its size, and the eat step is its net per chase', () => {
-        const config = createConfig({});
+        const config = createPreStep5Config({});
         const p = roleParams(config, 'predator', {}, { age: 'juvenile' });
         const b = budgetFirstMeal(contextOf(config, 'predator', p), {
             model: MODEL_DEFAULTS,
@@ -115,7 +115,7 @@ describe('the first meal where the numbers move', () => {
     });
 
     it('a hunter that loses energy on every chase has no way to climb back: eat is impossible', () => {
-        const config = createConfig({});
+        const config = createPreStep5Config({});
         const p = roleParams(config, 'predator', {}, { age: 'juvenile' });
         const b = budgetFirstMeal(contextOf(config, 'predator', p), {
             model: MODEL_DEFAULTS,

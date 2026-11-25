@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { arenaConfig } from '../../js/evo/chase-arena.js';
+import { preStep5Arena } from '../helpers/pre-step5.js';
 import { MODEL_DEFAULTS } from '../../js/evo/role-budget-model.js';
 import { roleParams } from '../../js/evo/role-budget-params.js';
 import { burstTicks } from '../../js/evo/role-budget-kinematics.js';
@@ -9,7 +9,7 @@ import { chaseTimeline } from '../../js/evo/role-budget-timeline.js';
 
 const arm = (/** @type {any} */ name) => JSON.parse(readFileSync(`evals/fair-chase/${name}.json`, 'utf8'));
 const pair = (/** @type {any} */ overrides, prey = 'forager') => {
-    const config = arenaConfig(overrides);
+    const config = preStep5Arena(overrides);
     return { hunter: roleParams(config, 'predator'), prey: roleParams(config, prey) };
 };
 const model = MODEL_DEFAULTS;

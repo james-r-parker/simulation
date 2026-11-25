@@ -3,7 +3,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { cloneWithNoisePolicy } from '../../js/sim/birth-policy.js';
-import { createConfig } from '../../js/sim/config.js';
+import { createPreStep5Config } from '../helpers/pre-step5.js';
 import { GROUP_LANES, compileGroups, foldGroup } from '../../js/sim/effect-group.js';
 import { LEVEL, LANE_ID } from '../../js/sim/effect-refs.js';
 import {
@@ -57,7 +57,7 @@ function compareSlot(world, slot, differ) {
  */
 function compareRun(over) {
     const policy = cloneWithNoisePolicy();
-    const world = createWorld(createConfig({ seed: 9, initialAgents: 40, maxAgents: 60, ...over }), policy);
+    const world = createWorld(createPreStep5Config({ seed: 9, initialAgents: 40, maxAgents: 60, ...over }), policy);
     let compared = 0;
     /** @type {string[]} */
     const differ = [];
@@ -89,7 +89,7 @@ describe('the group reads', () => {
 
     it('read each effect the active rules of the group name, the temperature ones by the band read', () => {
         const world = createWorld(
-            createConfig({ seed: 9, initialAgents: 4, minAgents: 4, maxAgents: 8 }),
+            createPreStep5Config({ seed: 9, initialAgents: 4, minAgents: 4, maxAgents: 8 }),
             cloneWithNoisePolicy(),
         );
         const motion = world.effectGroups[GROUP.MOTION];
@@ -111,7 +111,7 @@ describe('the group reads', () => {
 
     it('reads the heat lanes through the adrenaline, rally and huddle effects once their numbers are on', () => {
         const world = createWorld(
-            createConfig({ seed: 9, initialAgents: 4, minAgents: 4, maxAgents: 8, ...ON, huddleWarmth: 0.1 }),
+            createPreStep5Config({ seed: 9, initialAgents: 4, minAgents: 4, maxAgents: 8, ...ON, huddleWarmth: 0.1 }),
             cloneWithNoisePolicy(),
         );
         expect(Array.from(world.effectGroups[GROUP.HEAT].effects)).toEqual(
@@ -121,7 +121,7 @@ describe('the group reads', () => {
 
     it('folds every lane of the group in the one call, so liveIn reads the folded row and folds nothing', () => {
         const world = createWorld(
-            createConfig({ seed: 9, initialAgents: 4, minAgents: 4, maxAgents: 8 }),
+            createPreStep5Config({ seed: 9, initialAgents: 4, minAgents: 4, maxAgents: 8 }),
             cloneWithNoisePolicy(),
         );
         const slot = world.alive.indexOf(1);

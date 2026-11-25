@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
 import { createConfig } from '../../js/sim/config.js';
+import { createPreStep5Config, preStep5 } from '../helpers/pre-step5.js';
 import { createRng, fork } from '../../js/sim/rng.js';
 import { SPEC } from '../../js/sim/specs.js';
-import { arenaConfig } from '../../js/evo/chase-arena.js';
+import { preStep5Arena } from '../helpers/pre-step5.js';
 import { layerArena } from '../../js/evo/drill-body-rules.js';
 import {
     PARKED_GAP,
@@ -19,7 +20,7 @@ import { drillSubject, randomBrains } from '../../js/evo/drill.js';
 import { playTrial } from '../../js/evo/memory-probe-run.js';
 import { playWarning } from '../../js/evo/role-scenes-warn.js';
 
-const CONFIG = layerArena({}, ROLE_ARENA);
+const CONFIG = layerArena(preStep5(), ROLE_ARENA);
 const mute = { name: 'mute', id: 0, spec: SPEC.SCOUT, weights: null, act: () => {} };
 /** A scout that holds ALARM on from the first tick, whatever it sees. */
 const spammer = { name: 'spammer', id: 0, spec: SPEC.SCOUT, weights: null, act: lateCaller(0) };
@@ -48,7 +49,7 @@ describe('the warn-herd drill', () => {
     });
 
     it('parks the hunter far behind the forager while the field is empty, and the scene starts where it appears', () => {
-        const plan = WARN_HERD.plan(fork(createRng(1), 'drill:warn-herd'), 400, createConfig(ROLE_ARENA));
+        const plan = WARN_HERD.plan(fork(createRng(1), 'drill:warn-herd'), 400, createPreStep5Config(ROLE_ARENA));
         const [hunter, forager, scout] = /** @type {any[]} */ (plan.stage.agents);
         expect([hunter.role, forager.role, scout.role]).toEqual(['stalker', 'herd', 'subject']);
         expect([hunter.spec, forager.spec, scout.spec]).toEqual([SPEC.PREDATOR, SPEC.FORAGER, SPEC.SCOUT]);
@@ -58,7 +59,7 @@ describe('the warn-herd drill', () => {
     });
 
     it('stages the forager side-on to the hunter and the scout facing it, as the scene of playWarning', () => {
-        const plan = warnPlan(createConfig(ROLE_ARENA), { angle: 0, side: 1 });
+        const plan = warnPlan(createPreStep5Config(ROLE_ARENA), { angle: 0, side: 1 });
         const [, forager, scout] = /** @type {any[]} */ (plan.stage.agents);
         const hunter = { x: forager.x - 445, y: forager.y };
         const dist = (/** @type {any} */ a, /** @type {any} */ b) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -68,7 +69,7 @@ describe('the warn-herd drill', () => {
     });
 
     it('plays the scene of playWarning for the oracle scout, a quiet start later: the same hearing and first move', () => {
-        const scene = playWarning(arenaConfig(), { reaction: 2, threshold: 0.1, side: 150, goAt: 5 });
+        const scene = playWarning(preStep5Arena(), { reaction: 2, threshold: 0.1, side: 150, goAt: 5 });
         for (const [angle, side] of /** @type {[number, 1 | -1][]} */ ([
             [0, 1],
             [2.2, -1],
@@ -116,16 +117,18 @@ describe('the warn-herd drill', () => {
     });
 
     it('is won by the reference and not by every random brain, and replays from its seed', () => {
-        const a = drillSubject(WARN_HERD, scoutReference(), { trials: 4, seed: 3 });
+        const a = drillSubject(WARN_HERD, scoutReference(), { trials: 4, seed: 3, config: preStep5() });
         expect(a.wins).toBe(4);
-        expect(drillSubject(WARN_HERD, scoutReference(), { trials: 4, seed: 3 })).toEqual(a);
-        const wins = randomBrains(WARN_HERD).map((brain) => drillSubject(WARN_HERD, brain, { trials: 4 }).wins);
+        expect(drillSubject(WARN_HERD, scoutReference(), { trials: 4, seed: 3, config: preStep5() })).toEqual(a);
+        const wins = randomBrains(WARN_HERD, { config: preStep5() }).map(
+            (brain) => drillSubject(WARN_HERD, brain, { trials: 4, config: preStep5() }).wins,
+        );
         expect(wins.reduce((sum, w) => sum + w, 0)).toBeLessThan(16);
     });
 
     it('is won by a scout that holds ALARM on in no trial, and by one that never calls in none', () => {
-        expect(drillSubject(WARN_HERD, spammer, { trials: 6, seed: 3 }).wins).toBe(0);
-        expect(drillSubject(WARN_HERD, mute, { trials: 6, seed: 3 }).wins).toBe(0);
+        expect(drillSubject(WARN_HERD, spammer, { trials: 6, seed: 3, config: preStep5() }).wins).toBe(0);
+        expect(drillSubject(WARN_HERD, mute, { trials: 6, seed: 3, config: preStep5() }).wins).toBe(0);
     });
 });
 

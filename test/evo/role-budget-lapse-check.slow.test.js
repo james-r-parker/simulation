@@ -4,15 +4,15 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
-import { arenaConfig } from '../../js/evo/chase-arena.js';
+import { preStep5Arena } from '../helpers/pre-step5.js';
 import { TOLERANCE } from '../../js/evo/role-budget-check.js';
 import { formulaLapse, simLapse } from '../../js/evo/role-budget-lapse-check.js';
 
 const courser = JSON.parse(readFileSync('evals/fair-chase/courser.json', 'utf8'));
 const configs = [
-    ['defaults', arenaConfig()],
-    ['courser', arenaConfig(courser)],
-    ['weak sprint (lapses)', arenaConfig({ specialisations: { predator: { sprintBoost: 0.2 } } })],
+    ['defaults', preStep5Arena()],
+    ['courser', preStep5Arena(courser)],
+    ['weak sprint (lapses)', preStep5Arena({ specialisations: { predator: { sprintBoost: 0.2 } } })],
 ];
 const scenes = ['forager', 'scout'].flatMap((prey) =>
     [100, 200, 300, 400, 600].map((distance) => ({ prey, distance })),

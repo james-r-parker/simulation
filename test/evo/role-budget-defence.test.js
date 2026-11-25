@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { arenaConfig } from '../../js/evo/chase-arena.js';
+import { preStep5Arena } from '../helpers/pre-step5.js';
 import { defenceTimeline } from '../../js/evo/role-budget-defence.js';
 import { roleParams } from '../../js/evo/role-budget-params.js';
 
@@ -15,7 +15,7 @@ const SLOW = {
 
 /** @param {Record<string, any>} [overrides] config overrides @returns {import('../../js/evo/role-budget-params.js').RoleParams[]} */
 const bodies = (overrides = {}) => {
-    const config = arenaConfig(overrides);
+    const config = preStep5Arena(overrides);
     return ['predator', 'forager', 'defender'].map((name) => roleParams(config, name));
 };
 const play = (/** @type {Record<string, any>} */ config, /** @type {Record<string, any>} */ options = {}) => {
@@ -96,5 +96,32 @@ describe('defenceTimeline', () => {
         const free = play({ strikeMissCost: 0 }, { absent: true });
         const paid = play({ strikeMissCost: 2 }, { absent: true });
         expect(paid.hunterEnergy).toBeLessThan(free.hunterEnergy);
+    });
+
+    it('a hunter bites the defender dead when it touches it, and lies up predatorRestTicks before it goes on to the caller', () => {
+        const run = play(SLOW, { side: 150 });
+        const killed = /** @type {number} */ (run.defenderKillTick);
+        expect(killed).toBe(111);
+        expect(run.killTick).toBe(201);
+        const unrested = play({ ...SLOW, predatorRestTicks: 0 }, { side: 150 });
+        expect(/** @type {number} */ (run.killTick) - /** @type {number} */ (unrested.killTick)).toBeGreaterThanOrEqual(
+            50,
+        );
+    });
+
+    it('kills no defender it never touches, and none when there is none', () => {
+        expect(play({}).defenderKillTick).toBeNull();
+        expect(play(SLOW, { absent: true }).defenderKillTick).toBeNull();
+    });
+
+    it('a shove that staggers the hunter closes its bite and slows it, so the guard on its line lives', () => {
+        const between = { posture: /** @type {const} */ ('between'), side: 87 };
+        const free = play(SLOW, between);
+        const staggered = play({ ...SLOW, staggerThrust: 0.5 }, between);
+        expect(free.defenderKillTick).not.toBeNull();
+        expect(
+            staggered.defenderKillTick === null ||
+                staggered.defenderKillTick > /** @type {number} */ (free.defenderKillTick),
+        ).toBe(true);
     });
 });

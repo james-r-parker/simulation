@@ -3,7 +3,7 @@
 
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { arenaConfig } from '../../js/evo/chase-arena.js';
+import { preStep5Arena } from '../helpers/pre-step5.js';
 import { MAX_TICKS, chaseTimeline as timeline } from '../../js/evo/role-budget-timeline.js';
 import { roleParams } from '../../js/evo/role-budget-params.js';
 
@@ -12,7 +12,7 @@ const chaseTimeline = (hunter, prey, options) => timeline(hunter, prey, options)
 
 const overrides = JSON.parse(readFileSync('evals/fair-chase/courser.json', 'utf8'));
 const bodies = (extra = {}) => {
-    const config = arenaConfig(extra);
+    const config = preStep5Arena(extra);
     return { hunter: roleParams(config, 'predator'), prey: roleParams(config, 'forager'), config };
 };
 const courser = bodies(overrides);
@@ -133,7 +133,7 @@ describe('chaseTimeline', () => {
     });
 
     it('refuses the bite when the size gate fails and reports it', () => {
-        const small = roleParams(arenaConfig({ huntSizeRatio: 3 }), 'predator');
+        const small = roleParams(preStep5Arena({ huntSizeRatio: 3 }), 'predator');
         const run = chaseTimeline(small, defaults.prey, { gap: 60, prey: { sprint: 'always', jink: 0 } });
         expect(run.contactTick).toBe(1);
         expect(run.gate).toBe(false);
@@ -204,5 +204,26 @@ describe('chaseTimeline', () => {
         const run = straight(defaults, 300);
         expect(run.heat).toBeGreaterThan(0);
         expect(run.heat).toBeLessThanOrEqual(run.ticks * defaults.hunter.heat.gainMove);
+    });
+});
+
+describe('the prey start (T15a)', () => {
+    const run = (/** @type {any} */ preyStart) =>
+        chaseTimeline(courser.hunter, courser.prey, { gap: 300, prey: { sprint: 'always', jink: 0 }, preyStart });
+
+    it('starts a prey that was standing, facing away, unless told otherwise', () => {
+        expect(run(undefined)).toEqual(run({ speed: 0, offset: 0 }));
+    });
+
+    it('a prey already flying away is reached later than one that was standing', () => {
+        expect(/** @type {number} */ (run({ speed: 6, offset: 0 }).contactTick)).toBeGreaterThan(
+            /** @type {number} */ (run(undefined).contactTick),
+        );
+    });
+
+    it('a prey whose heading is off to the side is reached sooner than one flying straight away', () => {
+        const away = run({ speed: 6, offset: 0 }).contactTick ?? Infinity;
+        const aside = run({ speed: 6, offset: Math.PI / 2 }).contactTick ?? Infinity;
+        expect(aside).toBeLessThan(away);
     });
 });

@@ -1,0 +1,26 @@
+{
+  "id": "E275",
+  "plan": "body-genes.md",
+  "task": "T15",
+  "stream": "body-genes",
+  "date": "2026-11-25",
+  "branch": "feat/body-genes-t15-read",
+  "hypothesis": "The body-genes menu with its costs, the first-meal numbers and the social numbers each pass the keep rule on 64 matched seeds against the step5-b control, and step5-d passes against the current defaults.",
+  "prediction": "Written before the run (body-genes.md, E-BG-3). No guard reads WORSE for fat-only, first-meal or social against control, nor for step5-d against defaults; fat-only reads eval.gene_sd.speed above 0.05 and eval.gene_edge_share under 0.1.",
+  "targets": ["guard.keep_rule", "eval.gene_sd.speed", "eval.hunter_catches_per_1k"],
+  "before": "control (step5-b plus the shove) and defaults (main today), 64 seeds of 200000 ticks, live policy",
+  "after": "fat-only WORSE: hunter_catches_per_1k 1.35 to 1.188 (-12.0%), gene_sd.speed 0.019. first-meal and social no harm. step5-d against defaults no harm. step5-e (step5-d without the fat-only block) against defaults no harm: cold stress -85%, collision deaths -15%, births +7%, hunter catches -3.8% (no-difference), median lifespan -9.6%.",
+  "verdicts": {
+    "fat-only guard.keep_rule": "worse",
+    "fat-only eval.hunter_catches_per_1k": "worse",
+    "first-meal guard.keep_rule": "no-difference",
+    "social guard.keep_rule": "no-difference",
+    "step5-d guard.keep_rule": "no-difference",
+    "step5-e guard.keep_rule": "no-difference"
+  },
+  "effect": "worse",
+  "note": "T18b: the new spans stay at 0 and fatSlow, sizeTurn and burnThrust off; the guard named is eval.hunter_catches_per_1k. step5-e (evals/role-budget/step5-e.json) is the adopted candidate (T18). The spread leg is falsified too: no drift moves the speed gene in 200000 ticks.",
+  "kind": "compare",
+  "outcome": "falsified",
+  "reports": ["evals/decisions/E275-body-genes-keep-rule/results.md"]
+}

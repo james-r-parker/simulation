@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { arenaConfig } from '../../js/evo/chase-arena.js';
+import { preStep5Arena } from '../helpers/pre-step5.js';
 import { bodyTable } from '../../js/evo/chase-body.js';
 import {
     burstTicks,
@@ -42,8 +42,8 @@ describe('speedStep and steadySpeed', () => {
 
 describe('ticksToSpeed', () => {
     it('counts the ticks from rest to the cap, 32 for cruise and sprint of both bodies', () => {
-        const prey = roleParams(arenaConfig(), 'forager');
-        const hunter = roleParams(arenaConfig(), 'predator');
+        const prey = roleParams(preStep5Arena(), 'forager');
+        const hunter = roleParams(preStep5Arena(), 'predator');
         for (const p of [prey, hunter]) {
             expect(ticksToSpeed(p.thrust.cruise, p.damping, p.cap.cruise)).toBe(32);
             expect(ticksToSpeed(p.thrust.sprint, p.damping, p.cap.sprint)).toBe(32);
@@ -60,7 +60,7 @@ describe('ticksToSpeed', () => {
 
 describe('turnCircle, swingTicks and turnLoop', () => {
     it('settles at a d / sqrt(1 - 2 d cos w + d^2), the radius that over w, never above the cap', () => {
-        const prey = roleParams(arenaConfig(), 'forager');
+        const prey = roleParams(preStep5Arena(), 'forager');
         const cruise = turnCircle(prey.thrust.cruise, prey.damping, prey.turnRate.start);
         expect(cruise.speed).toBeCloseTo(3.231, 3);
         expect(cruise.radius).toBeCloseTo(21.54, 2);
@@ -69,7 +69,7 @@ describe('turnCircle, swingTicks and turnLoop', () => {
 
     it('agrees with the body table of the sim inside 0.5%, at the defaults and on the courser arm', () => {
         for (const overrides of [{}, courser]) {
-            const config = arenaConfig(overrides);
+            const config = preStep5Arena(overrides);
             for (const row of bodyTable(config)) {
                 const p = roleParams(config, row.name);
                 const cruise = turnCircle(p.thrust.cruise, p.damping, p.turnRate.start, p.cap.cruise);
@@ -86,7 +86,7 @@ describe('turnCircle, swingTicks and turnLoop', () => {
     });
 
     it('turns the hunter through an angle in ceil(angle / rate) ticks and loses speed doing it', () => {
-        const hunter = roleParams(arenaConfig(), 'predator');
+        const hunter = roleParams(preStep5Arena(), 'predator');
         const quarter = turnLoop(hunter, Math.PI / 2);
         expect(quarter.ticks).toBe(Math.ceil(Math.PI / 2 / hunter.turnRate.start));
         expect(quarter.endSpeed).toBeLessThan(hunter.cap.cruise);
@@ -97,7 +97,7 @@ describe('turnCircle, swingTicks and turnLoop', () => {
 });
 
 describe('the sprint store', () => {
-    const config = arenaConfig(courser);
+    const config = preStep5Arena(courser);
     const prey = roleParams(config, 'forager');
     const hunter = roleParams(config, 'predator');
 
@@ -116,7 +116,7 @@ describe('the sprint store', () => {
     });
 
     it('is infinite with the store off, and refills nothing', () => {
-        const off = roleParams(arenaConfig(), 'forager');
+        const off = roleParams(preStep5Arena(), 'forager');
         expect(burstTicks(off.store)).toBe(Infinity);
         expect(emptyTicks(off.store)).toBe(Infinity);
         expect(refillTicks(off.store)).toBe(0);

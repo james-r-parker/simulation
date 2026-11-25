@@ -462,14 +462,12 @@ jobs:
 
   # Alternates the PR base and head on this one runner, so the runner's speed cancels (scripts/bench-compare.mjs). It
   # always runs and reports; its steps are skipped (the job passes) when scripts/perf-scope.sh finds no path that can
-  # move the step time. Advisory (continue-on-error) for two weeks after it merges, then T18 of
-  # docs/designs/quality-gates-and-test-tiers.md makes it required at max(5%, 3 x measured noise).
-  # Never in the merge queue: it compares a PR with its base, and is not a required check.
+  # move the step time. A failure is red at 15%: max(5%, 3 x the largest `--self` spread of 4.8%) (T18 of
+  # docs/designs/quality-gates-and-test-tiers.md). Never in the merge queue: it compares a PR with its base.
   perf:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v7
         with:
@@ -498,11 +496,11 @@ jobs:
         if: steps.scope.outputs.scope == 'perf'
         run: |
           set -o pipefail
-          node scripts/bench-compare.mjs --base "origin/${{ github.base_ref }}" --sizes=500 --runs=3 --threshold=0.10 | tee bench-compare.txt
+          node scripts/bench-compare.mjs --base "origin/${{ github.base_ref }}" --sizes=500 --runs=3 --threshold=0.15 | tee bench-compare.txt
           { echo '### bench-compare'; echo '```'; cat bench-compare.txt; echo '```'; } >>"$GITHUB_STEP_SUMMARY"
 
   # Measures the noise alone: HEAD against a second checkout of itself (`gh workflow run check.yml -f noise=true`). T18 of
-  # docs/designs/quality-gates-and-test-tiers.md records the largest spread of these runs before it sets the perf threshold.
+  # docs/designs/quality-gates-and-test-tiers.md set the perf threshold from the largest spread of these runs (4.8%).
   noise:
     if: github.event_name == 'workflow_dispatch' && inputs.noise
     runs-on: ubuntu-latest

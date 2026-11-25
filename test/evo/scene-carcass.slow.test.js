@@ -9,7 +9,9 @@
 // pin, e37bdd9b; the world hash is unchanged), and again when the huddle pass stopped counting at huddleWarmth 0 (the
 // huddled share reads 0). The digest then covered every metric and moved for unrelated ones (agent-workflow.md T44), so
 // it now covers only the carcass and scavenge metrics (CARCASS_KEY): what the skip can change. Their entries are
-// unchanged since the whole-set pin, which the world hash (every world state) still backs.
+// unchanged since the whole-set pin, which the world hash (every world state) still backs. Both re-pinned for the step 5
+// defaults (the sprint store, the shove and the status effects are on): the world steps differently, and the unskipped loop
+// (the skip disabled) gives the same world hash and digest as the skip.
 
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
@@ -17,9 +19,9 @@ import { LIVE_POLICY } from '../../js/evo/policies/index.js';
 import { runSeed } from '../../scripts/eval-worker.mjs';
 import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 
-const RECORDED_WORLD_HASH = 'af220e7209361ae7';
+const RECORDED_WORLD_HASH = 'e3310c8df373f4c2';
 const CARCASS_KEY = /carcass|scavenge/;
-const RECORDED_METRICS_SHA256 = '1fa0edb77afc5dda66ccdc1fef5c41e1d72ba7c69b48790b42e3ad8deaf3dd7c';
+const RECORDED_METRICS_SHA256 = '34d638495a3bdeaa07cc91d338562b3162b32e17246ee59418a508c3deeb7be7';
 
 describe('trackCarcasses skipping empty slots', () => {
     it(

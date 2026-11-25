@@ -3,7 +3,7 @@
   "sprintDrain": 0.01,
   "entrantEnergy": 700,
   "herdRunSpeed": 5.5,
-  "coldStackRate": 0.4,
+  "coldStackRate": 0.5,
   "rallyThrust": 0.1,
   "rallyBurn": 4,
   "staggerThrust": 0.5,

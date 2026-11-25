@@ -23,6 +23,7 @@ import { WORLD_2 } from './world-2.js';
 import { WORLD_3 } from './world-3.js';
 import { WORLD_4 } from './world-4.js';
 import { WORLD_5 } from './world-5.js';
+import { WORLD_6 } from './world-6.js';
 import { LIVENESS } from './liveness.js';
 import { POWER } from './power.js';
 import { minSeedsFromPower } from './status.js';
@@ -92,6 +93,7 @@ export const METRICS = withRoles({
     ...withPower(withLiveness(WORLD_3)),
     ...withPower(withLiveness(WORLD_4)),
     ...withPower(withLiveness(WORLD_5)),
+    ...withPower(withLiveness(WORLD_6)),
 });
 
 /** @typedef {keyof typeof METRICS} MetricName a registered metric name */

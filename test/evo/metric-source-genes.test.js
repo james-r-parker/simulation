@@ -29,6 +29,23 @@ const NAMES = [
     'eval.gene_spread.gut',
     'eval.gene_spread.nerve',
     'eval.gene_edge_share',
+    'eval.gene_sd.size',
+    'eval.gene_sd.vision',
+    'eval.gene_sd.childShare',
+    'eval.gene_sd.speed',
+    'eval.gene_sd.sprintStore',
+    'eval.gene_sd.fat',
+    'eval.gene_sd.heatBand',
+    'eval.gene_sd.burn',
+    'eval.gene_sd.hearing',
+    'eval.gene_sd.nose',
+    'eval.gene_sd.smokeSight',
+    'eval.gene_sd.eyesOrEars',
+    'eval.gene_sd.clearOrSmoke',
+    'eval.gene_sd.agileOrFast',
+    'eval.gene_sd.wideOrFar',
+    'eval.gene_sd.gut',
+    'eval.gene_sd.nerve',
 ];
 
 /**
@@ -63,6 +80,12 @@ describe('eval.gene_spread.size and eval.gene_edge_share in a planted world', ()
         const metrics = planted([3, -3], { specialisations: { forager: { genes: { size: 0.2 } } } });
         expect(metrics['eval.gene_spread.size']?.value).toBeCloseTo(0.2 * detTanh(3), 5);
         expect(metrics['eval.gene_edge_share']?.value).toBe(1);
+    });
+
+    it('reads the gene spread in gene units, past the span the ratio spread is capped by', () => {
+        const metrics = planted([0.5, -0.5], { specialisations: { forager: { genes: { size: 0.05 } } } });
+        expect(metrics['eval.gene_sd.size']?.value).toBeCloseTo(0.5, 5);
+        expect(metrics['eval.gene_spread.size']?.value).toBeCloseTo(0.05 * detTanh(0.5), 5);
     });
 
     it('reads null for a trait that is in no menu', () => {

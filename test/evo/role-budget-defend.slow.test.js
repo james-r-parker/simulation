@@ -2,7 +2,7 @@
 // formulas against the scripted scenes of the real sim, at the defaults and in worlds where the defender arrives and the
 // hidden body escapes.
 import { describe, expect, it, vi } from 'vitest';
-import { arenaConfig } from '../../js/evo/chase-arena.js';
+import { preStep5Arena } from '../helpers/pre-step5.js';
 import { defenceCheck } from '../../js/evo/role-budget-defence-check.js';
 import { MODEL_DEFAULTS } from '../../js/evo/role-budget-model.js';
 
@@ -37,16 +37,10 @@ const ARMS = [
 ];
 const [DEFAULTS, , NEAR, FAR, , , QUICK] = ARMS;
 
-/**
- * The known gap of the formula (docs/designs/role-budget.md, "As built"), found by the kill-tick reading added with the shove
- * on: the sim's hunter bites the defender dead and rests after that kill, which the formula does not play. Every reading of the
- * arm that existed before is still inside its tolerance, and the gap is pinned to its numbers below.
- */
-const KNOWN_GAP = new Map([['slow, the shove on, defender 150 px off', ['kill tick']]]);
 const memo = /** @type {Map<string, any>} */ (new Map());
 const checked = (/** @type {Arm} */ arm) => {
     if (!memo.has(arm.name)) {
-        memo.set(arm.name, defenceCheck(arenaConfig(arm.config), { ...MODEL_DEFAULTS, ...arm.model }));
+        memo.set(arm.name, defenceCheck(preStep5Arena(arm.config), { ...MODEL_DEFAULTS, ...arm.model }));
     }
     return memo.get(arm.name);
 };
@@ -54,14 +48,14 @@ const reading = (/** @type {Arm} */ arm, /** @type {(what: string) => boolean} *
     checked(arm).readings.find((/** @type {any} */ r) => pick(r.what));
 
 describe('the defender budget against the scenes', () => {
-    it.each(ARMS)('$name: no reading outside its tolerance but the known gap', (arm) => {
+    it.each(ARMS)('$name: no reading outside its tolerance', (arm) => {
         const drifted = checked(arm).readings.filter((/** @type {any} */ r) => r.drift);
-        expect(drifted.map((/** @type {any} */ r) => r.what)).toEqual(KNOWN_GAP.get(arm.name) ?? []);
+        expect(drifted.map((/** @type {any} */ r) => r.what)).toEqual([]);
     });
 
-    it('the known gap is the kill tick with the shove on: 116 in the formula, 201 in the sim', () => {
+    it('the kill tick with the shove on is 201 in the formula and in the sim: the hunter kills the defender, rests, then the caller', () => {
         const kill = reading(FAR, (w) => w === 'kill tick');
-        expect([kill.formula, kill.scene]).toEqual([116, 201]);
+        expect([kill.formula, kill.scene]).toEqual([201, 201]);
     });
 
     it('the call, the hearing and the first move agree exactly in every arm', () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { arenaConfig } from '../../js/evo/chase-arena.js';
+import { preStep5Arena } from '../helpers/pre-step5.js';
 import { MODEL_DEFAULTS } from '../../js/evo/role-budget-model.js';
 import { AMPLIFIER_ROWS, PACK_LEVELS, budgetPack } from '../../js/evo/role-budget-pack.js';
 import { BUILT_ROWS } from '../../js/evo/role-budget-matrix.js';
@@ -14,7 +14,7 @@ describe('the pack row', () => {
     });
 
     it('has a packGain of exactly 0 at the neutral numbers, by construction: the rally changes no lane', () => {
-        const pack = budgetPack(arenaConfig({}), model);
+        const pack = budgetPack(preStep5Arena({}), model);
         expect(pack.packGain).toBe(0);
         expect(pack.packGainTicks).toBe(0);
         expect(pack.burn).toBe(0);
@@ -23,7 +23,7 @@ describe('the pack row', () => {
     });
 
     it('rises with a planted rally strength, and turns the lone hunter that cannot close into a pack that can', () => {
-        const pack = budgetPack(arenaConfig({ rallyThrust: 0.5, rallyBurn: 0.2 }), model);
+        const pack = budgetPack(preStep5Arena({ rallyThrust: 0.5, rallyBurn: 0.2 }), model);
         expect(pack.lone.catchable).toBe(false);
         expect(pack.rallied.catchable).toBe(true);
         expect(pack.packGain).toBeGreaterThan(0);
@@ -33,19 +33,19 @@ describe('the pack row', () => {
     });
 
     it('rises with the strength: a stronger rally gains more', () => {
-        const gain = (/** @type {number} */ rallyThrust) => budgetPack(arenaConfig({ rallyThrust }), model).packGain;
+        const gain = (/** @type {number} */ rallyThrust) => budgetPack(preStep5Arena({ rallyThrust }), model).packGain;
         expect(gain(0.1)).toBeGreaterThan(0);
         expect(gain(0.3)).toBeGreaterThan(gain(0.1));
     });
 
     it('gains nothing from a burn alone, and the burn shows in the energy the chase spends', () => {
-        const pack = budgetPack(arenaConfig({ rallyBurn: 0.5 }), model);
+        const pack = budgetPack(preStep5Arena({ rallyBurn: 0.5 }), model);
         expect(pack.packGain).toBe(0);
         expect(pack.burn).toBeGreaterThan(0);
     });
 
     it('gains nothing with no level on the hearer, and never reads below the lone hunter', () => {
-        const config = arenaConfig({ rallyThrust: 0.5, woundThrust: 0.1 });
+        const config = preStep5Arena({ rallyThrust: 0.5, woundThrust: 0.1 });
         expect(budgetPack(config, model, { levels: {} }).packGain).toBe(0);
         expect(budgetPack(config, model, { levels: { wounded: 3 } }).packGain).toBe(0);
     });

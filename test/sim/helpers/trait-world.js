@@ -1,6 +1,6 @@
 // A small world with one live slot, for the trait tests: set a gene, a span, then rebuild the slot's lanes.
 
-import { createConfig } from '../../../js/sim/config.js';
+import { createPreStep5Config } from '../../helpers/pre-step5.js';
 import { applyTraits } from '../../../js/sim/body-traits.js';
 import { TRAIT_SLOTS } from '../../../js/sim/brain-layout.js';
 import { writeLaneBases } from '../../../js/sim/lane-state.js';
@@ -13,7 +13,7 @@ import { fixedSpecPolicy } from './test-policy.js';
  * @returns {{world: Record<string, any>, slot: number}} a world and its first live slot
  */
 export function traitWorld(spec = 0) {
-    const config = createConfig({ ...SIMPLE_WORLD, maxAgents: 6, initialAgents: 3, minAgents: 0 });
+    const config = createPreStep5Config({ ...SIMPLE_WORLD, maxAgents: 6, initialAgents: 3, minAgents: 0 });
     const world = createWorld(config, fixedSpecPolicy(spec));
     return { world, slot: world.alive.indexOf(1) };
 }

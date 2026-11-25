@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { arenaConfig } from '../../js/evo/chase-arena.js';
+import { preStep5Arena } from '../helpers/pre-step5.js';
 import { budgetDefend } from '../../js/evo/role-budget-defend.js';
 import { defenceTimeline } from '../../js/evo/role-budget-defence.js';
 import { escortGap } from '../../js/evo/role-budget-escort.js';
@@ -19,7 +19,7 @@ const NEAR = { ...MODEL_DEFAULTS, escortGap: 150 };
 
 /** @param {Record<string, any>} overrides @param {import('../../js/evo/role-budget-model.js').RoleModel} [model] */
 const budget = (overrides, model = MODEL_DEFAULTS) => {
-    const config = arenaConfig(overrides);
+    const config = preStep5Arena(overrides);
     const [defender, hunter, caller] = ['defender', 'predator', 'forager'].map((s) => roleParams(config, s));
     return { ...budgetDefend(defender, hunter, caller, model), bodies: [hunter, caller, defender] };
 };

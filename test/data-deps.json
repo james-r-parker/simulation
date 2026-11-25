@@ -335,7 +335,8 @@
         "evals/role-budget/step5-d.json"
     ],
     "test/evo/role-budget-frame.test.js": [
-        "evals/fair-chase/courser.json"
+        "evals/fair-chase/courser.json",
+        "evals/fair-chase/even.json"
     ],
     "test/evo/role-budget-kinematics.test.js": [
         "evals/fair-chase/courser.json"
@@ -615,6 +616,9 @@
     "test/sim/body-lanes.test.js": [
         "evals/decisions/body-genes/settings-inventory.md"
     ],
+    "test/sim/effect-cheats.test.js": [
+        "evals/role-budget/step5-d.json"
+    ],
     "test/sim/effects-complete.test.js": [
         "js/sim/*.js"
     ],
@@ -629,6 +633,9 @@
     ],
     "test/sim/step-alloc.slow.test.js": [
         "scripts/alloc-check.mjs"
+    ],
+    "test/sim/step5-defaults.test.js": [
+        "evals/role-budget/step5-e.json"
     ],
     "test/sim/wasm-binary.test.js": [
         "wasm/blob-kernels.wasm"

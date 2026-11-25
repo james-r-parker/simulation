@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { laneBases } from '../../js/sim/body-lanes.js';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
-import { createConfig } from '../../js/sim/config.js';
+import { createPreStep5Config } from '../helpers/pre-step5.js';
 import { gainTemperature, stepTemperature, temperatureInputs } from '../../js/sim/temperature.js';
 import { SIMPLE_WORLD } from '../helpers/simple-world.js';
 import { withEffectRows } from './helpers/effect-stand-in.js';
@@ -15,7 +15,7 @@ const LEGACY_RATES = {
     temperatureEfficiencyHeatModerate: 0.8,
     temperatureEfficiencyHeatSevere: 0.4,
 };
-const config = createConfig({ ...SIMPLE_WORLD, ...LEGACY_RATES });
+const config = createPreStep5Config({ ...SIMPLE_WORLD, ...LEGACY_RATES });
 
 /** The per-season loss multiplier at the defaults: spring, summer, autumn, winter. */
 const LOSS = [1.15, 0.55, 0.85, 1.45];
@@ -104,7 +104,7 @@ describe('stepTemperature', () => {
         stepTemperature(cold, 0);
         expect(cold.temperature[0]).toBe(0);
         const hot = fakeWorld(99.999, 8, 0);
-        hot.config = createConfig({ ...SIMPLE_WORLD, ...LEGACY_RATES, temperatureLossPassive: 0 });
+        hot.config = createPreStep5Config({ ...SIMPLE_WORLD, ...LEGACY_RATES, temperatureLossPassive: 0 });
         hot.lanes = lanesOf(hot.config);
         stepTemperature(hot, 0);
         expect(hot.temperature[0]).toBe(100);
@@ -114,7 +114,7 @@ describe('stepTemperature', () => {
         const seasons = structuredClone(config.seasons);
         seasons[0].temperatureModifier = 60;
         const world = fakeWorld(50, 0, 0);
-        world.config = createConfig({ ...SIMPLE_WORLD, ...LEGACY_RATES, seasons });
+        world.config = createPreStep5Config({ ...SIMPLE_WORLD, ...LEGACY_RATES, seasons });
         world.lanes = lanesOf(world.config);
         stepTemperature(world, 0);
         expect(world.temperature[0]).toBe(50);
@@ -205,7 +205,7 @@ describe('passiveMultiplier', () => {
     });
 
     it('is 1 everywhere when the factor is 1', () => {
-        const flat = createConfig({ ...SIMPLE_WORLD, ...LEGACY_RATES, temperaturePassiveLossFactor: 1 });
+        const flat = createPreStep5Config({ ...SIMPLE_WORLD, ...LEGACY_RATES, temperaturePassiveLossFactor: 1 });
         for (const t of [0, 10, 50, 90, 100]) {
             expect(passiveMultiplier(bodyAt(flat, t), 0)).toBe(1);
         }
@@ -272,7 +272,7 @@ describe('temperatureInputs', () => {
     });
 
     it('is 1 above the heat threshold when the moderate and stress thresholds coincide', () => {
-        const same = createConfig({ ...SIMPLE_WORLD, ...LEGACY_RATES, temperatureHeatModerate: 85 });
+        const same = createPreStep5Config({ ...SIMPLE_WORLD, ...LEGACY_RATES, temperatureHeatModerate: 85 });
         const out = new Float32Array(4);
         temperatureInputs(bodyAt(same, 85.5), 0, out, 0);
         expect(out[3]).toBe(1);
