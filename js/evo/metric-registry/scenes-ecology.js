@@ -96,7 +96,6 @@ export const SCENES_ECOLOGY = {
     }),
     'eval.sick_share': entry('scenes-ecology', {
         module: 'js/evo/scene-flora.js',
-        scenes: ['Condition changes the walk'],
         meaning: 'The share of agent-ticks spent sick (lower is intended).',
         counts: 'Agent-ticks after burn-in with dose at or above config.sickDose over all agent-ticks.',
         unit: 'share',

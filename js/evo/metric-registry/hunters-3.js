@@ -215,6 +215,7 @@ export const HUNTERS_3 = {
     }),
     'eval.style_lineage_share': entry('hunters', {
         module: 'js/evo/style.js',
+        scenes: ['Same spec, different custom'],
         meaning: 'Higher means style at death is a family trait: more of its variance lies between lineages.',
         counts: 'Within each specialisation, the between-lineage sum of squares of style at death over the total, over lineages with MIN_STYLE_DEATHS deaths after burn-in, averaged over specialisations with two such lineages and a spread.',
         unit: 'share',

@@ -48,6 +48,24 @@ describe('the scenes tags on the registry', () => {
 
     it('leaves exactly the scenes with no detector yet untagged (principles.md says `none` for each)', () => {
         const tagged = new Set(Object.values(METRICS).flatMap((e) => e.scenes ?? []));
-        expect(SCENES.filter((scene) => !tagged.has(scene))).toEqual(['Abort', 'Refuge', 'Something unnamed']);
+        expect(SCENES.filter((scene) => !tagged.has(scene))).toEqual(['Something unnamed']);
+    });
+
+    it('tags the purpose-built detector of a scene, not a metric that only correlates with it (metric-noise T26)', () => {
+        const tags = (/** @type {string} */ name) => /** @type {any} */ (METRICS)[name].scenes ?? [];
+        expect(tags('eval.hunt_abort_rate')).toContain('Abort');
+        expect(tags('eval.chase_giveup_share')).toContain('Abort');
+        expect(tags('eval.condition_gait_shift')).toContain('Condition changes the walk');
+        expect(tags('eval.sick_share')).not.toContain('Condition changes the walk');
+        expect(tags('eval.patch_leave_depleted')).toContain('Leave a dying patch');
+        expect(tags('eval.patch_stay_depleted')).toContain('Leave a dying patch');
+        expect(tags('eval.migration_index')).not.toContain('Leave a dying patch');
+        expect(tags('eval.refuge_episode_entry')).toContain('Refuge');
+        expect(tags('eval.scavenge_approach_share')).toContain('Scavenge');
+        expect(tags('eval.mother_wait_by_condition')).toContain('Parent spends');
+        expect(tags('eval.gap_crossers')).toContain('Cross or stay');
+        expect(tags('eval.season_map_distance')).toContain('Season changes the map');
+        expect(tags('eval.boom_bust_count')).toContain('Boom and bust');
+        expect(tags('eval.style_separation')).toContain('Same spec, different custom');
     });
 });
