@@ -7,11 +7,11 @@ function guildShareEntry(spec) {
     return entry('scenes-ecology', {
         module: 'js/evo/scene-guilds.js',
         meaning: `Mean share of alive agents in the ${spec} guild after burn-in.`,
-        counts: `${spec} alive count over total alive agents across 100-tick checkpoints after burn-in.`,
+        counts: `${spec} alive count over total alive agents across 1000-tick checkpoints after burn-in.`,
         unit: 'share',
         direction: 'watch',
         intended: 'higher',
-        nullWhen: ['no 100-tick checkpoint after burn-in'],
+        nullWhen: ['no 1000-tick checkpoint after burn-in'],
         arithmetic: 'test/evo/scene-guilds.test.js',
         source: 'test/evo/metric-source-ecology.test.js',
     });
@@ -37,7 +37,7 @@ function preySelectivityEntry(spec) {
     return entry('scenes-ecology', {
         module: 'js/evo/scene-guilds.js',
         meaning: `How often hunters eat the ${spec} guild relative to its share of prey alive; 1 is no preference.`,
-        counts: `The ${spec} share of eaten prey deaths divided by its mean share of living prey at 100-tick checkpoints after burn-in.`,
+        counts: `The ${spec} share of eaten prey deaths divided by its mean share of living prey at 1000-tick checkpoints after burn-in.`,
         unit: 'ratio',
         direction: 'watch',
         intended: 'lower',

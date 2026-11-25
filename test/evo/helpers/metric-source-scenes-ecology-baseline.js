@@ -288,21 +288,23 @@ export default {
         value: null,
         reason: 'fewer than 100 prey samples after burn-in',
     },
+    // metric-noise T25 bug 4: the guild_share reason now names the real 1000-tick cadence (was 100); the values and the world
+    // hash did not move.
     'eval.guild_share.forager': {
         value: null,
-        reason: 'no 100-tick checkpoint after burn-in',
+        reason: 'no 1000-tick checkpoint after burn-in',
     },
     'eval.guild_share.reproducer': {
         value: null,
-        reason: 'no 100-tick checkpoint after burn-in',
+        reason: 'no 1000-tick checkpoint after burn-in',
     },
     'eval.guild_share.scout': {
         value: null,
-        reason: 'no 100-tick checkpoint after burn-in',
+        reason: 'no 1000-tick checkpoint after burn-in',
     },
     'eval.guild_share.defender': {
         value: null,
-        reason: 'no 100-tick checkpoint after burn-in',
+        reason: 'no 1000-tick checkpoint after burn-in',
     },
     'eval.guild_survival.forager': {
         value: 1 / 3600,
