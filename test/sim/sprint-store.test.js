@@ -3,7 +3,7 @@ import vm from 'node:vm';
 import { describe, expect, it } from 'vitest';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
 import { laneBases } from '../../js/sim/body-lanes.js';
-import { createConfig } from '../../js/sim/config.js';
+import { createPreStep5Config } from '../helpers/pre-step5.js';
 import { SPEC_NAMES } from '../../js/sim/specs.js';
 import { EVENT_TYPE, createEventRing } from '../../js/sim/events.js';
 import { createSimLog, drainEvents } from '../../js/sim/log.js';
@@ -25,7 +25,7 @@ const PREDATOR = 1;
  * @param {Record<string, any>} [overrides] config overrides
  * @returns {Readonly<Record<string, any>>} a config with the store on
  */
-const storeConfig = (overrides = {}) => createConfig({ sprintStoreEnabled: true, ...overrides });
+const storeConfig = (overrides = {}) => createPreStep5Config({ sprintStoreEnabled: true, ...overrides });
 
 /**
  * The step on a hand-built world: the `spent` effect reads the store from `world.sprintStore`, which a real world holds.
@@ -348,13 +348,13 @@ describe('resetSprintSlot', () => {
 
 describe('the sprint store keys', () => {
     it('are off by default and validated', () => {
-        const config = createConfig({});
+        const config = createPreStep5Config({});
         expect(config.sprintStoreEnabled).toBe(false);
         expect(config.specialisations.predator.sprintDrainMultiplier).toBe(1);
-        expect(() => createConfig({ sprintFloor: 0 })).toThrow(/sprintFloor/);
-        expect(() => createConfig({ sprintDrain: 0 })).toThrow(/sprintDrain/);
-        expect(() => createConfig({ sprintRefill: -0.1 })).toThrow(/sprintRefill/);
-        expect(() => createConfig({ specialisations: { scout: { sprintDrainMultiplier: 0 } } })).toThrow(
+        expect(() => createPreStep5Config({ sprintFloor: 0 })).toThrow(/sprintFloor/);
+        expect(() => createPreStep5Config({ sprintDrain: 0 })).toThrow(/sprintDrain/);
+        expect(() => createPreStep5Config({ sprintRefill: -0.1 })).toThrow(/sprintRefill/);
+        expect(() => createPreStep5Config({ specialisations: { scout: { sprintDrainMultiplier: 0 } } })).toThrow(
             /sprintDrainMultiplier/,
         );
     });
@@ -364,7 +364,7 @@ describe('sprintEffort', () => {
     it('is the graded effort with the store on and the all-or-nothing sprint with it off', () => {
         const on = bodies(1, storeConfig());
         on.sprintStore = createSprintStore(1);
-        const off = bodies(1, createConfig({}));
+        const off = bodies(1, createPreStep5Config({}));
         for (const [sprint, graded, whole] of [
             [-0.5, 0, 0],
             [0.03, 0, 1],

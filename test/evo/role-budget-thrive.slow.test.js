@@ -3,7 +3,7 @@
 // where the numbers move.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
-import { arenaConfig } from '../../js/evo/chase-arena.js';
+import { preStep5Arena } from '../helpers/pre-step5.js';
 import { MODEL_DEFAULTS } from '../../js/evo/role-budget-model.js';
 import {
     firstMealReadings,
@@ -11,7 +11,7 @@ import {
     idleReadings,
     livingReadings,
 } from '../../js/evo/role-budget-thrive-check.js';
-import { createConfig } from '../../js/sim/config.js';
+import { createPreStep5Config } from '../helpers/pre-step5.js';
 import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 
 vi.setConfig({ testTimeout: scaleTimeout(500_000) });
@@ -30,7 +30,7 @@ describe('the sitter and the walker', () => {
     ])(
         '%s: the lives agree with the sim for every birth rule',
         (_name, overrides) => {
-            const readings = idleReadings(createConfig(overrides), model);
+            const readings = idleReadings(createPreStep5Config(overrides), model);
             expect(readings).toHaveLength(6);
             expect(readings.filter((r) => r.drift)).toEqual([]);
         },
@@ -45,7 +45,7 @@ describe('the forager in a grid of food', () => {
     ])(
         '%s: the settled net rate is inside the tolerance',
         (_name, overrides) => {
-            expect(foragingReadings(createConfig(overrides), model).filter((r) => r.drift)).toEqual([]);
+            expect(foragingReadings(createPreStep5Config(overrides), model).filter((r) => r.drift)).toEqual([]);
         },
         LIMIT,
     );
@@ -58,7 +58,7 @@ describe('the hunter living', () => {
     ])(
         '%s: the kill tick and the net energy of each chase agree with the sim',
         (_name, overrides) => {
-            expect(livingReadings(arenaConfig(overrides)).filter((r) => r.drift)).toEqual([]);
+            expect(livingReadings(preStep5Arena(overrides)).filter((r) => r.drift)).toEqual([]);
         },
         LIMIT,
     );
@@ -67,7 +67,7 @@ describe('the hunter living', () => {
         'the arms differ: the courser kills where the defaults do not',
         () => {
             const kills = (/** @type {Record<string, any>} */ o) =>
-                livingReadings(arenaConfig(o))
+                livingReadings(preStep5Arena(o))
                     .filter((r) => r.what.endsWith('kill tick'))
                     .map((r) => r.scene !== null);
             expect(kills({})).not.toEqual(kills(COURSER));
@@ -80,7 +80,7 @@ describe('the first meal', () => {
     it(
         'the entrant and the founder of the default world: reach inside 0.2 and find under the formula, which assumes a free plane',
         () => {
-            const readings = firstMealReadings(createConfig({}), model, { count: 128 });
+            const readings = firstMealReadings(createPreStep5Config({}), model, { count: 128 });
             expect(readings).toHaveLength(6);
             expect(readings.filter((r) => r.drift)).toEqual([]);
         },
@@ -90,7 +90,7 @@ describe('the first meal', () => {
     it(
         'the entrant, whose walk is short, is read two-sided inside 0.15 on the find share',
         () => {
-            const entrant = firstMealReadings(createConfig({}), model, { count: 256 }).find((r) =>
+            const entrant = firstMealReadings(createPreStep5Config({}), model, { count: 256 }).find((r) =>
                 r.what.startsWith('entrant: find'),
             );
             expect(

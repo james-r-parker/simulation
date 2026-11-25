@@ -3,7 +3,7 @@
 // reset on birth, its zeroing on death and its bytes in `hashWorld` only when the switch is on.
 import { describe, expect, it } from 'vitest';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
-import { createConfig } from '../../js/sim/config.js';
+import { createPreStep5Config } from '../helpers/pre-step5.js';
 import { applyCosts } from '../../js/sim/energy.js';
 import { actAll, integrate } from '../../js/sim/physics.js';
 import { stepSprintStore } from '../../js/sim/sprint-store.js';
@@ -36,7 +36,9 @@ const FLOOR = 0.3;
  * @returns {any} a world with the store on and no agents
  */
 const storeWorld = (extra = {}) =>
-    allocateWorld(createConfig({ ...SIMPLE_WORLD, ...SMALL, sprintStoreEnabled: true, sprintFloor: FLOOR, ...extra }));
+    allocateWorld(
+        createPreStep5Config({ ...SIMPLE_WORLD, ...SMALL, sprintStoreEnabled: true, sprintFloor: FLOOR, ...extra }),
+    );
 
 /**
  * Births a sprinting forager at rest at the centre, heading +x, with the given store, and writes its factor.
@@ -92,7 +94,7 @@ describe('the sprint factor on thrust and the speed cap', () => {
     });
 
     it('is the full sprint with the switch off: no store and a lane of 1 in the arena', () => {
-        const w = allocateWorld(createConfig({ ...SIMPLE_WORLD, ...SMALL }));
+        const w = allocateWorld(createPreStep5Config({ ...SIMPLE_WORLD, ...SMALL }));
         expect(w.sprintStore).toBeUndefined();
         expect(w.sprintFactor).toBe(w.wasm.views.sprintFactor);
         expect([...w.sprintFactor]).toEqual(new Array(SMALL.maxAgents).fill(1));
@@ -115,7 +117,7 @@ describe('the sprint factor on the sprint cost', () => {
             applyCosts(w);
             return 100 - w.energy[slot];
         });
-        const { sprintCost } = createConfig({});
+        const { sprintCost } = createPreStep5Config({});
         LEVELS.forEach(([, f], k) => expect(costs[k]).toBeCloseTo(sprintCost * f, 9));
     });
 });
@@ -129,7 +131,7 @@ describe('the graded sprint (fair-chase T7a)', () => {
     ];
 
     it('scales the sprint thrust, the rise of the cap and the sprint cost by the effort at a full store', () => {
-        const { maxThrust, maxVelocity, sprintMultiplier, sprintCost } = createConfig({});
+        const { maxThrust, maxVelocity, sprintMultiplier, sprintCost } = createPreStep5Config({});
         const thrusts = EFFORTS.map(([sprint]) => {
             const w = storeWorld();
             const slot = sprinter(w, 1);
@@ -185,7 +187,7 @@ describe('the store in the world', () => {
     it('drains in a stepped world, and a world with the store on replays bit for bit', () => {
         const run = () => {
             const policy = cloneWithNoisePolicy();
-            const config = createConfig({
+            const config = createPreStep5Config({
                 ...SIMPLE_WORLD,
                 sprintStoreEnabled: true,
                 maxAgents: 60,

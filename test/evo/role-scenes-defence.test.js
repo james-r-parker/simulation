@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
-import { ARENA_CENTRE, arenaConfig, stageArena } from '../../js/evo/chase-arena.js';
+import { ARENA_CENTRE, stageArena } from '../../js/evo/chase-arena.js';
+import { preStep5Arena } from '../helpers/pre-step5.js';
 import { callerBrain, defenderBrain, smokerBrain } from '../../js/evo/chase-oracles.js';
 import { playDefence, runScene, touching } from '../../js/evo/role-scenes-defence.js';
 
@@ -28,7 +29,7 @@ const out = (/** @type {any} */ world, /** @type {number} */ slot, /** @type {st
     world.outputs[slot * OUTPUT_COUNT + OUTPUT_INDEX[name]];
 
 describe('the oracle brains of the defence', () => {
-    const config = arenaConfig();
+    const config = preStep5Arena();
 
     it('the caller stands, and holds ALARM from reaction ticks after it sees the hunter', () => {
         const { world } = arena(config, [0, 1]);
@@ -82,7 +83,7 @@ describe('the oracle brains of the defence', () => {
 
 describe('runScene and touching', () => {
     it('steps until the observer says stop, and counts bodies touching when their centres are within their sizes', () => {
-        const config = arenaConfig();
+        const config = preStep5Arena();
         const staged = arena(config, [0, 1]);
         const seen = /** @type {number[]} */ ([]);
         runScene(staged, {
@@ -101,31 +102,31 @@ describe('runScene and touching', () => {
 
 describe('playDefence', () => {
     it('at the defaults the caller dies at tick 27 whether or not the defender hears, and it never touches the hunter', () => {
-        const run = playDefence(arenaConfig(), OPTIONS);
+        const run = playDefence(preStep5Arena(), OPTIONS);
         expect(run.ticks).toMatchObject({ alarmTick: 2, heardTick: 3, startTick: 5, contactTick: 23, killTick: 27 });
         expect(run.ticks.interceptTick).toBeNull();
         expect(run.outcome).toEqual({ killed: true, defenderArrivedFirst: false, bites: 5 });
-        const alone = playDefence(arenaConfig(), { ...OPTIONS, absent: true });
+        const alone = playDefence(preStep5Arena(), { ...OPTIONS, absent: true });
         expect(alone.ticks.killTick).toBe(27);
         expect(alone.ticks.heardTick).toBe(-1);
     });
 
     it('in a slow world with the shove on, the defender touches the hunter and shoves it before the kill', () => {
-        const run = playDefence(arenaConfig(SLOW), { ...OPTIONS, side: 40 });
+        const run = playDefence(preStep5Arena(SLOW), { ...OPTIONS, side: 40 });
         expect(run.ticks.interceptTick).not.toBeNull();
         expect(run.ticks.repelTick).toBe(run.ticks.interceptTick);
         expect(run.outcome.defenderArrivedFirst).toBe(true);
     });
 
     it('with the shove off the defender touches the hunter and lands no shove', () => {
-        const off = arenaConfig({ ...SLOW, defenderRepelEnergy: 0, defenderRepelImpulse: 0 });
+        const off = preStep5Arena({ ...SLOW, defenderRepelEnergy: 0, defenderRepelImpulse: 0 });
         const run = playDefence(off, { ...OPTIONS, side: 40 });
         expect(run.ticks.interceptTick).not.toBeNull();
         expect(run.ticks.repelTick).toBeNull();
     });
 
     it('replays bit for bit from the same config', () => {
-        const config = arenaConfig(SLOW);
+        const config = preStep5Arena(SLOW);
         expect(playDefence(config, { ...OPTIONS, side: 40 })).toEqual(playDefence(config, { ...OPTIONS, side: 40 }));
     });
 });

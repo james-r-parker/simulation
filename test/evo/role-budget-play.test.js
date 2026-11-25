@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { arenaConfig, ARENA_CENTRE, stageArena } from '../../js/evo/chase-arena.js';
+import { ARENA_CENTRE, stageArena } from '../../js/evo/chase-arena.js';
+import { preStep5Arena } from '../helpers/pre-step5.js';
 import { evaderBrain, pursuerBrain, steer } from '../../js/evo/chase-oracles.js';
 import { OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
 import { createBody } from '../../js/evo/role-budget-body.js';
 import { HUNTER_PERFECT, hunterOut, preyOut, steerOut } from '../../js/evo/role-budget-play.js';
 import { roleParams } from '../../js/evo/role-budget-params.js';
 
-const config = arenaConfig({ sprintStoreEnabled: true, sprintDrain: 0.01 });
+const config = preStep5Arena({ sprintStoreEnabled: true, sprintDrain: 0.01 });
 const hunterP = roleParams(config, 'predator');
 const preyP = roleParams(config, 'forager');
 /** @type {import('../../js/evo/role-budget-play.js').PreyPlay} */
@@ -102,7 +103,7 @@ describe('the hunter play', () => {
         const play = { ...HUNTER_PERFECT, sprint: 'view' };
         expect(hunterOut(near.h, near.p, play, 0).sprint).toBe(1);
         expect(hunterOut(far.h, far.p, play, 0).sprint).toBe(0);
-        const off = roleParams(arenaConfig(), 'predator');
+        const off = roleParams(preStep5Arena(), 'predator');
         const h = createBody(off, { x: 0, y: 0, angle: 0 });
         expect(hunterOut(h, far.p, play, 0).sprint).toBe(1);
     });

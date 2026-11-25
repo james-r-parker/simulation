@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { createConfig } from '../../js/sim/config.js';
+import { createPreStep5Config } from '../helpers/pre-step5.js';
 import { PREY_SPECS, budgetChase } from '../../js/evo/role-budget-chase.js';
 import { contextOf } from '../../js/evo/role-budget-forage.js';
 import { budgetLiving, killIncome } from '../../js/evo/role-budget-living.js';
@@ -9,7 +9,7 @@ import { roleParams } from '../../js/evo/role-budget-params.js';
 
 /** @param {Record<string, any>} overrides @param {Partial<typeof MODEL_DEFAULTS>} [extra] @returns {ReturnType<typeof budgetLiving>} */
 function living(overrides, extra = {}) {
-    const config = createConfig(overrides);
+    const config = createPreStep5Config(overrides);
     const model = { ...MODEL_DEFAULTS, ...extra };
     const hunter = contextOf(config, 'predator', roleParams(config, 'predator'));
     const preys = Object.fromEntries(PREY_SPECS.map((s) => [s, roleParams(config, s)]));
@@ -24,7 +24,7 @@ const COURSER = JSON.parse(readFileSync('evals/fair-chase/courser.json', 'utf8')
 
 describe('killIncome', () => {
     it('is the bites and the gorge of the anchors: 700 on a forager and a reproducer, 760 on a scout, 700 on a defender', () => {
-        const config = createConfig({});
+        const config = createPreStep5Config({});
         const hunter = roleParams(config, 'predator');
         const of = (/** @type {string} */ s) => killIncome(hunter, roleParams(config, s));
         expect(of('forager')).toBeCloseTo(700, 6);
@@ -63,7 +63,7 @@ describe('budgetLiving at the defaults', () => {
     it('prints the resting cost and the ticks a full store lasts with no kill', () => {
         expect(b.resting.rest).toBeGreaterThan(0.012);
         expect(b.resting.storeTicks).toBeCloseTo(
-            roleParams(createConfig({}), 'predator').sizing.max / b.resting.rest,
+            roleParams(createPreStep5Config({}), 'predator').sizing.max / b.resting.rest,
             6,
         );
     });

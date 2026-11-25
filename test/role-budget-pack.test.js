@@ -3,7 +3,7 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { arenaConfig } from '../js/evo/chase-arena.js';
+import { preStep5Arena } from './helpers/pre-step5.js';
 import { BUILT_ROWS } from '../js/evo/role-budget-matrix.js';
 import { MODEL_DEFAULTS } from '../js/evo/role-budget-model.js';
 import { parseArgs, runBudget } from '../scripts/role-budget.mjs';
@@ -34,11 +34,11 @@ describe('splitRows', () => {
 
 describe('readAmplifiers', () => {
     it('reads nothing when no amplifier was asked for', () => {
-        expect(readAmplifiers(arenaConfig({}), MODEL_DEFAULTS, [])).toBeNull();
+        expect(readAmplifiers(preStep5Arena({}), MODEL_DEFAULTS, [])).toBeNull();
     });
 
     it('says at neutral numbers that packGain is 0 by construction', () => {
-        const read = /** @type {any} */ (readAmplifiers(arenaConfig({}), MODEL_DEFAULTS, ['pack:forager']));
+        const read = /** @type {any} */ (readAmplifiers(preStep5Arena({}), MODEL_DEFAULTS, ['pack:forager']));
         expect(read.data['pack:forager'].packGain).toBe(0);
         expect(read.text).toMatch(/pack:forager {2}hearer at rallied=1/);
         expect(read.text).toMatch(/packGain \+0\.0 px/);
@@ -46,7 +46,7 @@ describe('readAmplifiers', () => {
     });
 
     it('prints the gain of a planted rally and no neutral note', () => {
-        const config = arenaConfig({ rallyThrust: 0.5, rallyBurn: 0.2 });
+        const config = preStep5Arena({ rallyThrust: 0.5, rallyBurn: 0.2 });
         const read = /** @type {any} */ (readAmplifiers(config, MODEL_DEFAULTS, ['pack:forager']));
         expect(read.data['pack:forager'].packGain).toBeGreaterThan(0);
         expect(read.text).not.toMatch(/by construction/);

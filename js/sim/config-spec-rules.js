@@ -85,7 +85,7 @@ const FIELD_DEFAULTS = {
         kickMultiplier: 1, // natural-selection T5a: scales the kick a biter takes when it bites this specialisation
         maxEnergyMultiplier: 5, // survival screen (instinct, inst1-gorge-bite20): a 3x fat store (5x from E103), so a big meal carries a predator across the fast between kills like a lion's // new: scales maxEnergy, this specialisation's energy store (gorge-and-fast predator)
         rearVisionShare: 0.4, // senses-and-motor E186: forward, long-range eyes; the ray behind keeps 0.4 of the range
-        sprintDrainMultiplier: 1, // fair-chase Phase 1: scales sprintDrain for this specialisation (read only with sprintStoreEnabled)
+        sprintDrainMultiplier: 0.5, // fair-chase Phase 1: scales sprintDrain for this specialisation (read only with sprintStoreEnabled)
     },
     reproducer: {
         index: 2,

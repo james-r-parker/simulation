@@ -2,7 +2,7 @@
 // formulas against the scripted scenes of the real sim, at the defaults and in worlds where the defender arrives and the
 // hidden body escapes.
 import { describe, expect, it, vi } from 'vitest';
-import { arenaConfig } from '../../js/evo/chase-arena.js';
+import { preStep5Arena } from '../helpers/pre-step5.js';
 import { defenceCheck } from '../../js/evo/role-budget-defence-check.js';
 import { MODEL_DEFAULTS } from '../../js/evo/role-budget-model.js';
 
@@ -40,7 +40,7 @@ const [DEFAULTS, , NEAR, FAR, , , QUICK] = ARMS;
 const memo = /** @type {Map<string, any>} */ (new Map());
 const checked = (/** @type {Arm} */ arm) => {
     if (!memo.has(arm.name)) {
-        memo.set(arm.name, defenceCheck(arenaConfig(arm.config), { ...MODEL_DEFAULTS, ...arm.model }));
+        memo.set(arm.name, defenceCheck(preStep5Arena(arm.config), { ...MODEL_DEFAULTS, ...arm.model }));
     }
     return memo.get(arm.name);
 };

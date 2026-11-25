@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { arenaConfig } from '../../js/evo/chase-arena.js';
+import { preStep5Arena } from '../helpers/pre-step5.js';
 import { MODEL_DEFAULTS } from '../../js/evo/role-budget-model.js';
 import { roleParams } from '../../js/evo/role-budget-params.js';
 import { FORAGER_TURN } from '../../js/evo/role-budget-warn.js';
 import { flightAfter } from '../../js/evo/role-budget-warn-flight.js';
 
-const config = arenaConfig();
+const config = preStep5Arena();
 const bodies = { hunter: roleParams(config, 'predator'), forager: roleParams(config, 'forager') };
 const start = { gap: 405, turn: FORAGER_TURN, ticks: 11, model: MODEL_DEFAULTS };
 
@@ -33,7 +33,7 @@ describe('flightAfter', () => {
 
     it('with a sprint store, a forager that sprints from tick 0 (preySprint always) is faster than one that waits for the hunter', () => {
         // far enough that the hunter is outside the sprint range the rationed forager waits for
-        const stored = arenaConfig({ sprintStoreEnabled: true, sprintDrain: 0.01 });
+        const stored = preStep5Arena({ sprintStoreEnabled: true, sprintDrain: 0.01 });
         const own = { hunter: roleParams(stored, 'predator'), forager: roleParams(stored, 'forager') };
         const far = { ...start, gap: 2000 };
         const rationed = flightAfter(own, far);

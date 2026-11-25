@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { arenaConfig } from '../../js/evo/chase-arena.js';
+import { preStep5Arena } from '../helpers/pre-step5.js';
 import {
     EFFORTS,
     bestEffort as typedBestEffort,
@@ -13,13 +13,13 @@ import {
 import { MODEL_DEFAULTS } from '../../js/evo/role-budget-model.js';
 import { roleParams } from '../../js/evo/role-budget-params.js';
 
-const courserConfig = arenaConfig(JSON.parse(readFileSync('evals/fair-chase/courser.json', 'utf8')));
+const courserConfig = preStep5Arena(JSON.parse(readFileSync('evals/fair-chase/courser.json', 'utf8')));
 const bodies = (/** @type {any} */ config) => ({
     hunter: roleParams(config, 'predator'),
     prey: roleParams(config, 'forager'),
 });
 const courser = bodies(courserConfig);
-const defaults = bodies(arenaConfig());
+const defaults = bodies(preStep5Arena());
 const model = MODEL_DEFAULTS;
 /** @type {any} the frame functions with their options left untyped for the asserts */
 const frameOptions = typedFrameOptions;
@@ -36,8 +36,8 @@ describe('the gaps of awareness and sight', () => {
     });
 
     it('is the rear reach for a prey with a narrow rear eye', () => {
-        const hunter = roleParams(arenaConfig(), 'predator');
-        const prey = roleParams(arenaConfig(), 'defender');
+        const hunter = roleParams(preStep5Arena(), 'predator');
+        const prey = roleParams(preStep5Arena(), 'defender');
         expect(gapAtAwareness(hunter, prey)).toBeCloseTo(240 + 45, 9);
         expect(gapAtAwareness(prey, hunter)).toBeCloseTo(160 + 29, 9);
     });
@@ -144,7 +144,7 @@ describe('maxCatchableGap', () => {
     });
 
     it('is 0 when no gap down to the bodies touching kills: a hunter that cannot bite', () => {
-        const small = roleParams(arenaConfig({ huntSizeRatio: 3 }), 'predator');
+        const small = roleParams(preStep5Arena({ huntSizeRatio: 3 }), 'predator');
         expect(maxCatchableGap(small, defaults.prey, { model })).toBe(0);
     });
 
@@ -156,7 +156,7 @@ describe('maxCatchableGap', () => {
     });
 
     it('falls to the limit for a hunter nothing outruns', () => {
-        const fast = bodies(arenaConfig({ sprintStoreEnabled: false, maxVelocity: 12, maxThrust: 1.2 }));
+        const fast = bodies(preStep5Arena({ sprintStoreEnabled: false, maxVelocity: 12, maxThrust: 1.2 }));
         const gap = maxCatchableGap(fast.hunter, fast.prey, { model, bound: 'straight' });
         expect(gap).toBeGreaterThan(1000);
     });
@@ -181,7 +181,7 @@ describe('maxCatchableGap', () => {
     });
 
     it('the oracle hunter, which sprints only with the prey in view, reaches less far than the one that sprints from tick 0 (T15a)', () => {
-        const even = bodies(arenaConfig(JSON.parse(readFileSync('evals/fair-chase/even.json', 'utf8'))));
+        const even = bodies(preStep5Arena(JSON.parse(readFileSync('evals/fair-chase/even.json', 'utf8'))));
         const at = (/** @type {any} */ sprint) => maxCatchableGap(even.hunter, even.prey, { model, effort: 1, sprint });
         expect(at('view')).toBeLessThan(at('always'));
         expect(at(undefined)).toBe(at('always'));

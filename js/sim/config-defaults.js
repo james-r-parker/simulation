@@ -64,13 +64,13 @@ export const DEFAULTS = deepFreeze({
     damping: 0.95, // DAMPENING_FACTOR
     sprintMultiplier: 0.5, // SPRINT_BONUS_MULTIPLIER
     sprintCost: 0.05, // SPRINT_COST_PER_FRAME
-    sprintStoreEnabled: false, // fair-chase Phase 1: a sprint spends a per-agent store (js/sim/sprint-store.js); off until Phase 3 adopts or T8a deletes it
+    sprintStoreEnabled: true, // fair-chase Phase 1: a sprint spends a per-agent store (js/sim/sprint-store.js); on from step 5 (step5-e)
     sprintDrain: 0.01, // fair-chase: store drained a tick while SPRINT is above 0, times the spec's sprintDrainMultiplier (100 ticks from full)
     sprintRefill: 0.002, // fair-chase: store refilled a tick while SPRINT is at or under 0 and THRUST under sprintRestThrust
     sprintRestThrust: 0.2, // fair-chase: the THRUST output under which a body rests and its store refills
     sprintFloor: 0.3, // fair-chase: under this store the sprint's factor falls linearly to 0 at an empty store
     initialEnergy: 800, // INITIAL_AGENT_ENERGY
-    entrantEnergy: 200, // natural-selection T4: a floor or immigrant seeder entrant starts poor; 0 means initialEnergy
+    entrantEnergy: 700, // natural-selection T4: a floor or immigrant seeder entrant starts poor; 0 means initialEnergy
     maxEnergy: 2000, // natural-selection economy (was MAX_ENERGY 25000): a small store, so a mother has little to lose to a winter before she is dead
     passiveLoss: 0.06, // PASSIVE_LOSS
     movementCost: 0.015, // MOVEMENT_COST_MULTIPLIER x 0.5
@@ -199,15 +199,15 @@ export const DEFAULTS = deepFreeze({
     traitMutationSigma: 0.1, // body-genes T33: the step of a trait gene's mutation (the constant TRAIT_SIGMA before)
     traitGeneClamp: 3, // body-genes T33: a trait gene is clamped to plus or minus this after mutation; tanh(3) is 0.995, so a gene cannot drift into the flat part of the curve
     sizeTurn: 0, // body-genes T13: the size trait's cost, the turn rate x r^-sizeTurn; 0 is off
-    speedHeat: 0, // body-genes T13: the speed trait's cost, the heat gain of movement x r^speedHeat; 0 is off
+    speedHeat: 0.5, // body-genes T13: the speed trait's cost, the heat gain of movement x r^speedHeat; 0 is off
     heatSpeedCap: 1, // body-genes T13: the cap on speed / maxVelocity in the heat gain of movement (a lane); 1 is today, where a body over the cruise cap warms no faster
-    sprintHeat: 0, // body-genes T13: heat added per sprinting tick at sprint-store ratio 1 (a lane), times the sprint delivered; 0 is off
-    sprintStoreHeat: 0, // body-genes T13: the sprint-store trait's cost, sprintHeat x r^sprintStoreHeat; 0 is off
+    sprintHeat: 0.0025, // body-genes T13: heat added per sprinting tick at sprint-store ratio 1 (a lane), times the sprint delivered; 0 is off
+    sprintStoreHeat: 0.5, // body-genes T13: the sprint-store trait's cost, sprintHeat x r^sprintStoreHeat; 0 is off
     fatSlow: 0, // body-genes T13: the fat trait's cost, fatSlowShare x r^fatSlow; 0 is off
     burnThrust: 0, // body-genes T13: the burn trait's cost, thrust x r^burnThrust (a body that burns less has less power); 0 is off
-    hearingCost: 0, // body-genes T46: the hearing trait's cost, a standing loss of passiveLoss x hearingCost x (hearing - 1) above ratio 1; 0 is off
-    noseCost: 0, // body-genes T46: the nose trait's cost, a standing loss of passiveLoss x noseCost x (nose - 1) above ratio 1; 0 is off
-    smokeSightRange: 0, // body-genes T46: the smoke-sight trait's cost, the ray length x r^-smokeSightRange; 0 is off
+    hearingCost: 0.5, // body-genes T46: the hearing trait's cost, a standing loss of passiveLoss x hearingCost x (hearing - 1) above ratio 1; 0 is off
+    noseCost: 0.5, // body-genes T46: the nose trait's cost, a standing loss of passiveLoss x noseCost x (nose - 1) above ratio 1; 0 is off
+    smokeSightRange: 0.5, // body-genes T46: the smoke-sight trait's cost, the ray length x r^-smokeSightRange; 0 is off
     leakGeneStart: 0, // brain plan big bang (H3): a random genome's leak genes; 0 gives a 0.5 (memory from generation 0), was 3 (0.955)
     leakMin: 0.02, // brain plan big bang (H7): the smallest leak rate (a half-life of 34 ticks, was 0.05 and 13.5); a unit with a very negative leak gene still moves 2% toward its target per tick
     meritMateBonus: 150, // new: fitness-and-selection T16 (merit, off)
@@ -234,10 +234,10 @@ export const DEFAULTS = deepFreeze({
     rewardBase: 0.25, // realistic-keepers T5: share of the plain rate that applies with no reward
     rewardDecay: 0.02, // realistic-keepers T5: per-tick decay of the trace
     splitMateScarceTicks: 600, // natural-selection Phase 4: ticks without a possible mate in view before an agent may split (sharks, Komodo dragons); 0 is no wait
-    defenderRepelEnergy: 0, // prey-guilds Phase 2: energy a defender's active repel drains from a canHunt target in jaws; 0 is off
+    defenderRepelEnergy: 40, // prey-guilds Phase 2: energy a defender's active repel drains from a canHunt target in jaws; 0 is off
     defenderRepelCost: 0, // prey-guilds Phase 2: energy a defender pays when landing an active repel
-    defenderRepelImpulse: 0, // prey-guilds Phase 2: knockback velocity added to the repelled hunter along the defender-to-hunter vector
-    coldStackRate: 0, // status-effects T9: the standing cost `chilled` adds a stack (passiveLoss x (1 + rate x stacks)); 0 is off
+    defenderRepelImpulse: 4, // prey-guilds Phase 2: knockback velocity added to the repelled hunter along the defender-to-hunter vector
+    coldStackRate: 0.5, // status-effects T9: the standing cost `chilled` adds a stack (passiveLoss x (1 + rate x stacks)); 0 is off
     coldStackTicks: 60, // status-effects T9: ticks under `temperatureOptimalMin` that add one `chilled` stack
     coldRecoverTicks: 15, // status-effects T9: ticks at or above `temperatureOptimalMin` that take one `chilled` stack off
     woundThrust: 0, // status-effects T9: the thrust a `wounded` stack takes off (maxThrust x (1 - woundThrust x stacks)); 0 is off
@@ -248,8 +248,8 @@ export const DEFAULTS = deepFreeze({
     shakenThrust: 0, // status-effects T9: the thrust a `shaken` body loses after a panic; 0 is off
     shakenTicks: 120, // status-effects T9: ticks a body is `shaken`, times its nerve
     hearThreshold: 0.1, // status-effects T10: the loudness at or above which a heard call raises an effect (`rallied`, `alert`); role-budget.md reads it too
-    rallyThrust: 0, // status-effects T10: the thrust and sprint boost a `rallied` stack adds, times the body's nerve; 0 is off
-    rallyBurn: 0, // status-effects T10: the passive cost and heat gain a `rallied` stack adds, times the body's nerve; 0 is off
+    rallyThrust: 0.1, // status-effects T10: the thrust and sprint boost a `rallied` stack adds, times the body's nerve; 0 is off
+    rallyBurn: 4, // status-effects T10: the passive cost and heat gain a `rallied` stack adds, times the body's nerve; 0 is off
     rallyTicks: 120, // status-effects T10: ticks a `rallied` stack lasts, and how recent the caller's bite must be for an `answered` kill
     answeredBite: 0, // status-effects T10: the bite energy an `answered` stack adds (biteEnergy x (1 + answeredBite x stacks)); 0 is off
     answeredTicks: 120, // status-effects T10: ticks an `answered` stack lasts
@@ -260,6 +260,6 @@ export const DEFAULTS = deepFreeze({
     alertTicks: 90, // status-effects T11: ticks an `alert` stack lasts
     huddleWarmth: 0, // status-effects T11: the passive heat loss a `huddled` stack saves (temperatureLossPassive x (1 - warmth x stacks)); 0 is off
     huddleRange: 2, // status-effects T11: how near, in body sizes, a fed kin must be to give a `huddled` stack
-    staggerThrust: 0, // status-effects T11: the thrust a `staggered` stack takes off, and a staggered hunter cannot bite; 0 is off (no stack is raised)
+    staggerThrust: 0.5, // status-effects T11: the thrust a `staggered` stack takes off, and a staggered hunter cannot bite; 0 is off (no stack is raised)
     staggerTicks: 30, // status-effects T11: ticks a `staggered` stack lasts
 });

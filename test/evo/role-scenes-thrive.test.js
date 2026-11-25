@@ -1,11 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { createConfig } from '../../js/sim/config.js';
-import { arenaConfig } from '../../js/evo/chase-arena.js';
+import { createPreStep5Config } from '../helpers/pre-step5.js';
+import { preStep5Arena } from '../helpers/pre-step5.js';
 import { playForaging, playIdle, playLiving } from '../../js/evo/role-scenes-thrive.js';
 import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 
-const world = createConfig({});
+const world = createPreStep5Config({});
 const COURSER = JSON.parse(readFileSync('evals/fair-chase/courser.json', 'utf8'));
 
 describe('playIdle', () => {
@@ -29,7 +29,7 @@ describe('playIdle', () => {
     });
 
     it('ends at maxAgeTicks when the energy would outlast it (old age)', () => {
-        const rich = createConfig({ maxAgeTicks: 500, maturityTicks: 100 });
+        const rich = createPreStep5Config({ maxAgeTicks: 500, maturityTicks: 100 });
         const r = playIdle(rich, { spec: 'forager', energy: 800, speed: 0 });
         expect(r.ticks.life).toBe(500);
     });
@@ -72,10 +72,10 @@ describe('playForaging', () => {
 
 describe('playLiving', () => {
     it('plays the scripted chase at the awareness gap: no kill at the defaults, a kill on the courser arm', () => {
-        const none = playLiving(arenaConfig(), { prey: 'forager', gate: 600, birth: 200 });
+        const none = playLiving(preStep5Arena(), { prey: 'forager', gate: 600, birth: 200 });
         expect(none.ticks.killTick).toBeNull();
         expect(none.outcome).toEqual({ net: null, chasesToGate: null });
-        const killed = playLiving(arenaConfig(COURSER), { prey: 'forager', gate: 600, birth: 200 });
+        const killed = playLiving(preStep5Arena(COURSER), { prey: 'forager', gate: 600, birth: 200 });
         expect(killed.ticks.killTick).toBeGreaterThan(0);
         expect(typeof killed.outcome.net).toBe('number');
     });

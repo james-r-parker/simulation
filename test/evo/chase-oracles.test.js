@@ -9,7 +9,8 @@ import {
     storeAboveFloor,
     wrap,
 } from '../../js/evo/chase-oracles.js';
-import { arenaConfig, stageArena } from '../../js/evo/chase-arena.js';
+import { stageArena } from '../../js/evo/chase-arena.js';
+import { preStep5Arena } from '../helpers/pre-step5.js';
 
 const FORAGER = 0;
 const PREDATOR = 1;
@@ -19,7 +20,7 @@ const PREDATOR = 1;
  * @returns {Record<string, any>} a world with the pursuer at (4000, 4000) heading +x and the evader as given
  */
 function pair(evader) {
-    return stageArena(arenaConfig(), [
+    return stageArena(preStep5Arena(), [
         { spec: PREDATOR, x: 4000, y: 4000, angle: 0 },
         { spec: FORAGER, angle: 0, ...evader },
     ]).world;
@@ -88,7 +89,7 @@ describe('evaderBrain', () => {
     });
 
     it('bends along a wall when given a wall margin, and runs into it without one', () => {
-        const edge = arenaConfig().worldWidth - 10;
+        const edge = preStep5Arena().worldWidth - 10;
         const w = pair({ x: edge, y: 4400, angle: 0 });
         evaderBrain({ pursuer: 0, evader: 1, sprint: true })(w);
         const without = out(w, 1, OUTPUT_INDEX.TURN);
@@ -140,7 +141,7 @@ describe('the oracles with the sprint store on', () => {
      * @returns {Record<string, any>} the pair in an arena with the store on, both stores full
      */
     const stored = (evader) =>
-        stageArena(arenaConfig({ sprintStoreEnabled: true }), [
+        stageArena(preStep5Arena({ sprintStoreEnabled: true }), [
             { spec: PREDATOR, x: 4000, y: 4000, angle: 0 },
             { spec: FORAGER, angle: 0, ...evader },
         ]).world;

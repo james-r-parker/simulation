@@ -6,7 +6,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
-import { arenaConfig } from '../../js/evo/chase-arena.js';
+import { preStep5Arena } from '../helpers/pre-step5.js';
 import { ROLE_METRICS } from '../../js/evo/metric-registry/roles.js';
 import { playBiteChoice, playDefenceObserved } from './helpers/role-scene-defence.js';
 
@@ -27,9 +27,9 @@ const RATIO = 'eval.hunter_defender_bite_ratio';
 const timeout = scaleTimeout(60_000);
 
 describe('the defender metrics against a planted defence', { timeout }, () => {
-    const armed = playDefenceObserved(arenaConfig(SHOVE_ON), { side: 40 });
-    const disarmed = playDefenceObserved(arenaConfig(SHOVE_OFF), { side: 40 });
-    const absent = playDefenceObserved(arenaConfig(SHOVE_ON), { side: null });
+    const armed = playDefenceObserved(preStep5Arena(SHOVE_ON), { side: 40 });
+    const disarmed = playDefenceObserved(preStep5Arena(SHOVE_OFF), { side: 40 });
+    const absent = playDefenceObserved(preStep5Arena(SHOVE_ON), { side: null });
 
     it('plants shoves in one scene and none in the others', () => {
         expect(armed.shoveTicks.length).toBeGreaterThan(0);
@@ -61,8 +61,8 @@ describe('the defender metrics against a planted defence', { timeout }, () => {
     });
 
     it('defender_bite_break_share reads 1 when the hunter lets go after a shove, and 0 when it lets go with no shove', () => {
-        const broken = playDefenceObserved(arenaConfig(SHOVE_ON), { ...LATE, letGo: true });
-        const quiet = playDefenceObserved(arenaConfig(SHOVE_OFF), { ...LATE, letGo: broken.firstShoveAt });
+        const broken = playDefenceObserved(preStep5Arena(SHOVE_ON), { ...LATE, letGo: true });
+        const quiet = playDefenceObserved(preStep5Arena(SHOVE_OFF), { ...LATE, letGo: broken.firstShoveAt });
         expect(broken.shoveTicks.length).toBeGreaterThan(0);
         expect(broken.metrics['eval.escape_share'].value).toBe(1);
         expect(broken.metrics[BREAK].value).toBe(1);
@@ -78,7 +78,7 @@ describe('the defender metrics against a planted defence', { timeout }, () => {
     });
 
     it('defender_bite_break_share has no episode to read when the hunter never bites', () => {
-        const far = playDefenceObserved(arenaConfig(SHOVE_ON), { side: 40, ticks: 20 });
+        const far = playDefenceObserved(preStep5Arena(SHOVE_ON), { side: 40, ticks: 20 });
         expect(far.metrics[BREAK].value).toBeNull();
     });
 

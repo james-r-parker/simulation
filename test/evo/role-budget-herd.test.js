@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createConfig } from '../../js/sim/config.js';
+import { createPreStep5Config } from '../helpers/pre-step5.js';
 import { MODEL_DEFAULTS } from '../../js/evo/role-budget-model.js';
 import { roleParams } from '../../js/evo/role-budget-params.js';
 import {
@@ -12,7 +12,7 @@ import {
     trampleLoss,
 } from '../../js/evo/role-budget-herd.js';
 
-const config = createConfig({});
+const config = createPreStep5Config({});
 const herd = herdNumbers(config);
 const params = (/** @type {string} */ spec) => roleParams(config, spec);
 
@@ -28,8 +28,8 @@ describe('herdNumbers', () => {
 describe('the pulled flag', () => {
     it('is set for a ring wider than 4 herd radii (a herd of 12), and not at the defaults', () => {
         expect(herd.pulled).toBe(false);
-        expect(herdNumbers(createConfig({ herdSize: 12 })).pulled).toBe(true);
-        const big = createConfig({ herdSize: 12 });
+        expect(herdNumbers(createPreStep5Config({ herdSize: 12 })).pulled).toBe(true);
+        const big = createPreStep5Config({ herdSize: 12 });
         expect(budgetHerd(big, roleParams(big, 'forager'), MODEL_DEFAULTS).pulled).toBe(true);
     });
 });
@@ -137,19 +137,19 @@ describe('budgetHerd at the defaults', () => {
 
 describe('budgetHerd where the numbers move', () => {
     it('a slower herd does not read a predator either: the herd turns from a hunter at any run speed', () => {
-        const slow = createConfig({ herdRunSpeed: 2 });
+        const slow = createPreStep5Config({ herdRunSpeed: 2 });
         expect(budgetHerd(slow, roleParams(slow, 'predator'), MODEL_DEFAULTS).row.status).toBe('n/a');
     });
 
     it('a body with less than one trample of energy cannot survive: survive is impossible', () => {
-        const brutal = createConfig({ trampleDamage: 4000 });
+        const brutal = createPreStep5Config({ trampleDamage: 4000 });
         const f = budgetHerd(brutal, roleParams(brutal, 'forager'), MODEL_DEFAULTS);
         expect(f.cells.survive.status).toBe('impossible');
         expect(f.row.binding).toBe('survive');
     });
 
     it('a body that cannot see past its own size sees nothing: see is impossible', () => {
-        const blind = createConfig({ specialisations: { forager: { visionRange: 20 } } });
+        const blind = createPreStep5Config({ specialisations: { forager: { visionRange: 20 } } });
         const f = budgetHerd(blind, roleParams(blind, 'forager'), MODEL_DEFAULTS);
         expect(f.cells.see.status).toBe('impossible');
     });

@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { arenaConfig } from '../../js/evo/chase-arena.js';
+import { preStep5Arena } from '../helpers/pre-step5.js';
 import { LEVEL_EFFECTS, checkEffects, lanesWithEffects } from '../../js/evo/role-budget-effects.js';
 import { roleParams } from '../../js/evo/role-budget-params.js';
 import { laneBases } from '../../js/sim/body-lanes.js';
 import { SPEC_NAMES } from '../../js/sim/specs.js';
 
-const planted = arenaConfig({ rallyThrust: 0.2, rallyBurn: 0.1, woundThrust: 0.1 });
+const planted = preStep5Arena({ rallyThrust: 0.2, rallyBurn: 0.1, woundThrust: 0.1 });
 const offEverything = Object.fromEntries(LEVEL_EFFECTS.map((name) => [name, 0]));
 
 describe('checkEffects', () => {
@@ -50,14 +50,14 @@ describe('lanesWithEffects', () => {
     });
 
     it('leaves the lanes alone at a strength of 0, the neutral numbers', () => {
-        const neutral = arenaConfig({});
+        const neutral = preStep5Arena({});
         expect(lanesWithEffects(neutral, lane, { rallied: 3 })).toEqual(lane);
     });
 });
 
 describe('roleParams with effects', () => {
     it('with every level at 0 equals the record without effects, for every spec, age and the planted numbers', () => {
-        for (const config of [arenaConfig({}), planted]) {
+        for (const config of [preStep5Arena({}), planted]) {
             for (const name of SPEC_NAMES) {
                 for (const age of /** @type {const} */ (['adult', 'juvenile'])) {
                     expect(roleParams(config, name, {}, { age, effects: offEverything })).toEqual(

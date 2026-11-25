@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { arenaConfig, stageArena } from '../../js/evo/chase-arena.js';
+import { stageArena } from '../../js/evo/chase-arena.js';
+import { preStep5Arena } from '../helpers/pre-step5.js';
 import { evaderBrain, pursuerBrain } from '../../js/evo/chase-oracles.js';
 import { step } from '../../js/sim/step.js';
 import { DISTANCE_SHARES, FAIR_BAND, MAX_TICKS, fairBand, runEnvelope } from '../../js/evo/chase-envelope.js';
@@ -18,7 +19,7 @@ describe('runEnvelope', () => {
     it(
         'plays the named pairs only, one grid cell per distance and bearing',
         () => {
-            const [only, ...rest] = runEnvelope(arenaConfig(), { pairs: [['predator', 'forager']], trials: 1 });
+            const [only, ...rest] = runEnvelope(preStep5Arena(), { pairs: [['predator', 'forager']], trials: 1 });
             expect(rest).toEqual([]);
             expect([only.pursuer, only.evader, only.grid.length, only.grid[0].length]).toEqual([
                 'predator',
@@ -34,7 +35,7 @@ describe('runEnvelope', () => {
     it(
         'plays every hunting specialisation against every body when no pairs are named',
         () => {
-            const config = arenaConfig();
+            const config = preStep5Arena();
             const specs = Object.entries(config.specialisations);
             const hunters = specs.filter(([, spec]) => /** @type {any} */ (spec).canHunt);
             expect(hunters.length).toBeGreaterThan(0);
@@ -47,7 +48,7 @@ describe('runEnvelope', () => {
     );
 
     it('rejects a named pair with an unknown specialisation, listing the known ones', () => {
-        expect(() => runEnvelope(arenaConfig(), { pairs: [['dragon', 'forager']], trials: 1 })).toThrow(
+        expect(() => runEnvelope(preStep5Arena(), { pairs: [['dragon', 'forager']], trials: 1 })).toThrow(
             /unknown specialisation "dragon"; known: .*forager/,
         );
     });
@@ -60,7 +61,7 @@ describe('the envelope with the sprint store on', () => {
      * @returns {boolean} whether the predator caught it
      */
     function caught(evaderStore) {
-        const { world, policy } = stageArena(arenaConfig({ sprintStoreEnabled: true }), [
+        const { world, policy } = stageArena(preStep5Arena({ sprintStoreEnabled: true }), [
             { spec: 1, x: 4000, y: 4000, angle: 0 },
             { spec: 0, x: 4300, y: 4000, angle: 0 },
         ]);

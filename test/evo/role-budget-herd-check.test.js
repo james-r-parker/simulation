@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { createConfig } from '../../js/sim/config.js';
+import { createPreStep5Config } from '../helpers/pre-step5.js';
 import { HERD_SCENE_SPECS, HERD_TOLERANCE, herdCheck, herdReadings } from '../../js/evo/role-budget-herd-check.js';
 import { MODEL_DEFAULTS } from '../../js/evo/role-budget-model.js';
 import { playStampede } from '../../js/evo/role-scenes-herd.js';
 
-const world = createConfig({});
+const world = createPreStep5Config({});
 
 describe('herdReadings', () => {
     it('reads four things of a spec: the front, the first trample, the ticks to clear and whether it is trampled', () => {

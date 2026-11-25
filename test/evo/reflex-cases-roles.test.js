@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createConfig } from '../../js/sim/config.js';
+import { createPreStep5Config } from '../helpers/pre-step5.js';
 import { createRng, fork } from '../../js/sim/rng.js';
 import { reflexBars } from '../../js/evo/reflex-bars.js';
 import { ROLE_CASES } from '../../js/evo/reflex-cases-roles.js';
@@ -7,6 +8,10 @@ import { DEG, SEQUENCE_TICKS } from '../../js/evo/reflex-stage.js';
 
 const VIEW = 350;
 const BARS = reflexBars(createConfig());
+/** The bars of the config before the step 5 adoption: the scout row was ok there, so its bars were derived and not hand-set. */
+const PRE_BARS = reflexBars(createPreStep5Config());
+const checkOn = (/** @type {string} */ name) => (/** @type {any} */ o, /** @type {any} */ st) =>
+    byName(name).check(o, st, PRE_BARS);
 const ALARM_BAR = BARS.role.alarm;
 const SPACING = 360 / createConfig().rayCount;
 const byName = (/** @type {string} */ name) => {
@@ -187,10 +192,10 @@ describe('the heard-call cases', () => {
     });
 
     it('flee-on-alarm asks the forager and the reproducer for the turn the warn row needs of each', () => {
-        const turnAway = BARS.role.turnAway;
+        const turnAway = PRE_BARS.role.turnAway;
         const s = staging('alarm', 60 * DEG);
-        const forager = byName('flee-on-alarm').check;
-        const reproducer = byName('flee-on-alarm:reproducer').check;
+        const forager = checkOn('flee-on-alarm');
+        const reproducer = checkOn('flee-on-alarm:reproducer');
         expect(turnAway.reproducer).toBeGreaterThan(0.15);
         expect(reproducer(out({ turn: -turnAway.reproducer + 0.01, thrust: 1 }), s)).toBe(false);
         expect(forager(out({ turn: -turnAway.forager, thrust: 1 }), s)).toBe(true);
@@ -235,10 +240,10 @@ describe('clear-the-herd', () => {
     });
 
     it('reads each specialisation its own herd bars: the scout needs the thrust its row derives', () => {
-        const { herdThrust, herdTurn } = BARS.role;
+        const { herdThrust, herdTurn } = PRE_BARS.role;
         expect(herdThrust.scout).toBeGreaterThan(herdThrust.forager);
-        const scout = byName('clear-the-herd:scout').check;
-        const forager = byName('clear-the-herd').check;
+        const scout = checkOn('clear-the-herd:scout');
+        const forager = checkOn('clear-the-herd');
         const s = staging('herd', 25 * DEG);
         expect(scout(out({ turn: -1, thrust: herdThrust.scout }), s)).toBe(true);
         expect(scout(out({ turn: -1, thrust: herdThrust.scout - 0.01 }), s)).toBe(false);

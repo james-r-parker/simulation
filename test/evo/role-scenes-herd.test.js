@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { createConfig } from '../../js/sim/config.js';
+import { createPreStep5Config } from '../helpers/pre-step5.js';
 import { measureStampede, playStampede } from '../../js/evo/role-scenes-herd.js';
 
-const world = createConfig({});
+const world = createPreStep5Config({});
 
 describe('playStampede with a body that stands', () => {
     it('is trampled when the front arrives: at tick 59 for a forager, 74 for a scout, 49 for a defender facing away', () => {

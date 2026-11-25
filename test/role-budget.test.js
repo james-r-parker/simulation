@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { PHASE1_ROWS, matrix } from '../js/evo/role-budget-matrix.js';
 import { MODEL_DEFAULTS } from '../js/evo/role-budget-model.js';
-import { arenaConfig } from '../js/evo/chase-arena.js';
+import { PRE_STEP5, preStep5Arena } from './helpers/pre-step5.js';
 import { applySets, main, parseArgs, runBudget } from '../scripts/role-budget.mjs';
 import { scaleTimeout } from '../scripts/lib/test-timeout.mjs';
 import {
@@ -19,13 +19,24 @@ import { cell } from '../js/evo/role-budget-cell.js';
 
 const COURSER = 'evals/fair-chase/courser.json';
 const dir = () => mkdtempSync(join(tmpdir(), 'role-budget-'));
+/** The arm file of the numbers before the step 5 adoption: the tests anchored on the earlier defaults read it. */
+const PRE_STEP5_FILE = join(dir(), 'pre-step5.json');
+writeFileSync(PRE_STEP5_FILE, JSON.stringify(PRE_STEP5));
 
 /** Runs the budget with its output captured and its log in a temporary directory. */
 async function run(/** @type {string[]} */ argv) {
     const lines = /** @type {string[]} */ ([]);
     const logDir = dir();
-    const done = await runBudget(parseArgs(argv), { logDir, print: (text) => lines.push(text) });
+    const args = argv.includes('--config') ? argv : ['--config', PRE_STEP5_FILE, ...argv];
+    const done = await runBudget(parseArgs(args), { logDir, print: (text) => lines.push(text) });
     return { ...done, text: lines.join('\n'), logDir };
+}
+
+/** Runs the budget on the current defaults (no arm file). */
+async function runNow(/** @type {string[]} */ argv) {
+    const lines = /** @type {string[]} */ ([]);
+    const done = await runBudget(parseArgs(argv), { logDir: dir(), print: (text) => lines.push(text) });
+    return { ...done, text: lines.join('\n') };
 }
 
 describe('parseArgs', () => {
@@ -144,7 +155,7 @@ describe('runBudget', () => {
 
     it('reads the same budget from --set as from the config file: the defaults with the courser store are the courser arm', async () => {
         const viaFile = await run(['--config', COURSER, '--rows', 'predator:forager', '--json']);
-        const viaSet = await run([
+        const viaSet = await runNow([
             '--set',
             'sprintStoreEnabled=true',
             '--set',
@@ -169,8 +180,10 @@ describe('runBudget', () => {
         expect(readFileSync(out, 'utf8').trim()).toBe(text);
     });
 
-    it('is red at the defaults and green on the courser arm for the hunter against the forager', async () => {
+    it('is red at the pre-step 5 defaults, not red at the step 5 defaults, and green on the courser arm for the hunter against the forager', async () => {
         const red = JSON.parse((await run(['--rows', 'predator:forager', '--json'])).text).rows[0];
+        const now = JSON.parse((await runNow(['--rows', 'predator:forager', '--json'])).text).rows[0];
+        expect(now.status).not.toBe('impossible');
         const green = JSON.parse((await run(['--config', COURSER, '--rows', 'predator:forager', '--json'])).text)
             .rows[0];
         expect(red.status).toBe('impossible');
@@ -223,7 +236,7 @@ describe('main', () => {
 
 describe('the report', () => {
     const model = MODEL_DEFAULTS;
-    const result = matrix(arenaConfig(), model, PHASE1_ROWS);
+    const result = matrix(preStep5Arena(), model, PHASE1_ROWS);
 
     it('prints a cell as its slack, >200 at the cap, ! for tight, X for impossible and - for not read', () => {
         expect(cellText(cell(40.4, model))).toBe('40');

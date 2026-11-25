@@ -1,4 +1,4 @@
-import { createConfig } from '../../../js/sim/config.js';
+import { createPreStep5Config } from '../../helpers/pre-step5.js';
 import { createWorld } from '../../../js/sim/spawn.js';
 import { testPolicy } from './test-policy.js';
 import { SIMPLE_WORLD } from '../../helpers/simple-world.js';
@@ -9,7 +9,7 @@ import { SIMPLE_WORLD } from '../../helpers/simple-world.js';
  * @returns {ReturnType<typeof createWorld>}
  */
 export function smallWorld(over = {}) {
-    const config = createConfig({
+    const config = createPreStep5Config({
         ...SIMPLE_WORLD,
         worldWidth: 1000,
         worldHeight: 1000,

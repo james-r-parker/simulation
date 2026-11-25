@@ -2,7 +2,7 @@
 // stacks they make are hashed, and zeroed with a freed slot, only when a world has one on.
 
 import { describe, expect, it } from 'vitest';
-import { createConfig } from '../../js/sim/config.js';
+import { createPreStep5Config } from '../helpers/pre-step5.js';
 import {
     SOCIAL_KEYS,
     callEffectsOn,
@@ -20,7 +20,7 @@ import { smallWorld } from './helpers/small-world.js';
 
 describe('socialEffectsOn', () => {
     it('is false at the defaults, and true for any one key above 0', () => {
-        expect(socialEffectsOn(createConfig())).toBe(false);
+        expect(socialEffectsOn(createPreStep5Config())).toBe(false);
         for (const key of SOCIAL_KEYS) {
             expect(socialEffectsOn({ [key]: 0.1 }), key).toBe(true);
             expect(socialEffectsOn({ [key]: 0 }), key).toBe(false);
@@ -33,7 +33,7 @@ describe('socialEffectsOn', () => {
     });
 
     it('names only keys the config knows, each 0 by default', () => {
-        const config = createConfig();
+        const config = createPreStep5Config();
         for (const key of SOCIAL_KEYS.filter((k) => k in config)) {
             expect(config[key], key).toBe(0);
         }
@@ -42,7 +42,7 @@ describe('socialEffectsOn', () => {
 
 describe('callEffectsOn', () => {
     it('is off at the defaults, and on once a number of rallied or answered is above 0 or hoarse above 1', () => {
-        expect(callEffectsOn(createConfig())).toBe(false);
+        expect(callEffectsOn(createPreStep5Config())).toBe(false);
         for (const key of ['rallyThrust', 'rallyBurn', 'answeredBite']) {
             expect(callEffectsOn({ [key]: 0.1, hoarseFactor: 1 }), key).toBe(true);
         }
@@ -53,7 +53,7 @@ describe('callEffectsOn', () => {
 
 describe('the stacks a body keeps', () => {
     it('are off at the defaults, and each on once one of its own numbers is above 0', () => {
-        const config = createConfig();
+        const config = createPreStep5Config();
         expect([chilledOn(config), woundOn(config), panicOn(config)]).toEqual([false, false, false]);
         expect(chilledOn({ coldStackRate: 0.1 })).toBe(true);
         expect(woundOn({ woundThrust: 0.1 })).toBe(true);

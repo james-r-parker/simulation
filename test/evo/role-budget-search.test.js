@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { arenaConfig } from '../../js/evo/chase-arena.js';
+import { preStep5, preStep5Arena } from '../helpers/pre-step5.js';
 import { budgetChase } from '../../js/evo/role-budget-chase.js';
 import { MODEL_DEFAULTS } from '../../js/evo/role-budget-model.js';
 import { roleParams } from '../../js/evo/role-budget-params.js';
@@ -16,13 +16,13 @@ const small = {
     factors: [0.5, 1.5, 2],
 };
 const budget = (/** @type {any} */ overrides) => {
-    const config = arenaConfig(overrides);
+    const config = preStep5Arena(overrides);
     return budgetChase(roleParams(config, 'predator'), roleParams(config, 'forager'), model, { bearings: false });
 };
 
 describe('the path helpers', () => {
     it('reads a dotted path and sets one on a copy, making the nodes it needs', () => {
-        const config = arenaConfig();
+        const config = preStep5Arena();
         expect(getPath(config, 'specialisations.predator.sprintBoost')).toBe(1.6);
         expect(getPath(config, 'maxVelocity')).toBe(8);
         expect(getPath(config, 'specialisations.nobody.sprintBoost')).toBeUndefined();
@@ -35,8 +35,8 @@ describe('the path helpers', () => {
 });
 
 describe('searchSettings', () => {
-    const config = arenaConfig();
-    const found = searchSettings(config, pair, small);
+    const config = preStep5Arena();
+    const found = searchSettings(config, pair, { ...small, overrides: preStep5() });
 
     it('makes the planted impossible pair (the defaults) catchable by single settings, smallest change first', () => {
         expect(budget({}).catchable).toBe(false);
@@ -56,14 +56,17 @@ describe('searchSettings', () => {
 
     it('writes each finding as an overrides object that round-trips through the config and makes the pair catchable', () => {
         for (const f of found) {
-            const again = arenaConfig(JSON.parse(JSON.stringify(f.overrides)));
+            const again = preStep5Arena(JSON.parse(JSON.stringify(f.overrides)));
             expect(getPath(again, f.path)).toBeCloseTo(f.value, 12);
             expect(budget(f.overrides).catchable).toBe(true);
         }
     });
 
     it('keeps the overrides that made the config', () => {
-        const base = searchSettings(arenaConfig(courserOverrides), pair, { ...small, overrides: courserOverrides });
+        const base = searchSettings(preStep5Arena(courserOverrides), pair, {
+            ...small,
+            overrides: preStep5(courserOverrides),
+        });
         expect(base.length).toBeGreaterThan(0);
         for (const f of base) {
             expect(f.overrides.sprintStoreEnabled).toBe(true);
@@ -75,13 +78,13 @@ describe('searchSettings', () => {
         const base = budget(courserOverrides);
         expect(base.catchable).toBe(true);
         expect(base.fit).toBe(false);
-        const options = { ...small, overrides: courserOverrides };
-        const fixes = searchSettings(arenaConfig(courserOverrides), pair, options);
+        const options = { ...small, overrides: preStep5(courserOverrides) };
+        const fixes = searchSettings(preStep5Arena(courserOverrides), pair, options);
         expect(fixes.length).toBeGreaterThan(0);
         expect(fixes.every((f) => f.fit)).toBe(true);
         expect(budget(fixes[0].overrides).fit).toBe(true);
         const fit = fixes[0].overrides;
-        expect(searchSettings(arenaConfig(fit), pair, { ...small, overrides: fit })).toEqual([]);
+        expect(searchSettings(preStep5Arena(fit), pair, { ...small, overrides: fit })).toEqual([]);
     });
 
     it('skips a value the config refuses and takes the candidates and factors it is given', () => {

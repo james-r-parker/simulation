@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { laneTable } from '../../js/sim/body-lanes.js';
 import { TRAITS, traitRatio } from '../../js/sim/body-traits.js';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
-import { createConfig } from '../../js/sim/config.js';
+import { createPreStep5Config } from '../helpers/pre-step5.js';
 import { applyCosts } from '../../js/sim/energy.js';
 import { actAll } from '../../js/sim/physics.js';
 import { applyGenes } from '../../js/sim/traits.js';
@@ -34,7 +34,7 @@ const COSTS = [
  */
 function planted(name, span, over) {
     const { world, slot } = traitWorld();
-    const config = createConfig({ ...world.config, sprintHeat: 0.1, fatSlowShare: 0.2, ...over });
+    const config = createPreStep5Config({ ...world.config, sprintHeat: 0.1, fatSlowShare: 0.2, ...over });
     const w = /** @type {Record<string, any>} */ ({ ...world, config, laneBases: laneTable(config) });
     setSpan(w, slot, trait(name).index, span);
     setGene(w, slot, trait(name).index, 1);
@@ -44,7 +44,7 @@ function planted(name, span, over) {
 
 describe.each(COSTS)('%s', (key, name, span, lane, sign) => {
     it('is 0 by default, so a planted gene leaves its lane at the base', () => {
-        expect(createConfig()[key]).toBe(0);
+        expect(createPreStep5Config()[key]).toBe(0);
         const base = planted(name, 0, {});
         const gene = planted(name, span, {});
         const r = traitRatio(trait(name), 1, span);
@@ -97,7 +97,7 @@ describe('the standing loss of hearing and nose (body-genes T46)', () => {
      */
     const lost = (name, gene, over) => {
         const { world, slot } = traitWorld();
-        const config = createConfig({ ...world.config, ...over });
+        const config = createPreStep5Config({ ...world.config, ...over });
         const w = /** @type {Record<string, any>} */ ({ ...world, config, laneBases: laneTable(config) });
         setSpan(w, slot, trait(name).index, 0.3);
         setGene(w, slot, trait(name).index, gene);
@@ -114,12 +114,12 @@ describe('the standing loss of hearing and nose (body-genes T46)', () => {
         ['noseCost', 'nose'],
     ])('%s', (key, name) => {
         it('is 0 by default, so a longer ear or nose costs nothing extra', () => {
-            expect(createConfig()[key]).toBe(0);
+            expect(createPreStep5Config()[key]).toBe(0);
             expect(lost(name, 40, {})).toBe(lost(name, 0, {}));
         });
 
         it('charges passiveLoss x key x (ratio - 1) above ratio 1 only', () => {
-            const config = createConfig();
+            const config = createPreStep5Config();
             const extra = lost(name, 40, { [key]: 2 }) - lost(name, 0, { [key]: 2 });
             expect(extra).toBeCloseTo(config.passiveLoss * 2 * 0.3 * Math.tanh(40), 9);
             expect(lost(name, -40, { [key]: 2 })).toBe(lost(name, 0, { [key]: 2 }));

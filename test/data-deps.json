@@ -634,6 +634,9 @@
     "test/sim/step-alloc.slow.test.js": [
         "scripts/alloc-check.mjs"
     ],
+    "test/sim/step5-defaults.test.js": [
+        "evals/role-budget/step5-e.json"
+    ],
     "test/sim/wasm-binary.test.js": [
         "wasm/blob-kernels.wasm"
     ],
