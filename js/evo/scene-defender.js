@@ -32,7 +32,6 @@ export function createDefenderScene(config) {
     return {
         shoves: 0,
         open: new Uint8Array(n),
-        biter: new Uint32Array(n),
         lastBite: new Float64Array(n),
         shoved: new Uint8Array(n),
         resolved: 0,
@@ -60,10 +59,13 @@ function markShoved(scene, world, hunter) {
  * @param {Record<string, any>} world the world
  * @param {number} defender a slot
  * @param {number} target a slot it touches
- * @returns {boolean} whether the sim's repel fires from `defender` onto `target` (`tryDefenderRepel`)
+ * @returns {boolean} whether the sim's repel fires from `defender` onto `target` (`tryDefenderRepel`, which reads the
+ *   defender's per-slot lanes)
  */
 function shoves(world, defender, target) {
+    const { lanes } = world;
     return (
+        (lanes.defenderRepelEnergy[defender] > 0 || lanes.defenderRepelImpulse[defender] > 0) &&
         world.alive[defender] === 1 &&
         world.alive[target] === 1 &&
         world.spec[defender] === SPEC.DEFENDER &&
@@ -80,10 +82,6 @@ function shoves(world, defender, target) {
  * @returns {void}
  */
 function noteShoves(scene, world) {
-    const { config } = world;
-    if (config.defenderRepelEnergy <= 0 && config.defenderRepelImpulse <= 0) {
-        return;
-    }
     for (let c = 0; c < world.contactCount; c++) {
         const a = world.contacts[2 * c];
         const b = world.contacts[2 * c + 1];
@@ -126,7 +124,6 @@ function trackEpisodes(scene, world) {
         }
         if (world.bittenTimer[s] === BITTEN_THIS_TICK) {
             scene.open[s] = 1;
-            scene.biter[s] = world.lastBiter[s];
             scene.lastBite[s] = world.tick;
         } else if (scene.open[s] === 1 && world.tick - scene.lastBite[s] >= ESCAPE_TICKS) {
             resolve(scene, s, true);
@@ -144,18 +141,22 @@ export function tickDefender(scene, world) {
     if (world.tick < BURN_IN_TICKS) {
         return;
     }
-    noteShoves(scene, world);
     trackEpisodes(scene, world);
+    noteShoves(scene, world);
 }
 
 /**
  * Closes the episode of a victim that died, as `observer-combat.js` does: any death with an episode open, or an eaten one,
  * counts as caught.
  * @param {Record<string, any>} scene the defender scene
- * @param {{tick: number, slot: number, cause: number}} death the death record
+ * A hunter that dies has no episode (only non-hunters open one), so a hunter eaten by a hunter is not counted.
+ * @param {{tick: number, slot: number, cause: number, hunter: boolean}} death the death record
  * @returns {void}
  */
-export function noteDefenderDeath(scene, { tick, slot, cause }) {
+export function noteDefenderDeath(scene, { tick, slot, cause, hunter }) {
+    if (hunter) {
+        return;
+    }
     if (tick >= BURN_IN_TICKS && (scene.open[slot] === 1 || cause === DEATH_CAUSE.EATEN)) {
         resolve(scene, slot, false);
     }
@@ -184,6 +185,7 @@ export const defenderDetector = {
                 tick: d[o + EVENT_TICK],
                 slot: d[o + EVENT.AGENT_DIED.SLOT],
                 cause: d[o + EVENT.AGENT_DIED.CAUSE],
+                hunter: world.huntBySpec[d[o + EVENT.AGENT_DIED.SPEC]] === 1,
             });
         },
     },
