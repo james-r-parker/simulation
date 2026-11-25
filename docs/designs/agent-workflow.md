@@ -1,7 +1,7 @@
 # Agent workflow
 
-**Status:** In progress - Phases 1 to 5 are built and reviewed; Phase 6 is built except T40 (it needs 30 pull requests of history); Phase 7 T41 is built; T42 to T49 are open (gate 7 before any training).
-**Validated:** 80f10d18 (2026-11-22)
+**Status:** In progress - Phases 1 to 5 are built and reviewed; Phase 6 is built except T40 (it needs 30 pull requests of history); Phase 7 is built except T43 (the generated-docs choice, waiting on the user) (gate 7 before any training).
+**Validated:** 6761a1cf (2026-11-25)
 **Priority:** 1 - Workflow lead (dev tooling: cheap, and it speeds every step after it). Tooling that changes no sim rule; every session and every subagent pays the Phase 1 cost on its first token and every chunk ships through Phase 5, so both are built before the next training chunk
 **Depends on:** [quality-gates-and-test-tiers.md](quality-gates-and-test-tiers.md)
 
@@ -13,7 +13,7 @@ The repo is built by coding agents: a coordinator, its subagents, and outside st
 
 This doc is a lead: it holds a rank in the Build queue, and the docs below are built as its steps, in order, after its own next work. A step doc keeps its own phases, tasks and status line.
 
-Own work first: Phases 1 to 5 are built; Phase 6 is built except T40. Next: Phase 7 (T42 to T49, gate 7 of fair-chase.md "Before any training"; T46 is part built in PR 635, open), then the open reviews (T15 among them).
+Own work first: Phases 1 to 5 are built; Phase 6 is built except T40. Phase 7 is built except T43 (gate 7 of fair-chase.md "Before any training"), which waits on the user's choice between keeping the generated docs committed behind `npm run sync` and a merge driver. Next: T43, then the open reviews (T15 among them).
 
 | Step | Doc                                                                | Built when                                                                               |
 | ---- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
