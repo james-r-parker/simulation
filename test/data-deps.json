@@ -615,6 +615,9 @@
     "test/sim/body-lanes.test.js": [
         "evals/decisions/body-genes/settings-inventory.md"
     ],
+    "test/sim/effect-cheats.test.js": [
+        "evals/role-budget/step5-d.json"
+    ],
     "test/sim/effects-complete.test.js": [
         "js/sim/*.js"
     ],
