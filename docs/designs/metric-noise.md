@@ -1,8 +1,8 @@
 # Metric noise
 
-**Status:** In progress - Phases 1 and 4 are built. Phase 2 has a terminal hunter count candidate. Phase 6 role metrics are built and reviewed (T24); gate 2 is NOT met: fix detector bugs (T25) and scene tags (T26), then run a fresh 128-seed season-12 baseline after step 5 (T27; scout metrics wait on alarm-calls.md). Phase 5 follows.
-**Validated:** 80f10d18 (2026-11-22)
-**Priority:** 2 - Measurement lead (needed to judge every balance read after it). Phases 1, 4 and 6 code are built (registries.md Phases 1 and 3 built). Next: close gate 2 (T25 detector fixes, T26 scene tags, T27 fresh 128-seed season-12 baseline after step 5, live defender metric; scout waits on alarm-calls.md), then Phase 5 (headline metrics)
+**Status:** In progress - Phases 1 and 4 are built. Phase 2 has a terminal hunter count candidate. Phase 6 role metrics are built and reviewed (T24); gate 2 is NOT met: T25 detector fixes and T26 scene tags are built; left are a fresh 128-seed season-12 baseline after step 5 (T27; scout metrics wait on alarm-calls.md) and a live defender metric. Phase 5 follows.
+**Validated:** 5d678319 (2026-11-25)
+**Priority:** 2 - Measurement lead (needed to judge every balance read after it). Phases 1, 4 and 6 code are built (registries.md Phases 1 and 3 built). Next: close gate 2 (T27 fresh 128-seed season-12 baseline after step 5, live defender metric; scout waits on alarm-calls.md), then Phase 5 (headline metrics)
 **Depends on:** [metric-trust.md](metric-trust.md)
 
 Active plans need detectors that can judge their Targets, done criteria and predictions. This work serves every scene
@@ -12,7 +12,7 @@ in [principles.md](../principles.md) through its detector, without paying for a 
 
 This doc is a lead: it holds a rank in the Build queue, and the docs below are built as its steps, in order, after its own next work. A step doc keeps its own phases, tasks and status line.
 
-Step 1 (registries.md Phases 1 and 3) and Phase 4 (the statistics layer) are built. Next: close Phase 6 (gate 2 before any training: T25 detector bugs, T26 scene tags, T27 fresh 128-seed season-12 baseline after step 5), then Phase 5 (headline metrics), then Phases 2 and 3. E254 is stale for season 12.
+Step 1 (registries.md Phases 1 and 3) and Phase 4 (the statistics layer) are built. Next: close Phase 6 (gate 2 before any training: T25 and T26 are built; T27 fresh 128-seed season-12 baseline after step 5), then Phase 5 (headline metrics), then Phases 2 and 3. E254 is stale for season 12.
 
 | Step | Doc                                          | Built when                                                                                                                                 |
 | ---- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
