@@ -30,9 +30,9 @@ describe('roleDrillValidity', () => {
         expect(v.reason).toBe('valid: the reference wins 8 of 8 and the random brains do not');
     });
 
-    it('reads the scout drill at the defaults as valid: the row is tight, the reference wins every trial', () => {
+    it('reads the scout drill at the defaults as valid: the row is ok, the reference wins every trial', () => {
         const v = roleDrillValidity(WARN_HERD, { trials: 8 });
-        expect(v.bar).toMatchObject({ row: 'scout:predator', status: 'tight', passable: true, slackTicks: 3 });
+        expect(v.bar).toMatchObject({ row: 'scout:predator', status: 'ok', passable: true, slackTicks: 7 });
         expect(v.reference).toMatchObject({ wins: 8, trials: 8 });
         expect(v).toMatchObject({ referencePasses: true, randomFails: true, valid: true });
         expect(v.reference.winShareLow).toBeGreaterThan(v.random.winShare);

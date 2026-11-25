@@ -22,6 +22,8 @@ export const MAX_TICKS = 250;
  * @property {'rest' | 'cruise'} [hunterStart] the hunter's speed at tick 0 (cruise cap: it was creeping)
  * @property {Partial<import('./role-budget-play.js').HunterPlay>} [hunter] the hunter's play over the perfect one
  * @property {Partial<import('./role-budget-play.js').PreyPlay>} [prey] the prey's play over the flight of the oracle
+ * @property {{speed: number, offset: number}} [preyStart] the prey's speed at tick 0 and its heading's offset from straight away
+ *   from the hunter, in radians (default at rest and facing away: a prey that was standing)
  * @property {number} [maxTicks] the longest the chase runs
  */
 
@@ -114,7 +116,13 @@ export function chaseTimeline(hunter, prey, options) {
     const preyPlay = { sprint: 'rationed', jink: JINK_RANGE, breakAngle: Math.PI / 2, awareGap: Infinity, ...o.prey };
     const speed = o.hunterStart === 'cruise' ? hunter.cap.cruise : 0;
     const h = createBody(hunter, { x: 0, y: 0, angle: 0, speed });
-    const p = createBody(prey, { x: o.gap * detCos(o.bearing), y: o.gap * detSin(o.bearing), angle: o.bearing });
+    const { speed: preySpeed = 0, offset = 0 } = o.preyStart ?? {};
+    const p = createBody(prey, {
+        x: o.gap * detCos(o.bearing),
+        y: o.gap * detSin(o.bearing),
+        angle: o.bearing + offset,
+        speed: preySpeed,
+    });
     const slow = turnCircle(hunter.thrust.cruise, hunter.damping, hunter.turnRate.start, hunter.cap.cruise).speed;
     const tally = { bites: 0, income: 0, kick: 0, contact: /** @type {number | null} */ (null), gate: false };
     const closing = createLapse();

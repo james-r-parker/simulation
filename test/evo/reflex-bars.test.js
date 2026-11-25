@@ -15,8 +15,8 @@ describe('reflexBars at the defaults', () => {
     it('derives the forager turn away from the scout row: the swing over the swing plus the turn step slack', () => {
         const swing = swingTicks(FORAGER_TURN, roleParams(createConfig(), 'forager').turnRate.start);
         const source = bar(bars, 'role.turnAway.forager');
-        expect(source).toMatchObject({ source: 'budget', row: 'scout:predator', rowStatus: 'tight' });
-        expect(bars.role.turnAway.forager).toBeCloseTo(swing / (Math.ceil(swing) + 3), 12);
+        expect(source).toMatchObject({ source: 'budget', row: 'scout:predator', rowStatus: 'ok' });
+        expect(bars.role.turnAway.forager).toBeCloseTo(swing / (Math.ceil(swing) + 16), 12);
         expect(bars.role.turnAway.forager).toBeGreaterThan(HAND_SET.role.turn);
         expect(bars.role.turnAway.forager).toBeLessThan(1);
     });

@@ -35,11 +35,15 @@ export const EFFORTS = Object.freeze(
  * @typedef {'straight' | 'broken'} Bound
  * @typedef {object} Frame what a chase is played as
  * @property {Tier} [tier] the performer (default `perfect`)
+ * @property {'always' | 'view'} [sprint] when the `perfect` hunter sprints (default `always`, from tick 0 to an empty store; `view`
+ *   is the oracle's: only with the prey in view and the store above its floor)
  * @property {number} [effort] the `perfect` hunter's sprint effort; unset, `maxCatchableGap` sweeps `EFFORTS` and reads the best
  * @property {boolean} [fine] whether the sweep adds its second pass of `FINE_EFFORT` steps (default true); the eight audit
  *   bearings read the first pass only, a diagnostic that costs a third of the headline's time
  * @property {Bound} [bound] the prey's play (default `broken`)
  * @property {number} [bearing] the angle of the line to the prey from the hunter's heading (default 0)
+ * @property {{speed: number, offset: number}} [preyStart] the prey's speed at tick 0 and its heading's offset from straight away
+ *   from the hunter, in radians (default at rest and facing away); a warned forager that has turned is moving, not standing
  * @property {import('./role-budget-model.js').RoleModel} model the model options
  * @property {{see?: number, turn?: number, run?: number}} [delays] ticks added at one step
  */
@@ -98,12 +102,16 @@ function delayedPlay(hunter, prey, { delays = {}, model }) {
  * @returns {import('./role-budget-timeline.js').TimelineOptions} the options of `chaseTimeline`
  */
 export function frameOptions(hunter, prey, aware, frame) {
-    const { tier = 'perfect', bearing = 0, model } = frame;
+    const { tier = 'perfect', bearing = 0, model, preyStart } = frame;
     const play = preyPlay(frame);
     const hunterPlay = delayedPlay(hunter, prey, frame);
     if (tier === 'perfect') {
-        const performer = { ...hunterPlay, effort: frame.effort ?? 1 };
-        return { gap: aware, bearing, hunterStart: 'cruise', hunter: performer, prey: play };
+        const performer = {
+            ...hunterPlay,
+            effort: frame.effort ?? 1,
+            ...(frame.sprint === undefined ? {} : { sprint: frame.sprint }),
+        };
+        return { gap: aware, bearing, hunterStart: 'cruise', hunter: performer, prey: play, preyStart };
     }
     const late = tier === 'reactive' ? model.reactionTicks + hunterPlay.wait : hunterPlay.wait;
     const effort = tier === 'naive' ? model.naiveEffort : 1;
@@ -113,6 +121,7 @@ export function frameOptions(hunter, prey, aware, frame) {
         hunterStart: 'rest',
         hunter: { ...hunterPlay, wait: late, effort },
         prey: { ...play, awareGap: aware },
+        preyStart,
     };
 }
 
@@ -209,8 +218,11 @@ const SWEEPS = new WeakMap();
  * @param {number} aware the awareness gap
  * @returns {string} what a sweep depends on besides the pair
  */
-function sweepKey({ bound = 'broken', bearing = 0, model, delays = {}, fine = true }, aware) {
-    return JSON.stringify([bound, bearing, aware, model, delays, fine]);
+function sweepKey(
+    { bound = 'broken', bearing = 0, model, delays = {}, fine = true, preyStart, sprint = 'always' },
+    aware,
+) {
+    return JSON.stringify([bound, bearing, aware, model, delays, fine, preyStart, sprint]);
 }
 
 /**

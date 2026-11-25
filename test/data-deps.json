@@ -335,7 +335,8 @@
         "evals/role-budget/step5-d.json"
     ],
     "test/evo/role-budget-frame.test.js": [
-        "evals/fair-chase/courser.json"
+        "evals/fair-chase/courser.json",
+        "evals/fair-chase/even.json"
     ],
     "test/evo/role-budget-kinematics.test.js": [
         "evals/fair-chase/courser.json"

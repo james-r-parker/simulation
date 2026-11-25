@@ -20,28 +20,26 @@ const configs = [
 
 const EFFORT_ONE = "at effort 1, the oracle hunter's, the formula and the sim agree on whether the forager is caught";
 
-/**
- * The known gap of the formula (docs/designs/role-budget.md, "As built"), found by the two-sided reading at effort 1: on these
- * arms the formula says the warned forager is caught and the oracle forager escapes (even: it closes from 427 px against 313;
- * stalker: from 311 against 305). The formula holds the forager still while it turns and starts its flight from rest, where the
- * sim's forager has gained about 25 px and is moving. Every other reading is inside its tolerance on every arm.
- */
-const KNOWN_GAP = new Map([
-    ['even', [EFFORT_ONE]],
-    ['stalker', [EFFORT_ONE]],
-]);
-
 describe('the scout budget against the scenes', () => {
-    it.each(configs)('$name: no reading outside its tolerance but the known gap', ({ name, config }) => {
+    it.each(configs)('$name: no reading outside its tolerance', ({ config }) => {
         const { readings } = warnCheck(arenaConfig(config), MODEL_DEFAULTS);
-        expect(readings.filter((r) => r.drift).map((r) => r.what)).toEqual(KNOWN_GAP.get(name) ?? []);
+        expect(readings.filter((r) => r.drift).map((r) => r.what)).toEqual([]);
     });
 
-    it('at effort 1 the formula agrees with the sim on whether the forager is caught on every arm but even and stalker', () => {
+    it('at effort 1 the formula agrees with the sim on whether the forager is caught on every arm, even and stalker included (T15a)', () => {
         for (const { name, config } of configs) {
             const read = warnCheck(arenaConfig(config), MODEL_DEFAULTS).readings.find((r) => r.what === EFFORT_ONE);
-            expect(read?.drift, name).toBe(KNOWN_GAP.has(name));
+            expect(read?.drift, name).toBe(false);
         }
+        const caught = (/** @type {string} */ arm) => {
+            const { config } = configs.find((c) => c.name === arm) ?? { config: {} };
+            return warnCheck(arenaConfig(config), MODEL_DEFAULTS).readings.find((r) => r.what === EFFORT_ONE);
+        };
+        // true reads the forager escapes the oracle hunter: it does on even (427 px against 313 before) and stalker (311 against
+        // 305 before), and not on courser
+        expect([caught('even')?.formula, caught('even')?.scene]).toEqual([true, true]);
+        expect([caught('stalker')?.formula, caught('stalker')?.scene]).toEqual([true, true]);
+        expect([caught('courser')?.formula, caught('courser')?.scene]).toEqual([false, false]);
     });
 
     it('a forager the budget calls safe is safe on every arm, and the arms differ in whether the hunter closes', () => {
@@ -51,6 +49,6 @@ describe('the scout budget against the scenes', () => {
             return budgetWarn(scout, forager, hunter, MODEL_DEFAULTS).cells.run.status;
         });
         expect(status).toContain('impossible');
-        expect(status).toContain('tight');
+        expect(status).toContain('ok');
     });
 });
