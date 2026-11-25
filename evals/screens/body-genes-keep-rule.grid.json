@@ -1,0 +1,223 @@
+{
+  "seeds": 64,
+  "seedOffset": 0,
+  "ticks": 200000,
+  "policy": "live",
+  "reference": "control",
+  "base": {
+    "sprintStoreEnabled": true,
+    "sprintDrain": 0.01,
+    "entrantEnergy": 400,
+    "herdRunSpeed": 5.5,
+    "defenderRepelEnergy": 40,
+    "defenderRepelImpulse": 4,
+    "specialisations": {
+      "predator": {
+        "sprintDrainMultiplier": 0.5
+      },
+      "forager": {},
+      "reproducer": {},
+      "scout": {},
+      "defender": {}
+    }
+  },
+  "arms": {
+    "control": {},
+    "fat-only": {
+      "specialisations": {
+        "predator": {
+          "genes": {
+            "size": 0.1,
+            "vision": 0.15,
+            "childShare": 0.3,
+            "learn": 0.3,
+            "speed": 0.05,
+            "sprintStore": 0.1,
+            "fat": 0.1,
+            "heatBand": 5,
+            "burn": 0.2,
+            "hearing": 0.2,
+            "nose": 0.3,
+            "smokeSight": 0.3
+          }
+        },
+        "forager": {
+          "genes": {
+            "size": 0.15,
+            "vision": 0.15,
+            "childShare": 0.3,
+            "learn": 0.3,
+            "speed": 0.1,
+            "sprintStore": 0.15,
+            "fat": 0.1,
+            "heatBand": 8,
+            "burn": 0.2,
+            "hearing": 0.2,
+            "nose": 0.2,
+            "smokeSight": 0.3
+          }
+        },
+        "reproducer": {
+          "genes": {
+            "size": 0.15,
+            "vision": 0.15,
+            "childShare": 0.3,
+            "learn": 0.3,
+            "speed": 0.05,
+            "sprintStore": 0,
+            "fat": 0.1,
+            "heatBand": 5,
+            "burn": 0.2,
+            "hearing": 0.2,
+            "nose": 0.2,
+            "smokeSight": 0.3
+          }
+        },
+        "scout": {
+          "genes": {
+            "size": 0.15,
+            "vision": 0.15,
+            "childShare": 0.3,
+            "learn": 0.3,
+            "speed": 0.1,
+            "sprintStore": 0.1,
+            "fat": 0.1,
+            "heatBand": 8,
+            "burn": 0.2,
+            "hearing": 0.3,
+            "nose": 0.2,
+            "smokeSight": 0.3
+          }
+        },
+        "defender": {
+          "genes": {
+            "size": 0.15,
+            "vision": 0.15,
+            "childShare": 0.3,
+            "learn": 0.3,
+            "speed": 0,
+            "sprintStore": 0,
+            "fat": 0.15,
+            "heatBand": 5,
+            "burn": 0.1,
+            "hearing": 0.2,
+            "nose": 0.2,
+            "smokeSight": 0.3
+          }
+        }
+      },
+      "fatSlow": 1,
+      "sizeTurn": 1,
+      "burnThrust": 1
+    },
+    "step5-d": {
+      "specialisations": {
+        "predator": {
+          "genes": {
+            "size": 0.1,
+            "vision": 0.15,
+            "childShare": 0.3,
+            "learn": 0.3,
+            "speed": 0.05,
+            "sprintStore": 0.1,
+            "fat": 0.1,
+            "heatBand": 5,
+            "burn": 0.2,
+            "hearing": 0.2,
+            "nose": 0.3,
+            "smokeSight": 0.3
+          }
+        },
+        "forager": {
+          "genes": {
+            "size": 0.15,
+            "vision": 0.15,
+            "childShare": 0.3,
+            "learn": 0.3,
+            "speed": 0.1,
+            "sprintStore": 0.15,
+            "fat": 0.1,
+            "heatBand": 8,
+            "burn": 0.2,
+            "hearing": 0.2,
+            "nose": 0.2,
+            "smokeSight": 0.3
+          }
+        },
+        "reproducer": {
+          "genes": {
+            "size": 0.15,
+            "vision": 0.15,
+            "childShare": 0.3,
+            "learn": 0.3,
+            "speed": 0.05,
+            "sprintStore": 0,
+            "fat": 0.1,
+            "heatBand": 5,
+            "burn": 0.2,
+            "hearing": 0.2,
+            "nose": 0.2,
+            "smokeSight": 0.3
+          }
+        },
+        "scout": {
+          "genes": {
+            "size": 0.15,
+            "vision": 0.15,
+            "childShare": 0.3,
+            "learn": 0.3,
+            "speed": 0.1,
+            "sprintStore": 0.1,
+            "fat": 0.1,
+            "heatBand": 8,
+            "burn": 0.2,
+            "hearing": 0.3,
+            "nose": 0.2,
+            "smokeSight": 0.3
+          }
+        },
+        "defender": {
+          "genes": {
+            "size": 0.15,
+            "vision": 0.15,
+            "childShare": 0.3,
+            "learn": 0.3,
+            "speed": 0,
+            "sprintStore": 0,
+            "fat": 0.15,
+            "heatBand": 5,
+            "burn": 0.1,
+            "hearing": 0.2,
+            "nose": 0.2,
+            "smokeSight": 0.3
+          }
+        }
+      },
+      "fatSlow": 1,
+      "sizeTurn": 1,
+      "burnThrust": 1,
+      "speedHeat": 0.5,
+      "sprintHeat": 0.0025,
+      "sprintStoreHeat": 0.5,
+      "hearingCost": 0.5,
+      "noseCost": 0.5,
+      "smokeSightRange": 0.5,
+      "entrantEnergy": 700,
+      "coldStackRate": 0.5,
+      "rallyThrust": 0.1,
+      "rallyBurn": 4,
+      "staggerThrust": 0.5,
+      "staggerTicks": 30
+    },
+    "first-meal": {
+      "entrantEnergy": 700,
+      "coldStackRate": 0.5
+    },
+    "social": {
+      "rallyThrust": 0.1,
+      "rallyBurn": 4,
+      "staggerThrust": 0.5,
+      "staggerTicks": 30
+    }
+  }
+}
