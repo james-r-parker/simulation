@@ -217,6 +217,15 @@ describe('workflows', () => {
         expect(Number(/bench-compare\.mjs[^\n]*--runs=(\d+)/.exec(perf)?.[1])).toBeLessThanOrEqual(3);
     });
 
+    it('gate the perf job at the threshold set from the measured noise (quality-gates T18)', () => {
+        // Five `--self` runs on hosted runners spread at most 4.8% (step_ms@500merit), so the threshold is
+        // max(0.05, 3 x 0.048) = 0.15 and a red perf job is a real failure.
+        const check = workflows.find(({ name }) => name === 'check.yml')?.text ?? '';
+        const perf = check.slice(check.indexOf('\n  perf:'), check.indexOf('\n  noise:'));
+        expect(perf).not.toContain('continue-on-error');
+        expect(Number(/bench-compare\.mjs[^\n]*--threshold=([\d.]+)/.exec(perf)?.[1])).toBe(0.15);
+    });
+
     it('offer a noise dispatch on check.yml that runs bench-compare --self', () => {
         const check = workflows.find(({ name }) => name === 'check.yml')?.text ?? '';
         expect(check).toMatch(/workflow_dispatch:\s+inputs:\s+noise:/);
