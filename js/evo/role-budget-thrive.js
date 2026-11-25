@@ -42,23 +42,34 @@ export function poorestBirth(p) {
 }
 
 /**
+ * @param {import('./role-budget-chase.js').ChaseBudget} chase the hunter's budget against this prey
+ * @returns {number} the catch margin the prey's `run` reads: the `reactive` hunter on the broken bound (Phase 6: the prey
+ *   breaks at `breakAngle` when the hunter is `tightTicks` from it), not the perfect hunter's straight margin
+ */
+export function escapeMargin(chase) {
+    return chase.tiers.reactive.broken;
+}
+
+/**
  * @param {import('./role-budget-forage.js').Context} ctx the context of the prey
  * @param {{chase: import('./role-budget-chase.js').ChaseBudget, hunter: import('./role-budget-forage.js').Context,
  *   model: import('./role-budget-model.js').RoleModel}} against the budget of the nearest hunter against it, the hunter's
  *   context and the model
  * @returns {{cell: import('./role-budget-cell.js').Cell, encounters: number, flight: number}} the `run` cell: its margin is
- *   the ticks the forager may lose before the hunter's catch margin exceeds its flight slack (`reactionTicks` of the hunter's
- *   creep, in px); impossible only when a life meets a hunter (`encountersPerLife` at least 1) that closes on it
+ *   the ticks the forager may lose before the reactive hunter's broken-bound margin (`escapeMargin`) exceeds its flight slack
+ *   (`reactionTicks` of the hunter's creep, in px); impossible only when a life meets a hunter (`encountersPerLife` at least 1)
+ *   that closes on it
  */
 function runCell(ctx, { chase, hunter, model }) {
     const { perLife } = encountersPerLife(hunter, model);
     const speed = hunter.p.cap.cruise;
     const flight = model.reactionTicks * speed;
-    if (perLife >= 1 && chase.catchable && chase.catchMargin > flight) {
-        return { cell: cell(null, model, { distance: chase.catchMargin - flight }), encounters: perLife, flight };
+    const margin = escapeMargin(chase);
+    if (perLife >= 1 && margin > flight) {
+        return { cell: cell(null, model, { distance: margin - flight }), encounters: perLife, flight };
     }
-    const ticks = perLife < 1 ? SLACK_CAP : Math.min(SLACK_CAP, Math.floor((flight - chase.catchMargin) / speed));
-    return { cell: cell(ticks, model, { distance: flight - chase.catchMargin }), encounters: perLife, flight };
+    const ticks = perLife < 1 ? SLACK_CAP : Math.min(SLACK_CAP, Math.floor((flight - margin) / speed));
+    return { cell: cell(ticks, model, { distance: flight - margin }), encounters: perLife, flight };
 }
 
 /**
@@ -68,7 +79,9 @@ function runCell(ctx, { chase, hunter, model }) {
  * @property {ReturnType<typeof forageCycle>} cycle the meal cycle
  * @property {{gate: number, birth: number, ticks: number, life: number, slack: number}} split the split gate, the energy
  *   born with, the ticks to the gate (Infinity with no net gain), the adult life and the slack in ticks, uncapped
- * @property {{encounters: number, flight: number}} hunters the hunters met in a life and the forager's flight slack in px
+ * @property {{encounters: number, flight: number, perfectStraight: number, reactiveBroken: number}} hunters the hunters met in a life, the forager's flight
+ *   slack in px, the reactive hunter's broken-bound margin `run` reads and, as context, the perfect hunter's straight-bound
+ *   margin (the old reading of `run`)
  * @property {string | null} binding the step of least slack
  */
 
@@ -100,7 +113,12 @@ export function budgetThrive(ctx, against) {
         cells,
         cycle,
         split: { gate, birth, ticks, life, slack },
-        hunters: { encounters: run.encounters, flight: run.flight },
+        hunters: {
+            encounters: run.encounters,
+            flight: run.flight,
+            reactiveBroken: escapeMargin(against.chase),
+            perfectStraight: against.chase.tiers.perfect.straight,
+        },
         binding: row.binding,
     };
 }
