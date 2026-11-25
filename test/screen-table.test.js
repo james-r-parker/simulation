@@ -161,10 +161,10 @@ describe('renderTable paired seed cells (T31a)', () => {
 });
 
 describe('lockCommand', () => {
-    it('runs the script under flock with --no-lock appended', () => {
+    it('runs the script under a shared flock with --no-lock appended, so tests and commits run beside a screen', () => {
         expect(lockCommand({ lockPath: '/l', execPath: '/node', script: '/s.mjs', argv: ['--grid', 'g'] })).toEqual({
             command: 'flock',
-            args: ['/l', '/node', '/s.mjs', '--grid', 'g', '--no-lock'],
+            args: ['-s', '/l', '/node', '/s.mjs', '--grid', 'g', '--no-lock'],
         });
     });
 });
