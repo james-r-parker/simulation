@@ -25,8 +25,8 @@ auto-merge, wait). The steps below are the judgement half an agent does before i
 1. **Know what the gate is.** `scripts/ship.sh` runs it (step 3): `scripts/check.sh --fix --quick` for a code change,
    `scripts/check.sh --fix --docs` when `scripts/change-scope.sh` says `docs` or `records`, and commits what `--fix`
    wrote. The quick gate includes `ratchet-related`: the related tests of the changed files with coverage, failing a
-   changed `js/sim`, `js/evo`, `js/worker` or `js/app` file that is under 100% where its baseline is 100% (the CI
-   `coverage` miss, found before the push; it names the file and its uncovered lines, and a file covered only by a
+   changed `js/sim`, `js/evo`, `js/worker` or `js/app` file that is under 100% where its baseline is 100%, and a new
+   `scripts/` file under the `scripts` baseline (the CI `coverage` miss, found before the push; it names the file and its uncovered lines, and a file covered only by a
    `*.slow.test.js` needs that test run first). The pre-commit hook already ran the tests of each commit's staged
    files, and CI runs the rest on a quiet runner. The full local gate (`scripts/check.sh --fix --skip=browser-smoke`, under `flock /tmp/claude-1000/cpu.lock`
    on a quiet machine) is only for a PR that moves step time (`bench-check`). A failed gate prints a digest under its

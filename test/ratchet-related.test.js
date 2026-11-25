@@ -4,7 +4,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { changedFiles, main } from '../scripts/ratchet-related.mjs';
+import { addedFiles, changedFiles, main } from '../scripts/ratchet-related.mjs';
 
 const BASELINE = JSON.stringify({
     coverage: { 'js/sim': { lines: 100, branches: 100, functions: 100, statements: 100 }, scripts: { lines: 90 } },
@@ -37,14 +37,15 @@ function git(...args) {
  * --coverage.reportsDirectory it is given, and exits with `status`.
  * @param {number} covered covered count out of 4
  * @param {number} [status] exit status
+ * @param {string} [file] the repo-relative file it reports
  * @returns {string} its path
  */
-function fakeVitest(covered, status = 0) {
+function fakeVitest(covered, status = 0, file = 'js/sim/a.js') {
     const fake = join(root, 'fake-vitest');
     const metrics = ['lines', 'branches', 'functions', 'statements'].map(
         (m) => `"${m}":{"total":4,"covered":${covered}}`,
     );
-    const summary = `{"${join(root, 'js/sim/a.js')}":{${metrics.join(',')}}}`;
+    const summary = `{"${join(root, file)}":{${metrics.join(',')}}}`;
     const script = `#!/usr/bin/env bash
 echo "$@" > "${join(root, 'args.txt')}"
 for a in "$@"; do case "$a" in --coverage.reportsDirectory=*) d="\${a#*=}"; echo '${summary}' > "$d/coverage-summary.json";; esac; done
@@ -86,9 +87,26 @@ describe('changedFiles', () => {
     });
 });
 
+describe('addedFiles', () => {
+    it('lists committed and untracked new files, not modified ones', () => {
+        writeFileSync(join(root, 'js/sim/a.js'), 'export const a = 2;\n');
+        writeFileSync(join(root, 'scripts/committed.mjs'), 'export const c = 1;\n');
+        git('add', 'scripts/committed.mjs');
+        git('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '-m', 'new');
+        writeFileSync(join(root, 'scripts/untracked.mjs'), 'export const u = 1;\n');
+        expect([...addedFiles(root, 'main')].sort()).toEqual(['scripts/committed.mjs', 'scripts/untracked.mjs']);
+    });
+});
+
 describe('ratchet-related main', () => {
-    it('skips with a notice (status 3) when no changed file is under a 100% baseline', () => {
+    it('skips with a notice (status 3) when no changed file is under a 100% baseline and no new file has a limit', () => {
         writeFileSync(join(root, 'scripts/x.mjs'), 'export const x = 1;\n');
+        git('add', 'scripts/x.mjs');
+        git('-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '-m', 'x');
+        git('checkout', '-q', 'main');
+        git('merge', '-q', 'feature');
+        git('checkout', '-q', 'feature');
+        writeFileSync(join(root, 'scripts/x.mjs'), 'export const x = 2;\n');
         const { status, out } = run(fakeVitest(0));
         expect(status).toBe(3);
         expect(out).toContain('no changed file under a 100% coverage baseline');
@@ -99,7 +117,7 @@ describe('ratchet-related main', () => {
         writeFileSync(join(root, 'js/sim/a.js'), 'export const a = 2;\n');
         const { status, out } = run(fakeVitest(4));
         expect(status).toBe(0);
-        expect(out).toContain('1 changed file(s) at 100%');
+        expect(out).toContain('1 changed file(s) at their limits');
         const args = readFileSync(join(root, 'args.txt'), 'utf8');
         expect(args).toContain('related --run');
         expect(args).toContain('--coverage.include=js/sim/a.js');
@@ -113,6 +131,15 @@ describe('ratchet-related main', () => {
         expect(status).toBe(1);
         expect(out).toContain('js/sim/a.js: lines 3/4');
         expect(out).toContain('*.slow.test.js');
+    });
+
+    it('fails a new script under the scripts baseline and passes one above it (agent-workflow T50)', () => {
+        writeFileSync(join(root, 'scripts/new.mjs'), 'export const n = 1;\n');
+        const low = run(fakeVitest(3, 0, 'scripts/new.mjs'));
+        expect(low.status).toBe(1);
+        expect(low.out).toContain("scripts/new.mjs: lines 3/4 (a new file needs the scope's 90%)");
+        expect(readFileSync(join(root, 'args.txt'), 'utf8')).toContain('--coverage.include=scripts/new.mjs');
+        expect(run(fakeVitest(4, 0, 'scripts/new.mjs')).status).toBe(0);
     });
 
     it('fails when the related tests fail, without reading coverage', () => {
