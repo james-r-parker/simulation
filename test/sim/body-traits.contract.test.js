@@ -6,12 +6,12 @@ import { crossTraits, mutateTraits } from '../../js/evo/trait-inherit.js';
 import { LANES } from '../../js/sim/body-lanes.js';
 import { MAX_OFFSET_SPAN, MAX_TRAIT_SPAN, TRAITS, maxSpanOf, traitRatio } from '../../js/sim/body-traits.js';
 import { TRAIT_INDEX, TRAIT_SLOTS, brainLayout } from '../../js/sim/brain-layout.js';
-import { createConfig } from '../../js/sim/config.js';
+import { createPreStep5Config } from '../helpers/pre-step5.js';
 import { createRng } from '../../js/sim/rng.js';
 import { rebuild, setGene, setSpan, traitWorld } from './helpers/trait-world.js';
 
 const BIRTHS = 10000;
-const config = createConfig();
+const config = createPreStep5Config();
 const layout = brainLayout({ rayCount: 2, brainHidden: 4 });
 
 /**

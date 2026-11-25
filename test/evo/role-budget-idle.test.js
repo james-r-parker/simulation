@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { createConfig } from '../../js/sim/config.js';
+import { createPreStep5Config } from '../helpers/pre-step5.js';
 import { contextOf, lifeOf } from '../../js/evo/role-budget-forage.js';
 import { TIGHT_RATIO, birthEnergies, budgetIdle, idleLine } from '../../js/evo/role-budget-idle.js';
 import { roleParams } from '../../js/evo/role-budget-params.js';
 
 /** @param {Record<string, any>} overrides @param {string} [spec] @returns {ReturnType<typeof contextOf>} */
 function ctxOf(overrides, spec = 'forager') {
-    const config = createConfig(overrides);
+    const config = createPreStep5Config(overrides);
     return contextOf(config, spec, roleParams(config, spec, {}, { age: 'juvenile' }));
 }
 

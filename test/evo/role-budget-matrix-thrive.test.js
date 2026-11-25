@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { createConfig } from '../../js/sim/config.js';
+import { createPreStep5Config } from '../helpers/pre-step5.js';
 import { PREY_SPECS, budgetChase } from '../../js/evo/role-budget-chase.js';
 import { MODEL_DEFAULTS } from '../../js/evo/role-budget-model.js';
 import { PHASE4_ROWS, phase4Budget, preysFor } from '../../js/evo/role-budget-matrix-thrive.js';
 import { roleParams } from '../../js/evo/role-budget-params.js';
 
-const config = createConfig({});
+const config = createPreStep5Config({});
 const model = MODEL_DEFAULTS;
 const hunter = roleParams(config, 'predator');
 const budgets = Object.fromEntries(

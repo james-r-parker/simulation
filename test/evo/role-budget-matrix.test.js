@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { arenaConfig } from '../../js/evo/chase-arena.js';
-import { createConfig } from '../../js/sim/config.js';
+import { preStep5Arena } from '../helpers/pre-step5.js';
+import { createPreStep5Config } from '../helpers/pre-step5.js';
 import { rulesHash } from '../../js/sim/config.js';
 import { MODEL_DEFAULTS } from '../../js/evo/role-budget-model.js';
 import {
@@ -17,7 +17,7 @@ import {
 const model = MODEL_DEFAULTS;
 /** @type {any} the matrix with its detail left untyped for the asserts */
 const matrix = typedMatrix;
-const courser = arenaConfig(JSON.parse(readFileSync('evals/fair-chase/courser.json', 'utf8')));
+const courser = preStep5Arena(JSON.parse(readFileSync('evals/fair-chase/courser.json', 'utf8')));
 
 describe('the rows of Phase 1', () => {
     it('are the four prey rows, the average and the best', () => {
@@ -102,7 +102,7 @@ describe('matrix', () => {
     });
 
     it('marks a hunter that cannot close red and one that can green on the same rows', () => {
-        const red = matrix(arenaConfig(), model, ['predator:forager']).rows[0];
+        const red = matrix(preStep5Arena(), model, ['predator:forager']).rows[0];
         const green = matrix(courser, model, ['predator:forager']).rows[0];
         expect(red.status).toBe('impossible');
         expect(green.status).not.toBe('impossible');
@@ -122,7 +122,7 @@ describe('the rows of Phase 4', () => {
     });
 
     it('builds each from the default world, not the empty arena, with the budget attached', () => {
-        const m = matrix(arenaConfig(), model, PHASE4_ROWS, { worldConfig: createConfig({}) });
+        const m = matrix(preStep5Arena(), model, PHASE4_ROWS, { worldConfig: createPreStep5Config({}) });
         expect(m.rows.map((/** @type {any} */ r) => r.name)).toEqual(PHASE4_ROWS);
         const first = m.rows.find((/** @type {any} */ r) => r.name === 'forager:first-meal');
         expect(first.detail.source.n).toBe(16);
@@ -130,15 +130,15 @@ describe('the rows of Phase 4', () => {
     });
 
     it('computes a forager row without the other prey budgets, and the hunter rows from all four', () => {
-        const one = matrix(courser, model, ['forager:predator'], { worldConfig: createConfig({}) });
+        const one = matrix(courser, model, ['forager:predator'], { worldConfig: createPreStep5Config({}) });
         expect(one.rows[0].detail.cells.run).toBeDefined();
-        const living = matrix(courser, model, ['predator:living'], { worldConfig: createConfig({}) });
+        const living = matrix(courser, model, ['predator:living'], { worldConfig: createPreStep5Config({}) });
         expect(living.rows[0].status).toBeDefined();
     });
 
     it('reads a red first meal at the defaults (a blind walk is longer than the range) and a red hunter living', () => {
-        const m = matrix(arenaConfig(), model, ['forager:first-meal', 'predator:living'], {
-            worldConfig: createConfig({}),
+        const m = matrix(preStep5Arena(), model, ['forager:first-meal', 'predator:living'], {
+            worldConfig: createPreStep5Config({}),
         });
         expect(m.rows[0].status).toBe('impossible');
         expect(m.rows[0].binding).toBe('find');
@@ -149,7 +149,7 @@ describe('the rows of Phase 4', () => {
 describe('the rows of Phase 5', () => {
     it('are each spec against the herd, read from the default world', () => {
         expect(PHASE5_ROWS).toEqual(['forager', 'predator', 'reproducer', 'scout', 'defender'].map((s) => `${s}:herd`));
-        const m = matrix(arenaConfig(), model, PHASE5_ROWS, { worldConfig: createConfig({}) });
+        const m = matrix(preStep5Arena(), model, PHASE5_ROWS, { worldConfig: createPreStep5Config({}) });
         expect(m.rows.map((/** @type {any} */ r) => r.status)).toEqual([
             'tight',
             'n/a',

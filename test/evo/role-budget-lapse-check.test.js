@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { arenaConfig } from '../../js/evo/chase-arena.js';
+import { preStep5Arena } from '../helpers/pre-step5.js';
 import { formulaLapse, simLapse } from '../../js/evo/role-budget-lapse-check.js';
 
 describe('formulaLapse and simLapse', () => {
-    const config = /** @type {any} */ (arenaConfig());
+    const config = /** @type {any} */ (preStep5Arena());
     const scene = { hunter: 'predator', prey: 'forager', distance: 300 };
 
     it('read a chase that does not kill as its whole run, with the energy spent in it', () => {
@@ -23,7 +23,7 @@ describe('formulaLapse and simLapse', () => {
     });
 
     it('lapse where a weak sprint is outrun: the formula gives up on the tick the sim does, well before the run ends', () => {
-        const weak = /** @type {any} */ (arenaConfig({ specialisations: { predator: { sprintBoost: 0.2 } } }));
+        const weak = /** @type {any} */ (preStep5Arena({ specialisations: { predator: { sprintBoost: 0.2 } } }));
         const at = { hunter: 'predator', prey: 'forager', distance: 200 };
         const sim = simLapse(weak, at);
         const formula = formulaLapse(weak, at);
@@ -33,7 +33,7 @@ describe('formulaLapse and simLapse', () => {
     });
 
     it('read a prey that is never closed on as a chase that never opened: the whole run, no give-up seen', () => {
-        const weak = /** @type {any} */ (arenaConfig({ specialisations: { predator: { sprintBoost: 0.2 } } }));
+        const weak = /** @type {any} */ (preStep5Arena({ specialisations: { predator: { sprintBoost: 0.2 } } }));
         const at = { hunter: 'predator', prey: 'forager', distance: 900 };
         expect(simLapse(weak, at).lapse).toBe(250);
         expect(formulaLapse(weak, at).lapse).toBe(250);

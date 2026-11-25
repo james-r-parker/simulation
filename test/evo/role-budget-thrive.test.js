@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { createConfig } from '../../js/sim/config.js';
+import { createPreStep5Config } from '../helpers/pre-step5.js';
 import { budgetChase } from '../../js/evo/role-budget-chase.js';
 import { contextOf } from '../../js/evo/role-budget-forage.js';
 import { MODEL_DEFAULTS } from '../../js/evo/role-budget-model.js';
@@ -11,13 +11,13 @@ const model = MODEL_DEFAULTS;
 
 /** @param {Record<string, any>} overrides @param {string} spec @returns {ReturnType<typeof contextOf>} */
 function ctxOf(overrides, spec) {
-    const config = createConfig(overrides);
+    const config = createPreStep5Config(overrides);
     return contextOf(config, spec, roleParams(config, spec));
 }
 
 /** @param {Record<string, any>} overrides @param {string} spec @returns {ReturnType<typeof budgetThrive>} */
 function thrive(overrides, spec = 'forager') {
-    const config = createConfig(overrides);
+    const config = createPreStep5Config(overrides);
     const hunter = ctxOf(overrides, 'predator');
     const chase = budgetChase(hunter.p, roleParams(config, spec), model, { bearings: false });
     return budgetThrive(ctxOf(overrides, spec), { chase, hunter, model });
@@ -43,8 +43,8 @@ describe('encountersPerLife', () => {
 
 describe('poorestBirth', () => {
     it('is the entrant, and a founder when the entrant is set to 0 (it reads as initialEnergy)', () => {
-        expect(poorestBirth(roleParams(createConfig({}), 'forager'))).toBe(200);
-        expect(poorestBirth(roleParams(createConfig({ entrantEnergy: 0 }), 'forager'))).toBe(800);
+        expect(poorestBirth(roleParams(createPreStep5Config({}), 'forager'))).toBe(200);
+        expect(poorestBirth(roleParams(createPreStep5Config({ entrantEnergy: 0 }), 'forager'))).toBe(800);
     });
 });
 
@@ -100,7 +100,7 @@ describe('budgetThrive on a changed world', () => {
 
     it('run is not impossible when no hunter is met in a life (the hunters are too few)', () => {
         const courser = JSON.parse(readFileSync('evals/fair-chase/courser.json', 'utf8'));
-        const config = createConfig(courser);
+        const config = createPreStep5Config(courser);
         const hunter = ctxOf(courser, 'predator');
         const chase = budgetChase(
             hunter.p,
@@ -114,7 +114,7 @@ describe('budgetThrive on a changed world', () => {
     });
 
     it('reads the model density when it is given', () => {
-        const config = createConfig({});
+        const config = createPreStep5Config({});
         const hunter = ctxOf({}, 'predator');
         const chase = budgetChase(hunter.p, roleParams(config, 'forager'), model, { bearings: false });
         const thin = budgetThrive(ctxOf({}, 'forager'), { chase, hunter, model: { ...model, foodDensity: 1e-6 } });

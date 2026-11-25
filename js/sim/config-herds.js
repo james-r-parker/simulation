@@ -9,7 +9,7 @@ export const HERD_DEFAULTS = {
     herdSize: 8,
     herdRadius: 80,
     herdWalkSpeed: 1.5,
-    herdRunSpeed: 6.5,
+    herdRunSpeed: 5.5,
     herdStartleRadius: 200,
     herdStampedeTicks: 360,
     herdLifeTicks: 144000,

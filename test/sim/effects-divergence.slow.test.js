@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
 import { cloneWithNoisePolicy } from '../../js/sim/birth-policy.js';
-import { createConfig } from '../../js/sim/config.js';
+import { createPreStep5Config } from '../helpers/pre-step5.js';
 import { LANE_ID, liveOf } from '../../js/sim/effects.js';
 import { tickCost } from '../../js/sim/energy.js';
 import { thrustOf } from '../../js/sim/physics.js';
@@ -37,7 +37,7 @@ function relative(a, b) {
  */
 function compareRun(overrides) {
     const policy = cloneWithNoisePolicy();
-    const world = createWorld(createConfig({ ...overrides, checkInvariants: false }), policy);
+    const world = createWorld(createPreStep5Config({ ...overrides, checkInvariants: false }), policy);
     const worst = { thrust: 0, turn: 0, cost: 0 };
     const active = { fat: 0, resting: 0 };
     let compared = 0;

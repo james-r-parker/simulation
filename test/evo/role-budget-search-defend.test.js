@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { arenaConfig } from '../../js/evo/chase-arena.js';
+import { preStep5, preStep5Arena } from '../helpers/pre-step5.js';
 import { MODEL_DEFAULTS } from '../../js/evo/role-budget-model.js';
 import { DEFENDER_CANDIDATES, searchDefender } from '../../js/evo/role-budget-search-defend.js';
 
 const SHOVE = { defenderRepelEnergy: 40, defenderRepelImpulse: 4 };
 const search = (/** @type {Record<string, any>} */ overrides, /** @type {'defence' | 'smoke'} */ goal, extra = {}) =>
-    searchDefender(arenaConfig(overrides), { overrides, model: MODEL_DEFAULTS, goal, ...extra });
+    searchDefender(preStep5Arena(overrides), { overrides: preStep5(overrides), model: MODEL_DEFAULTS, goal, ...extra });
 
 describe('searchDefender', () => {
     it('finds nothing for the defence at the defaults: with the shove off no scaling of a setting turns it on', () => {
@@ -27,7 +27,7 @@ describe('searchDefender', () => {
 
     it('each finding is a full overrides object: the config makes it, and it carries the base overrides', () => {
         for (const f of search(SHOVE, 'defence')) {
-            expect(() => arenaConfig(f.overrides)).not.toThrow();
+            expect(() => preStep5Arena(f.overrides)).not.toThrow();
             expect(f.overrides.defenderRepelEnergy).toBe(40);
         }
     });

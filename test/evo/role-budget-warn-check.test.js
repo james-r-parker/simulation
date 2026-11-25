@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { arenaConfig } from '../../js/evo/chase-arena.js';
+import { preStep5Arena } from '../helpers/pre-step5.js';
 import { MODEL_DEFAULTS } from '../../js/evo/role-budget-model.js';
 import { warnCheck } from '../../js/evo/role-budget-warn-check.js';
 
 describe('warnCheck at the defaults', () => {
-    const { readings, drift } = warnCheck(arenaConfig(), MODEL_DEFAULTS);
+    const { readings, drift } = warnCheck(preStep5Arena(), MODEL_DEFAULTS);
 
     it('reads the alarm, the hearing, the first move, the gaps, the no-flattery sign and the effort-1 sign, with no drift', () => {
         expect(drift).toBe(0);
@@ -40,9 +40,9 @@ describe('warnCheck at the defaults', () => {
     });
 
     it('flags a reading outside its tolerance: a scout that sees a tick late no longer matches the scene', () => {
-        const late = warnCheck(arenaConfig(), { ...MODEL_DEFAULTS, reactionTicks: 3 });
+        const late = warnCheck(preStep5Arena(), { ...MODEL_DEFAULTS, reactionTicks: 3 });
         expect(late.drift).toBe(0);
-        const slow = warnCheck(arenaConfig({ specialisations: { scout: { visionRange: 380 } } }), MODEL_DEFAULTS);
+        const slow = warnCheck(preStep5Arena({ specialisations: { scout: { visionRange: 380 } } }), MODEL_DEFAULTS);
         expect(slow.readings[0].formula).toBe(slow.readings[0].scene);
     });
 });

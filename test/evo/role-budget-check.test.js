@@ -1,7 +1,7 @@
 // reads: evals/fair-chase/courser.json
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { arenaConfig } from '../../js/evo/chase-arena.js';
+import { preStep5Arena } from '../helpers/pre-step5.js';
 import { AUDIT_BEARINGS } from '../../js/evo/role-budget-chase.js';
 import {
     TOLERANCE,
@@ -12,12 +12,12 @@ import {
     simChase,
 } from '../../js/evo/role-budget-check.js';
 
-const courser = arenaConfig(JSON.parse(readFileSync('evals/fair-chase/courser.json', 'utf8')));
+const courser = preStep5Arena(JSON.parse(readFileSync('evals/fair-chase/courser.json', 'utf8')));
 const scene = { hunter: 'predator', prey: 'forager', distance: 240, bearing: 0, straight: true };
 
 describe('kinematicRows', () => {
     it('reads speeds, turn radii and energy per 100 ticks of each spec against the body table, none outside its tolerance', () => {
-        for (const config of [arenaConfig(), courser]) {
+        for (const config of [preStep5Arena(), courser]) {
             const rows = kinematicRows(config);
             expect(rows).toHaveLength(5 * 6);
             expect(rows.filter((r) => r.drift)).toEqual([]);
@@ -26,14 +26,14 @@ describe('kinematicRows', () => {
     });
 
     it('carries the tolerance of the plan for each reading and flags a reading outside it', () => {
-        const rows = kinematicRows(arenaConfig());
+        const rows = kinematicRows(preStep5Arena());
         const radius = rows.find((r) => r.what === 'turn radius');
         expect(radius?.tolerance).toBe(TOLERANCE.radius);
         expect(rows.find((r) => r.what === 'energy per 100 ticks')?.tolerance).toBe(TOLERANCE.energy);
         // a formula that did not follow the config would drift: the sim of one config against the formula of another
-        const sim = kinematicRows(arenaConfig({ maxVelocity: 9 }));
+        const sim = kinematicRows(preStep5Arena({ maxVelocity: 9 }));
         expect(sim.every((r) => !r.drift)).toBe(true);
-        expect(Math.abs(sim[0].formula / kinematicRows(arenaConfig())[0].formula - 1)).toBeGreaterThan(0.1);
+        expect(Math.abs(sim[0].formula / kinematicRows(preStep5Arena())[0].formula - 1)).toBeGreaterThan(0.1);
     });
 });
 
@@ -49,13 +49,13 @@ describe('the scene and the formula', () => {
     });
 
     it('both fail to kill a prey out of reach, and a breaking prey the defaults cannot catch', () => {
-        expect(simChase(arenaConfig(), { ...scene, distance: 400, straight: false }).killTick).toBeNull();
-        expect(formulaChase(arenaConfig(), { ...scene, distance: 400, straight: false }).killTick).toBeNull();
+        expect(simChase(preStep5Arena(), { ...scene, distance: 400, straight: false }).killTick).toBeNull();
+        expect(formulaChase(preStep5Arena(), { ...scene, distance: 400, straight: false }).killTick).toBeNull();
         expect(simChase(courser, { ...scene, distance: 401, bearing: 1.5 }).killTick).toBeNull();
     });
 
     it('ends the scene when the hunter dies before the kill', () => {
-        const starving = arenaConfig({ huntUpkeep: 1e6 });
+        const starving = preStep5Arena({ huntUpkeep: 1e6 });
         expect(simChase(starving, scene).killTick).toBeNull();
     });
 

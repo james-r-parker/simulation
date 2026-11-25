@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { arenaConfig } from '../../js/evo/chase-arena.js';
+import { preStep5Arena } from '../helpers/pre-step5.js';
 import { MODEL_DEFAULTS } from '../../js/evo/role-budget-model.js';
 import { roleParams } from '../../js/evo/role-budget-params.js';
 import { hunterXs } from '../../js/evo/role-budget-smoke.js';
@@ -8,7 +8,7 @@ import { budgetWarn, warnTimeline } from '../../js/evo/role-budget-warn.js';
 
 /** @param {Record<string, any>} overrides @returns {{scout: any, forager: any, hunter: any}} the bodies of the row */
 const bodiesOf = (overrides) => {
-    const config = arenaConfig(overrides);
+    const config = preStep5Arena(overrides);
     const [scout, forager, hunter] = ['scout', 'forager', 'predator'].map((s) => roleParams(config, s));
     return { scout, forager, hunter };
 };

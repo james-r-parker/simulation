@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { createConfig } from '../../js/sim/config.js';
+import { createPreStep5Config, preStep5 } from '../helpers/pre-step5.js';
 import { createRng, fork } from '../../js/sim/rng.js';
 import { SPEC, SPEC_NAMES } from '../../js/sim/specs.js';
-import { arenaConfig } from '../../js/evo/chase-arena.js';
+import { preStep5Arena } from '../helpers/pre-step5.js';
 import { layerArena } from '../../js/evo/drill-body-rules.js';
 import { LIVING_ROW, MAKE_A_LIVING, hunterReference, livingPlan, reasonOf } from '../../js/evo/drill-role-living.js';
 import { ROLE_ARENA } from '../../js/evo/drill-role-staging.js';
@@ -13,7 +14,7 @@ import { gapAtAwareness } from '../../js/evo/role-budget-frame.js';
 import { roleParams } from '../../js/evo/role-budget-params.js';
 
 /** A hunter that kills each prey and keeps most of what it takes (`predator:living` is ok): bites of 400 and a faster sprint. */
-const REACHABLE = { biteEnergy: 400, specialisations: { predator: { sprintBoost: 2.2 } } };
+const REACHABLE = preStep5({ biteEnergy: 400, specialisations: { predator: { sprintBoost: 2.2 } } });
 const PREYS = ['forager', 'reproducer', 'scout', 'defender'];
 
 /**
@@ -22,7 +23,7 @@ const PREYS = ['forager', 'reproducer', 'scout', 'defender'];
  * @returns {{won: boolean, trace: Record<string, any>}} the reference's trial
  */
 function play(over, at) {
-    const config = layerArena(over, ROLE_ARENA);
+    const config = layerArena(preStep5(over), ROLE_ARENA);
     const plan = livingPlan(createConfig(config), at);
     const won = playTrial({ plan, subject: hunterReference(), controlSpec: { name: 'intact' }, seed: 1, config });
     return { won, trace: /** @type {any} */ (plan.trace)(won) };
@@ -43,11 +44,11 @@ describe('the make-a-living drill', () => {
 
     it('stages a prey ahead of the hunter at the gap it first sees it, facing away, one of the four preys from the stream', () => {
         const plan = (/** @type {number} */ seed) =>
-            MAKE_A_LIVING.plan(fork(createRng(seed), 'drill:make-a-living'), 300, createConfig(ROLE_ARENA));
+            MAKE_A_LIVING.plan(fork(createRng(seed), 'drill:make-a-living'), 300, createPreStep5Config(ROLE_ARENA));
         const [prey, hunter] = /** @type {any[]} */ (plan(1).stage.agents);
         expect([prey.role, hunter.role]).toEqual(['herd', 'subject']);
         expect(hunter.spec).toBe(SPEC.PREDATOR);
-        const a = arenaConfig();
+        const a = preStep5Arena();
         const gap = gapAtAwareness(roleParams(a, 'predator'), roleParams(a, SPEC_NAMES[prey.spec]));
         expect(Math.hypot(prey.x - hunter.x, prey.y - hunter.y)).toBeCloseTo(gap, 6);
         const seen = new Set(
@@ -60,7 +61,7 @@ describe('the make-a-living drill', () => {
     });
 
     it('plays the chase of simChase for the oracle hunter: the same net energy at the kill, turned', () => {
-        const a = arenaConfig(REACHABLE);
+        const a = preStep5Arena(REACHABLE);
         for (const prey of ['forager', 'reproducer', 'defender']) {
             const gap = gapAtAwareness(roleParams(a, 'predator'), roleParams(a, prey));
             const sim = simChase(a, { hunter: 'predator', prey, distance: gap, bearing: 0, straight: false });

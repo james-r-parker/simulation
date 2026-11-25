@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { arenaConfig } from '../../js/evo/chase-arena.js';
+import { preStep5Arena } from '../helpers/pre-step5.js';
 import { defenceTimeline } from '../../js/evo/role-budget-defence.js';
 import { roleParams } from '../../js/evo/role-budget-params.js';
 
@@ -15,7 +15,7 @@ const SLOW = {
 
 /** @param {Record<string, any>} [overrides] config overrides @returns {import('../../js/evo/role-budget-params.js').RoleParams[]} */
 const bodies = (overrides = {}) => {
-    const config = arenaConfig(overrides);
+    const config = preStep5Arena(overrides);
     return ['predator', 'forager', 'defender'].map((name) => roleParams(config, name));
 };
 const play = (/** @type {Record<string, any>} */ config, /** @type {Record<string, any>} */ options = {}) => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createConfig } from '../../js/sim/config.js';
+import { createPreStep5Config } from '../helpers/pre-step5.js';
 import { SPEC_NAMES } from '../../js/sim/specs.js';
 import { HAND_SET } from '../../js/evo/reflex-bars-hand.js';
 import { herdBars, leastCruiseShare, turnAwayBars, turnShare } from '../../js/evo/reflex-bars-derived.js';
@@ -11,7 +11,7 @@ import { roleParams } from '../../js/evo/role-budget-params.js';
 const MODEL = validateModel({});
 const ROWS = ['scout:predator', ...SPEC_NAMES.map((s) => `${s}:herd`)];
 const rowsAt = (/** @type {Record<string, any>} */ overrides = {}) => {
-    const config = createConfig(overrides);
+    const config = createPreStep5Config(overrides);
     return { config, rows: Object.fromEntries(matrix(config, MODEL, ROWS).rows.map((r) => [r.name, r])) };
 };
 const read = { specs: [...SPEC_NAMES], reaction: MODEL.reactionTicks };

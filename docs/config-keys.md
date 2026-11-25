@@ -34,12 +34,12 @@ with one and not the other when the world starts. 266 keys.
 | `childEnergyShare`                  | 0.5       | num > 0 < 1                   |
 | `coldMarginWidth`                   | 600       | num >= 0                      |
 | `coldRecoverTicks`                  | 15        | int >= 1                      |
-| `coldStackRate`                     | 0         | num >= 0                      |
+| `coldStackRate`                     | 0.5       | num >= 0                      |
 | `coldStackTicks`                    | 60        | int >= 1                      |
 | `damping`                           | 0.95      | num >= 0 <= 1                 |
 | `defenderRepelCost`                 | 0         | num >= 0                      |
-| `defenderRepelEnergy`               | 0         | num >= 0                      |
-| `defenderRepelImpulse`              | 0         | num >= 0                      |
+| `defenderRepelEnergy`               | 40        | num >= 0                      |
+| `defenderRepelImpulse`              | 4         | num >= 0                      |
 | `digestTicks`                       | 10        | int >= 0 <= 30                |
 | `diseaseDrain`                      | 0.3       | num >= 0                      |
 | `diseaseMinHosts`                   | 30        | int >= 0                      |
@@ -51,7 +51,7 @@ with one and not the other when the world starts. 266 keys.
 | `doseDecay`                         | 0.0008    | num >= 0                      |
 | `droughtChance`                     | 0.25      | num >= 0 <= 1                 |
 | `energyToSize`                      | 250       | num > 0                       |
-| `entrantEnergy`                     | 200       | num >= 0                      |
+| `entrantEnergy`                     | 700       | num >= 0                      |
 | `eraSeasonTicks`                    | 36000     | int >= 1                      |
 | `eventCapacity`                     | 8192      | int >= 1                      |
 | `fatSlow`                           | 0         | num >= 0 <= 4                 |
@@ -78,7 +78,7 @@ with one and not the other when the world starts. 266 keys.
 | `handlingTicks`                     | 20        | int >= 0 <= 30                |
 | `hashCellSize`                      | 140       | num > 0                       |
 | `hearThreshold`                     | 0.1       | num > 0 < 1                   |
-| `hearingCost`                       | 0         | num >= 0                      |
+| `hearingCost`                       | 0.5       | num >= 0                      |
 | `heatSpeedCap`                      | 1         | num > 0 <= 4                  |
 | `hebbianRate`                       | 0.0001    | num >= 0 <= 1                 |
 | `herdAssimilation`                  | 0.3       | num >= 0 <= 1                 |
@@ -94,7 +94,7 @@ with one and not the other when the world starts. 266 keys.
 | `herdLeaveShare`                    | 0.4       | num >= 0 <= 1                 |
 | `herdLifeTicks`                     | 144000    | int >= 1                      |
 | `herdRadius`                        | 80        | num > 0                       |
-| `herdRunSpeed`                      | 6.5       | num >= 0                      |
+| `herdRunSpeed`                      | 5.5       | num >= 0                      |
 | `herdSeedChance`                    | 0.5       | num >= 0 <= 1                 |
 | `herdSeedMinDistance`               | 800       | num > 0                       |
 | `herdSeedTicks`                     | 24000     | int >= 1                      |
@@ -159,7 +159,7 @@ with one and not the other when the world starts. 266 keys.
 | `myceliumLife`                      | 144000    | int >= 1 <= 2147483647        |
 | `myceliumMax`                       | 200       | int >= 1 <= 1000              |
 | `myceliumRadius`                    | 150       | num > 0                       |
-| `noseCost`                          | 0         | num >= 0                      |
+| `noseCost`                          | 0.5       | num >= 0                      |
 | `obstacleDamage`                    | 50        | num >= 0                      |
 | `packWindow`                        | 120       | int >= 1                      |
 | `panicBurn`                         | 0         | num >= 0                      |
@@ -176,8 +176,8 @@ with one and not the other when the world starts. 266 keys.
 | `pollenTicks`                       | 3000      | int >= 1 <= 2147483647        |
 | `predatorRestTicks`                 | 60        | int >= 0 <= 65535             |
 | `pregnancyTicks`                    | 480       | int >= 1                      |
-| `rallyBurn`                         | 0         | num >= 0                      |
-| `rallyThrust`                       | 0         | num >= 0                      |
+| `rallyBurn`                         | 4         | num >= 0                      |
+| `rallyThrust`                       | 0.1       | num >= 0                      |
 | `rallyTicks`                        | 120       | int >= 1                      |
 | `rayCount`                          | 16        | int >= 1 <= 64                |
 | `recoilEnergy`                      | 20        | num >= 0                      |
@@ -209,13 +209,13 @@ with one and not the other when the world starts. 266 keys.
 | `smokeCost`                         | 20        | num >= 0                      |
 | `smokeDecoyTicks`                   | 60        | int >= 0 <= 65535             |
 | `smokeRadius`                       | 80        | num > 0                       |
-| `smokeSightRange`                   | 0         | num >= 0 <= 4                 |
+| `smokeSightRange`                   | 0.5       | num >= 0 <= 4                 |
 | `smokeThreshold`                    | 0.8       | num >= 0 <= 1                 |
 | `smokeTicks`                        | 180       | int >= 1 <= 65535             |
 | `specFlipNoHunt`                    | false     | bool                          |
 | `specMutationRate`                  | 0.02      | num >= 0 <= 1                 |
 | `specialisations`                   | {5 keys}  | specialisations               |
-| `speedHeat`                         | 0         | num >= 0 <= 4                 |
+| `speedHeat`                         | 0.5       | num >= 0 <= 4                 |
 | `splitCapMargin`                    | 50        | int >= 0                      |
 | `splitCooldownMultiplier`           | 1.5       | num >= 0                      |
 | `splitDeliberateMin`                | 300       | num >= 0                      |
@@ -226,14 +226,14 @@ with one and not the other when the world starts. 266 keys.
 | `sprintCost`                        | 0.05      | num >= 0                      |
 | `sprintDrain`                       | 0.01      | num > 0 <= 1                  |
 | `sprintFloor`                       | 0.3       | num > 0 <= 1                  |
-| `sprintHeat`                        | 0         | num >= 0                      |
+| `sprintHeat`                        | 0.0025    | num >= 0                      |
 | `sprintMultiplier`                  | 0.5       | num >= 0                      |
 | `sprintRefill`                      | 0.002     | num >= 0 <= 1                 |
 | `sprintRestThrust`                  | 0.2       | num >= 0 <= 1                 |
-| `sprintStoreEnabled`                | false     | bool                          |
-| `sprintStoreHeat`                   | 0         | num >= 0 <= 4                 |
+| `sprintStoreEnabled`                | true      | bool                          |
+| `sprintStoreHeat`                   | 0.5       | num >= 0 <= 4                 |
 | `sproutRate`                        | 0.000005  | num >= 0 <= 1                 |
-| `staggerThrust`                     | 0         | num >= 0 <= 1                 |
+| `staggerThrust`                     | 0.5       | num >= 0 <= 1                 |
 | `staggerTicks`                      | 30        | int >= 1                      |
 | `strikeMissCost`                    | 1         | num >= 0                      |
 | `temperatureColdModerate`           | 40        | num >= 0                      |

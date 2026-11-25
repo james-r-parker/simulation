@@ -3,7 +3,7 @@
 // the warned forager.
 import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
-import { arenaConfig } from '../../js/evo/chase-arena.js';
+import { preStep5Arena } from '../helpers/pre-step5.js';
 import { MODEL_DEFAULTS } from '../../js/evo/role-budget-model.js';
 import { budgetWarn } from '../../js/evo/role-budget-warn.js';
 import { warnCheck } from '../../js/evo/role-budget-warn-check.js';
@@ -22,18 +22,18 @@ const EFFORT_ONE = "at effort 1, the oracle hunter's, the formula and the sim ag
 
 describe('the scout budget against the scenes', () => {
     it.each(configs)('$name: no reading outside its tolerance', ({ config }) => {
-        const { readings } = warnCheck(arenaConfig(config), MODEL_DEFAULTS);
+        const { readings } = warnCheck(preStep5Arena(config), MODEL_DEFAULTS);
         expect(readings.filter((r) => r.drift).map((r) => r.what)).toEqual([]);
     });
 
     it('at effort 1 the formula agrees with the sim on whether the forager is caught on every arm, even and stalker included (T15a)', () => {
         for (const { name, config } of configs) {
-            const read = warnCheck(arenaConfig(config), MODEL_DEFAULTS).readings.find((r) => r.what === EFFORT_ONE);
+            const read = warnCheck(preStep5Arena(config), MODEL_DEFAULTS).readings.find((r) => r.what === EFFORT_ONE);
             expect(read?.drift, name).toBe(false);
         }
         const caught = (/** @type {string} */ arm) => {
             const { config } = configs.find((c) => c.name === arm) ?? { config: {} };
-            return warnCheck(arenaConfig(config), MODEL_DEFAULTS).readings.find((r) => r.what === EFFORT_ONE);
+            return warnCheck(preStep5Arena(config), MODEL_DEFAULTS).readings.find((r) => r.what === EFFORT_ONE);
         };
         // true reads the forager escapes the oracle hunter: it does on even (427 px against 313 before) and stalker (311 against
         // 305 before), and not on courser
@@ -44,7 +44,7 @@ describe('the scout budget against the scenes', () => {
 
     it('a forager the budget calls safe is safe on every arm, and the arms differ in whether the hunter closes', () => {
         const status = configs.map(({ config }) => {
-            const c = arenaConfig(config);
+            const c = preStep5Arena(config);
             const [scout, forager, hunter] = ['scout', 'forager', 'predator'].map((s) => roleParams(c, s));
             return budgetWarn(scout, forager, hunter, MODEL_DEFAULTS).cells.run.status;
         });
