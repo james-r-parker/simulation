@@ -91,7 +91,40 @@ describe('scene-defender: the shove count', () => {
     });
 });
 
+describe('scene-defender: the lanes the sim reads', () => {
+    it('reads the per-slot repel lanes, not the world config', () => {
+        const stale = makeWorld();
+        stale.lanes.defenderRepelEnergy.fill(0);
+        stale.lanes.defenderRepelImpulse.fill(0);
+        const lanesOn = makeWorld({ defenderRepelEnergy: 0, defenderRepelImpulse: 0 });
+        lanesOn.lanes.defenderRepelEnergy.fill(40);
+        const scenes = [stale, lanesOn].map((world) => {
+            const scene = createDefenderScene({ maxAgents: 4 });
+            tick(world, scene);
+            return scene.shoves;
+        });
+        expect(scenes).toEqual([0, 1]);
+    });
+});
+
 describe('scene-defender: the bite-break share', () => {
+    it('counts a shove that lands in the same tick as the bite that opens the episode', () => {
+        const world = makeWorld();
+        const scene = createDefenderScene({ maxAgents: 4 });
+        tick(world, scene, { bite: true });
+        world.contactCount = 0;
+        tick(world, scene, { tick: world.tick + ESCAPE_TICKS });
+        expect(defenderMetrics(scene)[BREAK]?.value).toBe(1);
+    });
+
+    it('does not count the death of a hunter as a resolved episode', () => {
+        const world = makeWorld();
+        const scene = createDefenderScene({ maxAgents: 4 });
+        noteDefenderDeath(scene, { tick: world.tick, slot: HUNTER, cause: DEATH_CAUSE.EATEN, hunter: true });
+        expect(scene.resolved).toBe(0);
+        expect(defenderMetrics(scene)[BREAK]?.value).toBeNull();
+    });
+
     it('is null with no resolved episode', () => {
         const scene = createDefenderScene({ maxAgents: 4 });
         expect(defenderMetrics(scene)[BREAK]).toEqual({
@@ -118,8 +151,8 @@ describe('scene-defender: the bite-break share', () => {
         const world = makeWorld();
         const scene = createDefenderScene({ maxAgents: 4 });
         tick(world, scene);
+        world.contactCount = 0; // the contact ends before the bite tick: a same-tick shove counts, an earlier one does not
         tick(world, scene, { bite: true });
-        world.contactCount = 0;
         tick(world, scene, { tick: world.tick + ESCAPE_TICKS });
         expect(defenderMetrics(scene)[BREAK]?.value).toBe(0);
     });

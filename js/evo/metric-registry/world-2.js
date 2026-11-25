@@ -85,7 +85,7 @@ export const WORLD_2 = {
     }),
     'eval.migration_index': entry('world', {
         module: 'js/evo/metrics-watch.js',
-        scenes: ['Leave a dying patch', 'Season changes the map', 'N3', 'G4'],
+        scenes: ['Season changes the map', 'N3', 'G4'],
         meaning: 'Higher means mature agents visit more of the food patches in a life.',
         counts: 'Mean over mature deaths after burn-in of distinct patches visited (strictly inside the patch disc, sampled every MOTION_SAMPLE_TICKS) over the patch count.',
         unit: 'share',

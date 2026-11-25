@@ -99,7 +99,11 @@ function addSlope(scene, world, { mother, x }) {
  */
 export function noteSpendBirth(scene, world, { child, motherId }) {
     const mother = world.parentSlotA[child];
-    if (world.tick < BURN_IN_TICKS || mother < 0 || world.alive[mother] !== 1 || world.genomeId[mother] !== motherId) {
+    if (mother < 0 || world.alive[mother] !== 1 || world.genomeId[mother] !== motherId) {
+        return;
+    }
+    if (world.tick < BURN_IN_TICKS) {
+        scene.readySince[mother] = -1; // a birth before burn-in ends her sample, so a later wait is not timed from it
         return;
     }
     if (scene.readySince[mother] >= 0) {

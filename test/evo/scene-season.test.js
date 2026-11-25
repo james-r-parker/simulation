@@ -7,7 +7,7 @@ import { computeMetrics } from '../../js/evo/metrics.js';
 import { sampleSeason } from '../../js/evo/scene-season.js';
 import { addBlob } from '../sim/helpers/life-world.js';
 import { observed } from './helpers/observer-world.js';
-import { loose } from './helpers/metric-registry.js';
+import { intendedOf, loose } from './helpers/metric-registry.js';
 
 const BASINS = {
     worldWidth: 4000,
@@ -93,5 +93,11 @@ describe('eval.winter_basin_density and eval.winter_shelter_distance', () => {
         crowd(open.world, { n: 1, x: 100, y: 500 });
         checkpoint(open, 11000, WINTER);
         expect(read(open, 'winter_shelter_distance').value).toBeNull();
+    });
+});
+
+describe('eval.winter_shelter_distance: the intended direction', () => {
+    it('is lower: a negative reading means agents move towards shelter in winter', () => {
+        expect(intendedOf('eval.winter_shelter_distance')).toBe('lower');
     });
 });

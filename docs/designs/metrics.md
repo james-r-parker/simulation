@@ -291,7 +291,7 @@ the metric definitions in full (`counts`, `nullWhen`) are in the registry entrie
 | `eval.winter_band_shift`                | Whether agents leave the snowline in winter (negative; lower is intended).                                                                 | share difference          | watch (lower)  | unverified | 16    | 100%      |
 | `eval.winter_basin_density`             | How basin populations differ in winter against the other seasons.                                                                          | ratio                     | watch (higher) | unverified | 16    | none      |
 | `eval.winter_patch_proximity`           | Whether winter concentrates agents on the patches that fruit.                                                                              | share difference          | watch (higher) | verified   | 64    | 30%       |
-| `eval.winter_shelter_distance`          | Whether agents move towards shelter in winter (negative).                                                                                  | px                        | watch (higher) | unverified | 16    | none      |
+| `eval.winter_shelter_distance`          | Whether agents move towards shelter in winter (negative).                                                                                  | px                        | watch (lower)  | unverified | 16    | none      |
 
 ## Scenes - social
 

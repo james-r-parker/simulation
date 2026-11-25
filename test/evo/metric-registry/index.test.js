@@ -271,6 +271,7 @@ const ADDED_INTENDED_LOWER = [
     'eval.sprint_share.prey',
     'eval.hunter_defender_bite_ratio',
     'eval.gene_edge_share',
+    'eval.winter_shelter_distance', // metric-noise T25: negative is towards shelter, so lower is intended (was higher)
 ];
 const SNAPSHOT = JSON.parse(readFileSync(new URL('../../fixtures/metric-directions.json', import.meta.url), 'utf8'));
 

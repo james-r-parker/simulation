@@ -15,6 +15,7 @@ export const SCENES_SCENT = {
     }),
     'eval.scavenge_approach_share': entry('scenes-ecology', {
         module: 'js/evo/scene-scent.js',
+        scenes: ['Scavenge'],
         meaning: 'Share of blob-carcass meals preceded by movement toward the carcass from beyond sight.',
         counts: 'Blob-carcass meals whose eater closed monotonically toward the carcass over at least 3 sampled ticks while the carcass existed, beginning beyond vision range, over blob-carcass meals after burn-in.',
         unit: 'share',

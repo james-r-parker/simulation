@@ -9,7 +9,9 @@ import { metricName } from './metric-registry/index.js';
 import { none, ok, per1k } from './metrics-stats.js';
 import { SPEC } from '../sim/specs.js';
 
-const NO_SHARE_SAMPLE = 'no 100-tick checkpoint after burn-in';
+/** Ticks between the guild checkpoints: the 1000-tick checkpoint every scene shares (the registry text says so too). */
+export const GUILD_SAMPLE_TICKS = 1000;
+const NO_SHARE_SAMPLE = `no ${GUILD_SAMPLE_TICKS}-tick checkpoint after burn-in`;
 const NO_GUILD_DEATH = 'no death of this guild after burn-in';
 const NO_PREY_SELECTIVITY = 'no eaten prey death or prey checkpoint after burn-in';
 const NO_DEFENDER_TICKS = 'no defender tick after burn-in';
@@ -239,7 +241,7 @@ export const guildsDetector = {
     },
     onTick: (scene, world) => {
         tickGuilds(scene, world);
-        if (world.tick % 1000 === 0) {
+        if (world.tick % GUILD_SAMPLE_TICKS === 0) {
             sampleGuilds(scene, world);
         }
     },

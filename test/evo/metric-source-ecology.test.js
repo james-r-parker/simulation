@@ -35,6 +35,11 @@ const SOURCE_METRICS = [
     'eval.herd_carcass_meal_share',
     'eval.carcass_meal_share',
     'eval.defender_bite_break_share',
+    // metric-noise T26: these three entries moved to scenes-ecology-4.js (file size limit), which the registry spreads here;
+    // only the order of the pin changed, no reading did.
+    'eval.refuge_crowding',
+    'eval.refuge_eligible_share',
+    'eval.predators_at_end_terminal_window',
     'eval.carcass_hunter_share',
     'eval.herd_carcass_share.forager',
     'eval.herd_carcass_share.predator',
@@ -61,8 +66,6 @@ const SOURCE_METRICS = [
     'eval.refuge_episode_entry',
     'eval.refuge_dwell_ticks',
     'eval.refuge_exit_fed',
-    'eval.refuge_crowding',
-    'eval.refuge_eligible_share',
     'eval.cold_margin_use_under_threat',
     'eval.refuge_bite_deficit',
     'eval.refuge_use_under_threat',
@@ -98,7 +101,6 @@ const SOURCE_METRICS = [
     'eval.chase_overshoot_share',
     'eval.chase_cover_use_share',
     'eval.chase_turn_jitter',
-    'eval.predators_at_end_terminal_window',
     'eval.chase_sprint_lift',
     'eval.flee_sprint_lift',
     'eval.sprint_cost_share',

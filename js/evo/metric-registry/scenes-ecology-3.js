@@ -7,11 +7,11 @@ function guildShareEntry(spec) {
     return entry('scenes-ecology', {
         module: 'js/evo/scene-guilds.js',
         meaning: `Mean share of alive agents in the ${spec} guild after burn-in.`,
-        counts: `${spec} alive count over total alive agents across 100-tick checkpoints after burn-in.`,
+        counts: `${spec} alive count over total alive agents across 1000-tick checkpoints after burn-in.`,
         unit: 'share',
         direction: 'watch',
         intended: 'higher',
-        nullWhen: ['no 100-tick checkpoint after burn-in'],
+        nullWhen: ['no 1000-tick checkpoint after burn-in'],
         arithmetic: 'test/evo/scene-guilds.test.js',
         source: 'test/evo/metric-source-ecology.test.js',
     });
@@ -37,7 +37,7 @@ function preySelectivityEntry(spec) {
     return entry('scenes-ecology', {
         module: 'js/evo/scene-guilds.js',
         meaning: `How often hunters eat the ${spec} guild relative to its share of prey alive; 1 is no preference.`,
-        counts: `The ${spec} share of eaten prey deaths divided by its mean share of living prey at 100-tick checkpoints after burn-in.`,
+        counts: `The ${spec} share of eaten prey deaths divided by its mean share of living prey at 1000-tick checkpoints after burn-in.`,
         unit: 'ratio',
         direction: 'watch',
         intended: 'lower',
@@ -60,6 +60,7 @@ export const SCENES_ECOLOGY_3 = {
     }),
     'eval.refuge_bite_deficit': entry('scenes-ecology', {
         module: 'js/evo/scene-refuge-outcome.js',
+        scenes: ['Refuge'],
         meaning:
             'How much the bite rate inside a ring differs from outside (below 1: cover protects; lower is intended).',
         counts: 'Bites per prey-tick inside a ring over bites per prey-tick outside one (prey-ticks are samples times 10), after burn-in.',
@@ -71,6 +72,7 @@ export const SCENES_ECOLOGY_3 = {
     }),
     'eval.refuge_use_under_threat': entry('scenes-ecology', {
         module: 'js/evo/scene-terrain.js',
+        scenes: ['Refuge'],
         meaning: 'How much more threatened agents are in a refuge ring than unthreatened ones.',
         counts: 'Every 10 ticks after burn-in: the share of threatened agents inside a refuge ring minus the share of unthreatened agents (all agents, not only prey).',
         unit: 'share difference',
@@ -81,6 +83,7 @@ export const SCENES_ECOLOGY_3 = {
     }),
     'eval.gap_crossers': entry('scenes-ecology', {
         module: 'js/evo/scene-terrain.js',
+        scenes: ['Cross or stay'],
         meaning: 'How often lineages cross the wall line.',
         counts: 'Mean crossings (a change of side of the wall line between samples 10 ticks apart) per lineage with at least MIN_LINEAGE_SAMPLES agent-samples, after burn-in.',
         unit: 'crossings per lineage',
@@ -91,6 +94,7 @@ export const SCENES_ECOLOGY_3 = {
     }),
     'eval.gap_never_share': entry('scenes-ecology', {
         module: 'js/evo/scene-terrain.js',
+        scenes: ['Cross or stay'],
         meaning: 'The share of lineages that never cross the wall (lower is intended).',
         counts: 'Lineages with at least MIN_LINEAGE_SAMPLES agent-samples and no crossings, over all such lineages.',
         unit: 'share',
@@ -101,6 +105,7 @@ export const SCENES_ECOLOGY_3 = {
     }),
     'eval.patch_leave_depleted': entry('scenes-ecology', {
         module: 'js/evo/scene-patch.js',
+        scenes: ['Leave a dying patch'],
         meaning: 'Higher means agents standing in a dying patch leave it.',
         counts: 'Of agents inside a patch with stock under half of foodPatchCapacity at a 100-tick sample, the share outside that patch 300 ticks later (agents that died or were replaced are left out).',
         unit: 'share',
@@ -110,6 +115,7 @@ export const SCENES_ECOLOGY_3 = {
     }),
     'eval.patch_stay_depleted': entry('scenes-ecology', {
         module: 'js/evo/scene-patch.js',
+        scenes: ['Leave a dying patch'],
         meaning: 'Lower means fewer agents stay in a dying patch.',
         counts: 'Of the same sampled agents, the share still inside the patch 300 ticks later.',
         unit: 'share',
@@ -128,6 +134,7 @@ export const SCENES_ECOLOGY_3 = {
     }),
     'eval.boom_bust_count': entry('scenes-ecology', {
         module: 'js/evo/scene-guards.js',
+        scenes: ['Boom and bust'],
         meaning:
             'Lower means fewer boom-bust episodes (hunter-prey cycles or total-population booms followed by crashes).',
         counts: 'Maximum of hunter-prey boom-bust episodes and total-population boom-bust episodes (total reaches BOOM_FACTOR times its trough then falls to PREY_CRASH of its peak within BOOM_BUST_WINDOW checkpoints).',
@@ -293,15 +300,5 @@ export const SCENES_ECOLOGY_3 = {
         nullWhen: ['no active chase turn samples after burn-in'],
         arithmetic: 'test/evo/scene-kinematics.test.js',
         source: 'test/evo/metric-source-ecology.test.js',
-    }),
-    'eval.predators_at_end_terminal_window': entry('scenes-ecology', {
-        module: 'js/evo/scene-terminal-hunters.js',
-        meaning: 'Higher means more hunters were alive on average during the last complete season after burn-in.',
-        counts: 'Mean alive canHunt count at 1000-tick checkpoints in the last complete season after burn-in, including zero counts. The starting boundary belongs to the season and the ending boundary belongs to the next season.',
-        unit: 'agents',
-        direction: 'higher',
-        nullWhen: ['no complete season after burn-in', 'no complete season checkpoint series'],
-        arithmetic: 'test/evo/scene-terminal-hunters.test.js',
-        source: 'test/evo/scene-terminal-hunters.test.js',
     }),
 };

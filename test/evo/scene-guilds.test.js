@@ -3,6 +3,8 @@ import { BORN_CAUSE, DEATH_CAUSE } from '../../js/sim/events.js';
 import { BURN_IN_TICKS } from '../../js/evo/burn-in.js';
 import {
     createGuildScene,
+    GUILD_SAMPLE_TICKS,
+    guildsDetector,
     guildMetrics,
     noteGuildAlarm,
     noteGuildBirth,
@@ -10,6 +12,7 @@ import {
     sampleGuilds,
     tickGuilds,
 } from '../../js/evo/scene-guilds.js';
+import { METRICS } from '../../js/evo/metric-registry/index.js';
 import { directionOf, namesOf } from './helpers/metric-registry.js';
 
 const GUILD_NAMES = [
@@ -197,5 +200,26 @@ describe('scene-guilds', () => {
         w.alarmSeen[0] = 1;
         noteGuildAlarm(scene, w, 0);
         expect(guildMetrics(scene)['eval.scout_alarm_lead_share']?.value).toBe(1);
+    });
+});
+
+describe('scene-guilds: the checkpoint cadence', () => {
+    it('samples every GUILD_SAMPLE_TICKS (1000) ticks and the registry text says the same', () => {
+        expect(GUILD_SAMPLE_TICKS).toBe(1000);
+        const w = makeWorld(5);
+        w.alive.set([1, 1, 1, 1, 1]);
+        w.spec.set([0, 1, 2, 3, 4]);
+        const scene = createGuildScene({ maxAgeTicks: 1000, callRadius: 200, initialAgents: 5 });
+        const onTick = /** @type {(s: any, world: any) => void} */ (guildsDetector.onTick);
+        w.tick = BURN_IN_TICKS + 100;
+        onTick(scene, w);
+        expect(scene.shareSamples).toBe(0);
+        w.tick = BURN_IN_TICKS + GUILD_SAMPLE_TICKS;
+        onTick(scene, w);
+        expect(scene.shareSamples).toBe(1);
+        const e = /** @type {any} */ (METRICS)['eval.guild_share.forager'];
+        expect(e.nullWhen).toEqual([`no ${GUILD_SAMPLE_TICKS}-tick checkpoint after burn-in`]);
+        expect(e.counts).toContain(`${GUILD_SAMPLE_TICKS}-tick checkpoints`);
+        expect(guildMetrics(scene)['eval.guild_share.forager']?.value).toBeCloseTo(0.2, 6);
     });
 });
