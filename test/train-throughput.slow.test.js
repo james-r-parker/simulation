@@ -41,6 +41,18 @@ writeFileSync(
 const TIMING = ['wallSeconds', 'cpuShare', 'cpuSeconds', 'workers'];
 
 /**
+ * The archive JSON without its `rulesHash` stamp: the stamp moves with every rules change (a `!` commit), and this test is
+ * about what the throughput changes write, not which rules the run was stamped with (agent-workflow.md T44).
+ * @param {string} text an archive file
+ * @returns {string} its JSON with the top-level `rulesHash` removed
+ */
+function withoutStamp(text) {
+    const json = JSON.parse(text);
+    delete json.rulesHash;
+    return JSON.stringify(json);
+}
+
+/**
  * @param {string} name the output directory name
  * @param {number} workers the pool size
  * @returns {Promise<{archives: string, curve: string}>} the SHA-256 of every archive file and of the curve without its timing columns
@@ -62,7 +74,7 @@ async function run(name, workers) {
     const files = readdirSync(out)
         .filter((f) => /^archive-\d+\.json$/.test(f))
         .sort();
-    const archives = files.map((f) => readFileSync(join(out, f), 'utf8')).join('');
+    const archives = files.map((f) => withoutStamp(readFileSync(join(out, f), 'utf8'))).join('');
     const rows = readFileSync(join(out, 'curve.jsonl'), 'utf8')
         .trim()
         .split('\n')
@@ -78,7 +90,7 @@ async function run(name, workers) {
 
 /** What the run wrote before T27 to T32 (recorded on the unchanged code). */
 const PINNED = {
-    archives: 'b4ca8ff736cd43d2765c6b8e574eba788fd65d8a888a73a14a09a76e6bcbc5b3', // the pin with the rulesHash of smokeDecoyTicks (the archives carry it)
+    archives: 'c4540cecf7f33a2ed73111c8b821f411d48a2d0e69bd31f0b1fdfd6ff96ad80b', // the archive files without their rulesHash stamp (the stamp moves with every rules change)
     curve: 'd2c482106d746362232a7cb9f250d9e4fa1316c97169ed18e085abeeb3279f40', // moved with the smoke decoy: a hunter whose rays meet a fresh cloud sees a body in it
 };
 

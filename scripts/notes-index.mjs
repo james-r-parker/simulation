@@ -1,12 +1,12 @@
 #!/usr/bin/env node
-// Regenerates the index in docs/designs/sim-notes.md from the dated entries in docs/notes/<YYYY-MM>.md: one line per
-// `### YYYY-MM-DD - <topic>` heading, with a link to it (docs/designs/agent-workflow.md, Context diet, Notes).
-// A new entry goes into the month file; run --write in the same commit.
+// Regenerates the index in docs/designs/sim-notes.md from the entry files docs/notes/<YYYY-MM>/<YYYY-MM-DD>-<slug>.md: one
+// line per file, from its `### YYYY-MM-DD - <topic>` heading, with a link to it (docs/designs/agent-workflow.md, Phase 7).
+// A new entry is a new file, which no other pull request edits; run --write in the same commit.
 //
 // Usage:
 //   node scripts/notes-index.mjs            # print the index section to stdout
 //   node scripts/notes-index.mjs --write    # rewrite the index section of docs/designs/sim-notes.md
-//   node scripts/notes-index.mjs --check    # exit 1 if the committed index differs from the month files
+//   node scripts/notes-index.mjs --check    # exit 1 if the committed index differs from the entry files
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -16,24 +16,24 @@ const INDEX_HEADING = '## Learned while building';
 const ENTRY = /^### (\d{4}-\d{2}-\d{2}) - (.+)$/;
 
 /**
- * @param {string} heading a heading's text
- * @returns {string} its GitHub anchor: lower case, punctuation dropped, spaces to hyphens
+ * @param {string} topic an entry's topic
+ * @returns {string} the slug of its file name: lower case ASCII words joined by hyphens, cut at a word boundary under 60
+ *   characters
  */
-export function slug(heading) {
-    return heading
+export function topicSlug(topic) {
+    const words = topic
         .toLowerCase()
-        .replace(/[^\p{L}\p{N}\s_-]/gu, '')
-        .replace(/\s/g, '-');
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+    const cut = words.length > 60 ? words.slice(0, words.slice(0, 60).lastIndexOf('-')) : words;
+    return cut || 'entry';
 }
 
 /**
- * @param {string} markdown a month file
- * @returns {{ date: string, topic: string, anchor: string }[]} its dated entries in file order, with the anchor
- *   GitHub gives each heading (a repeated heading gets `-1`, `-2`)
+ * @param {string} markdown an entry file
+ * @returns {{ date: string, topic: string } | null} its first `### YYYY-MM-DD - <topic>` heading outside a code fence, or null
  */
-export function parseEntries(markdown) {
-    const seen = new Map();
-    const entries = [];
+export function parseEntry(markdown) {
     let fenced = false;
     for (const line of markdown.split('\n')) {
         if (line.startsWith('```')) {
@@ -41,46 +41,66 @@ export function parseEntries(markdown) {
         }
         const match = fenced ? null : ENTRY.exec(line);
         if (match) {
-            const base = slug(line.slice(4));
-            const count = seen.get(base) ?? 0;
-            seen.set(base, count + 1);
-            entries.push({ date: match[1], topic: match[2], anchor: count === 0 ? base : `${base}-${count}` });
+            return { date: match[1], topic: match[2] };
         }
     }
-    return entries;
+    return null;
 }
 
 /**
- * @param {{ month: string, markdown: string }[]} files the month files
+ * @typedef {object} Entry
+ * @property {string} month the `YYYY-MM` directory
+ * @property {string} file the file name, `<YYYY-MM-DD>-<slug>.md`
+ * @property {string} date the heading's date
+ * @property {string} topic the heading's topic
+ */
+
+/**
+ * @param {Entry[]} entries every entry
  * @returns {string} the index section: its heading, a sentence, and one bullet per entry, newest month first
  */
-export function renderIndex(files) {
+export function renderIndex(entries) {
     const lines = [
         INDEX_HEADING,
         '',
-        'One line per entry, in date order within a month and newest month first. The entries are in [docs/notes/](../notes/);',
-        'add one to the month file and run `node scripts/notes-index.mjs --write` in the same commit.',
+        'One line per entry, in date order within a month and newest month first. The entries are in [docs/notes/](../notes/),',
+        'one file per entry in `docs/notes/<YYYY-MM>/<YYYY-MM-DD>-<slug>.md`; add one and run `node scripts/notes-index.mjs --write`',
+        'in the same commit.',
         '',
     ];
-    for (const { month, markdown } of [...files].sort((a, b) => (a.month < b.month ? 1 : -1))) {
-        for (const { date, topic, anchor } of parseEntries(markdown)) {
-            lines.push(`- ${date} - ${topic} - [${month}](../notes/${month}.md#${anchor})`);
-        }
+    const order = (/** @type {Entry} */ a, /** @type {Entry} */ b) =>
+        a.month === b.month ? 0 : a.month < b.month ? 1 : -1;
+    const sorted = [...entries].sort((a, b) => order(a, b) || (a.file < b.file ? -1 : a.file > b.file ? 1 : 0));
+    for (const { month, file, date, topic } of sorted) {
+        lines.push(`- ${date} - ${topic} - [${month}](../notes/${month}/${file})`);
     }
     return `${lines.join('\n')}\n`;
 }
 
 /**
- * @param {string} notesDir the directory of month files
- * @returns {{ month: string, markdown: string }[]} each `<YYYY-MM>.md` file
+ * @param {string} notesDir `docs/notes`, holding a `<YYYY-MM>` directory per month
+ * @returns {Entry[]} every entry file
+ * @throws {Error} naming a file whose name or heading does not follow the rule: `<YYYY-MM>/<date>-<slug>.md` holding a
+ *   `### <date> - <topic>` heading with that date in that month
  */
-function readMonths(notesDir) {
+export function readEntries(notesDir) {
     if (!existsSync(notesDir)) {
         return [];
     }
-    return readdirSync(notesDir)
-        .filter((name) => /^\d{4}-\d{2}\.md$/.test(name))
-        .map((name) => ({ month: name.slice(0, 7), markdown: readFileSync(join(notesDir, name), 'utf8') }));
+    /** @type {Entry[]} */
+    const entries = [];
+    for (const month of readdirSync(notesDir).filter((name) => /^\d{4}-\d{2}$/.test(name))) {
+        for (const file of readdirSync(join(notesDir, month)).filter((name) => name.endsWith('.md'))) {
+            const heading = parseEntry(readFileSync(join(notesDir, month, file), 'utf8'));
+            if (!heading || !file.startsWith(`${heading.date}-`) || !heading.date.startsWith(month)) {
+                throw new Error(
+                    `docs/notes/${month}/${file}: the file name must start with the date of its "### YYYY-MM-DD - <topic>" heading, in that month's directory`,
+                );
+            }
+            entries.push({ month, file, ...heading });
+        }
+    }
+    return entries;
 }
 
 /**
@@ -102,7 +122,7 @@ function readText(path) {
 }
 
 /**
- * @param {boolean} stale whether the committed index differs from the month files
+ * @param {boolean} stale whether the committed index differs from the entry files
  * @returns {number} the exit code, after saying which it is
  */
 function reportStale(stale) {
@@ -115,8 +135,21 @@ function reportStale(stale) {
 }
 
 /**
+ * @param {string} notesDir `docs/notes`
+ * @returns {string | null} the index section, or null after printing which entry file breaks the naming rule
+ */
+function indexOf(notesDir) {
+    try {
+        return renderIndex(readEntries(notesDir));
+    } catch (error) {
+        process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
+        return null;
+    }
+}
+
+/**
  * @param {string[]} args `--write`, `--check` or nothing
- * @param {{ notesDir?: string, docPath?: string }} [paths] where the month files and sim-notes.md are
+ * @param {{ notesDir?: string, docPath?: string }} [paths] where the entry directories and sim-notes.md are
  * @returns {number} the exit code
  */
 export function main(
@@ -128,7 +161,10 @@ export function main(
         process.stderr.write(`usage: node scripts/notes-index.mjs [--write | --check] (got: ${args.join(' ')})\n`);
         return 2;
     }
-    const index = renderIndex(readMonths(notesDir));
+    const index = indexOf(notesDir);
+    if (index === null) {
+        return 1;
+    }
     const current = readText(docPath);
     const next = withIndex(current, index);
     if (mode === '--write') {

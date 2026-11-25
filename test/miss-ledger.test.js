@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { check, report } from '../scripts/miss-ledger.mjs';
+import { check, close, report } from '../scripts/miss-ledger.mjs';
 import {
     failedTests,
     findMisses,
@@ -238,5 +238,54 @@ describe('check', () => {
         };
         expect(check({ run: broken, root: repo(files), log: (line) => log.push(line) })).toBe(0);
         expect(log[0]).toContain('could not be listed');
+    });
+});
+
+describe('close', () => {
+    const labels = (/** @type {string[]} */ ...names) => names.map((name) => ({ name }));
+
+    it('comments with the green commit and closes each open red-main issue', () => {
+        const gh = fakeGh({
+            open: [
+                { number: 582, labels: labels('red-main') },
+                { number: 590, labels: labels('red-main') },
+            ],
+        });
+        /** @type {string[]} */
+        const log = [];
+        expect(close({ run: gh.run, env: ENV, log: (line) => log.push(line) })).toBe(0);
+        const list = gh.calls.find((a) => a[0] === 'issue' && a[1] === 'list');
+        expect(list?.slice(list.indexOf('--label'), list.indexOf('--label') + 4)).toEqual([
+            '--label',
+            'red-main',
+            '--state',
+            'open',
+        ]);
+        const comment = gh.calls.find((a) => a[0] === 'issue' && a[1] === 'comment' && a[2] === '582');
+        expect(comment?.[comment.indexOf('--body') + 1]).toContain('main is green at abcdef1');
+        expect(gh.calls.filter((a) => a[0] === 'issue' && a[1] === 'close').map((a) => a[2])).toEqual(['582', '590']);
+        expect(log).toEqual(['closed #582', 'closed #590']);
+    });
+
+    it('keeps open an issue that records an affected-test miss, and does nothing with none open', () => {
+        const held = fakeGh({ open: [{ number: 7, labels: labels('red-main', 'affected-miss') }] });
+        /** @type {string[]} */
+        const log = [];
+        close({ run: held.run, env: ENV, log: (line) => log.push(line) });
+        expect(held.calls.some((a) => a[1] === 'close' || a[1] === 'comment')).toBe(false);
+        expect(log).toEqual(['kept #7 open: it records an affected-test miss']);
+        const none = fakeGh({});
+        expect(close({ run: none.run, env: ENV, log: () => {} })).toBe(0);
+        expect(none.calls.every((a) => a[1] === 'list')).toBe(true);
+    });
+
+    it('logs and still returns 0 when gh fails: a green main stays green', () => {
+        /** @type {string[]} */
+        const log = [];
+        const run = () => {
+            throw new Error('gh issue list exited 1');
+        };
+        expect(close({ run, env: ENV, log: (line) => log.push(line) })).toBe(0);
+        expect(log[0]).toContain('could not close the open issues');
     });
 });

@@ -1,0 +1,9 @@
+### 2026-10-30 - E81, the big-bang defaults against the Phase 4 gate (natural-selection T31)
+
+16 seeds x 200000 ticks, live policy, `evals/results/e81-defaults.json` (code at b6f9c67; the T41 channel shares came later, the world is bit-identical). Viability table from `scripts/viability-table.mjs`.
+
+- **Mechanical layer.** A prey type is alive at the last tick on 16 of 16 seeds and the population sits at 450 to 500 on 15 (one seed ends at 55 after 7 floor episodes). Child survival 0.78 to 0.95, deliberate food share 0.45 to 0.62.
+- **The gate misses on both rows.** Predators are alive at the last tick on 3 of 16 seeds (17, 10 and 3 hunters), against 14 needed; `eval.predator_presence` still reads 0.56 over the run, so the hunters boom early and are gone by the end. `eval.basin_lineage_effective` is at least 3 on 0 of 16 seeds (mean 1.04, max 1.18): in the last quarter each basin holds one maternal line. The whole-run `eval.lineage_effective` is 3.96 and `eval.lineages_alive` 7.2, so the families exist after burn-in and coalesce later.
+- **Why the families coalesce.** `lineageId` passes down the mother's line and only floor and immigrant entrants start a new one; with the floor guard idle (0 episodes on 14 seeds) nothing new enters, and over 200000 ticks the maternal lines coalesce as any closed population's do. A gate of 3 effective matrilines per basin at the end may be out of reach for any predator value; the bite screen (E82) tests that, and the definition is a question for the plan.
+- **Behavioural layer.** `eval.circling_share` 0.079 (0.035 to 0.155) and `eval.output_saturation` 0.289 (0.226 to 0.368): neither reaches 0.30 on the mean, so the brain-plan follow-up is not triggered. `eval.spec_effective` 2.39.
+- **Emergent layer.** `eval.instinct_drift` 1.01 (0.73 to 1.40): the instinct cells sit as far from the prior as the founders did, so no scene is credited to evolution of the reflex yet.

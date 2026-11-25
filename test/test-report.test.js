@@ -94,6 +94,16 @@ describe('formatReport', () => {
         expect(lines.at(-1)).toBe('  3.2 s  test/x.test.js > slowish');
     });
 
+    it("lists the reporter's near-limit tests, explicit limits included, instead of the default-limit list", () => {
+        const limits = [{ file: 'test/y.test.js', name: 'long', ms: 119500, limitMs: 120000 }];
+        const lines = formatReport(result([{ status: 'passed', fullName: 'slowish', duration: 3200 }]), {
+            ...opts,
+            limits,
+        });
+        expect(lines.join('\n')).toContain('119.5 s of 120 s  test/y.test.js > long');
+        expect(lines.join('\n')).not.toContain('slowish');
+    });
+
     it('reports a file that failed to load', () => {
         const json = result([], { numFailedTests: 0 });
         json.testResults[0].message = 'Error: cannot import foo';

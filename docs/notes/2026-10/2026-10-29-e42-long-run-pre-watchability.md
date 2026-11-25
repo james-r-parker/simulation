@@ -1,0 +1,7 @@
+### 2026-10-29 - E42 long run (pre-watchability)
+
+- **What ran**: the T48g defaults (live `map-elites-v6`, configHash `79384a6cfa80414d`), seeds 1-16 at the default offset, 600000 ticks, no config or policy options. The report is `evals/experiments/E42-report.json`. This is the pre-watchability baseline: the user judged this world unwatchable (97% scouts, spinning, alarm spam), so T49 is rerun after the watchability work (T48h to T48j).
+- **Result**: `eval.skill_trend` mean +0.036 (sd 0.083), positive on 10 of 16 seeds. `eval.deliberate_food_share` 0.172, `eval.mating_share` 0.262, `eval.split_bumper_share` 0.025, `eval.spec_dominance` 0.851, `eval.spec_effective` 1.66, `eval.alarm_precision` 0.0003, heat stress 0.490, cold stress 0.061, `eval.population_mean` 385 (sd 35).
+- **Floor and predators**: the sampled population minimum (every 1000 ticks) is 40 on five seeds and never under `minAgents`. `eval.predator_births` median 93.5 per seed, with seed 313056 at 15890 (mean 1101), so the mean is one seed.
+- **Prediction check**: `skill_trend` sign and count (10 of 16) and `deliberate_food_share` were as predicted. Mating (0.26 against about 0.2), heat (0.49 against about 0.30), split bumper (0.025 against 0.10 to 0.15) and population (385 against below 256) were wrong. The longer run did not reproduce the 200000-tick E63 levels of heat and population.
+- **Verdict**: none. There is no same-tick reference for `eval:compare`, so the ledger effect is a placeholder.

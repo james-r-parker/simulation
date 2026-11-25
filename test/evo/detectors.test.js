@@ -25,7 +25,7 @@ describe('DETECTORS', () => {
 
     it('runs approach before the detectors that read its per-tick state', () => {
         // The sprint detector reads `scenes.approach.phase`, which the approach detector rewrites each tick, and
-        // approach and stillness read each other at a death (docs/notes/2026-11.md, 2026-11-21 "Detector order is
+        // approach and stillness read each other at a death (docs/notes/2026-11/, 2026-11-21 "Detector order is
         // behaviour"). Moving approach after any of them moves `eval.chase_sprint_lift`.
         const index = (/** @type {string} */ name) => DETECTORS.findIndex((detector) => detector.name === name);
         const approach = index('approach');
@@ -33,7 +33,7 @@ describe('DETECTORS', () => {
         for (const later of ['stillness', 'sprint', 'kinematics']) {
             expect(
                 approach,
-                `approach must run before ${later} (docs/notes/2026-11.md, 2026-11-21 "Detector order is behaviour")`,
+                `approach must run before ${later} (docs/notes/2026-11/, 2026-11-21 "Detector order is behaviour")`,
             ).toBeLessThan(index(later));
         }
     });

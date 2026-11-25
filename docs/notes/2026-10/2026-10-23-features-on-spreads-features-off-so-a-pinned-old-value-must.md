@@ -1,0 +1,3 @@
+### 2026-10-23 - `FEATURES_ON` spreads `FEATURES_OFF`, so a pinned old value must be restated
+
+`scripts/lib/features-on.mjs` builds `FEATURES_ON` as `{ ...FEATURES_OFF, ... }`. T78 pinned `mateRange`, `reproductionCooldown` and `childEnergyMin` at their old values in `FEATURES_OFF` to keep the frozen bench world, and that inherited into `FEATURES_ON` too, so the tracked `defaults` row would have run the old values. Any key pinned off that is retuned on must also be restated in `FEATURES_ON`. The golden hashes are re-pinned with `runGolden` and `driveGolden` in Node (as T41 did), and `npm run browser:hash` matches the default and busy cases.

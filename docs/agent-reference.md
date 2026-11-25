@@ -22,7 +22,7 @@ When one agent hands tasks to others (user, 2026-10-22):
   `runs.json` and prints one warning line when a lone run claims under half the free workers.
 - **One batch branch, one PR per session (user, 2026-11-22).** The coordinator keeps one local `batch/<date>-<desc>`
   branch cut from fresh `origin/main`. Each subagent builds its chunk on its own branch cut from the batch
-  (`git worktree add -b <type>/<desc> .claude/worktrees/<name> <batch>` until `task-start.sh --from` exists, agent-workflow T45),
+  (`scripts/task-start.sh <type>/<desc> --from <batch>`),
   commits locally, and does not push or open a PR (this replaces the 2026-11-20 rule that subagents open PRs). When a
   subagent finishes, the coordinator reviews its commits against the plan rows, merges its branch into the batch with
   `--no-ff`, runs the gate (`scripts/check.sh --fix --quick`) and carries on; a red gate is fixed on the batch before
@@ -32,6 +32,12 @@ When one agent hands tasks to others (user, 2026-10-22):
   and rebasing. Everything above still holds: one coordinator, parallel streams only on disjoint Owns paths, a chunk
   that changes `rulesHash` carries its `library/seasons.json` entry in the same batch, and evals, screens and timing
   runs stay out of a code chunk.
+- **Merge order for parallel lanes in `js/sim` (user, 2026-11-21).** Lanes whose Owns paths overlap in `js/sim` conflict by
+  the order they land, so the coordinator merges them into the batch in a set order: the lane that changes shared sim
+  state, `config.js` keys or `rulesHash` first, then the lanes that only read them (metrics, sensors, brains, evals), and
+  within a group the lane with the fewest files first. The handoff names the lane's place in the order. After each
+  merge the coordinator regenerates the generated docs (the regen of `npm run sync`), re-runs the gate
+  (`scripts/check.sh --fix --quick`) and only then merges the next lane, so a conflict or a red gate is one lane's.
 - **Build in chunks (user, 2026-10-29).** One chunk carries 4 to 8 related tasks, usually most of a phase,
   built in order by one subagent on one branch, one commit per task. During the chunk each commit runs only the
   pre-commit hook (`scripts/check.sh --tier 1`), whose `test-related` gate runs the tests of the staged files, so the

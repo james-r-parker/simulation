@@ -1,35 +1,14 @@
-// The committed ladder's gates against the scripted references (training-stages.md, Gates, Validity) at a gate checkpoint's
-// trial count, and the evidence behind the conditions the ladder leaves out.
+// The evidence behind the gate conditions the ladder leaves out (training-stages.md, Gates, Validity). The ladder's own
+// conditions are read in gate-validity-a, -b and -c.slow.test.js, one drill group each (helpers/gate-validity-ladder.js).
 
-import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { DRILLS } from '../../js/evo/drill-scenarios.js';
 import { drillSubject, randomBrains } from '../../js/evo/drill.js';
 import { gateValidity } from '../../js/evo/gate-validity.js';
 import { kinSparingSubject } from '../../js/evo/lesson-reference.js';
-import { partitionSeed } from '../../js/evo/partitions.js';
 import { scaleTimeout } from '../../scripts/lib/test-timeout.mjs';
 
-const LADDER = JSON.parse(readFileSync(new URL('../fixtures/train-ladder.json', import.meta.url), 'utf8'));
 const drillOf = (/** @type {string} */ name) => /** @type {any} */ (DRILLS.find((d) => d.name === name));
-
-describe('a frozen copy of the committed ladder', () => {
-    it(
-        'has a reference that passes each drill condition and random brains that fail it, on the gate seed',
-        () => {
-            const rows = gateValidity(LADDER, { seed: partitionSeed('validation', 0), trials: 64 });
-            expect(rows.length).toBeGreaterThan(8);
-            for (const row of rows) {
-                expect(row.level, `${row.stage} ${row.read}`).not.toBe('none');
-                expect(row.randomFails, `${row.stage} ${row.read}`).toBe(true);
-            }
-            const level = (/** @type {string} */ read) => rows.find((r) => r.read === read)?.level;
-            expect(level('drill.kin-spared.edgeLow')).toBe('senses');
-            expect(level('drill.hunter-closing.edgeLow')).toBe('senses');
-        },
-        scaleTimeout(120000),
-    );
-});
 
 describe('the pack gate that the ladder leaves out', () => {
     it(

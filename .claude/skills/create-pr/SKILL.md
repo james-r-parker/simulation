@@ -59,7 +59,7 @@ scripts/browser-perf.mjs` (v6 by default; `--viewport 3840x2160` and `2560x1440`
     - move the **Status:** line and mark the phase `(built)`; drop `**Validated:**` and `**Priority:**` (or `**Scheduled by:**`, with its row in the lead's `## Order` table) once
       `Implemented`
     - regenerate the index: `node scripts/designs-index.mjs --write`
-    - append learnings to `docs/notes/<YYYY-MM>.md` as a dated `### YYYY-MM-DD - <topic>` entry, then run
+    - add each learning as its own file `docs/notes/<YYYY-MM>/<YYYY-MM-DD>-<slug>.md` headed `### YYYY-MM-DD - <topic>`, then run
       `node scripts/notes-index.mjs --write` (it updates the index in `docs/designs/sim-notes.md`)
 7. **Write the PR body** to a file (the template under Ship); `ship.sh` checks it (step 4) before it pushes.
    A branch checked out in another worktree (a harness-made `worktree-agent-*` branch) cannot be pushed under its own
@@ -67,7 +67,7 @@ scripts/browser-perf.mjs` (v6 by default; `--viewport 3840x2160` and `2560x1440`
 
 ## Git conventions
 
-- Never commit to `main`. Start with `scripts/task-start.sh <type>/<short-desc>` (a worktree branched from fresh `origin/main`; e.g. `feat/headless-sim-core-phase-1`). Design docs in the planning stage go on `docs/<doc-name>`.
+- Never commit to `main`. Start with `scripts/task-start.sh <type>/<short-desc>` (a worktree branched from fresh `origin/main`, or from the session's batch with `--from batch/<date>-<desc>`; e.g. `feat/headless-sim-core-phase-1`). Design docs in the planning stage go on `docs/<doc-name>`.
 - Stage explicit paths: `git add js/sim/rng.js test/sim/rng.test.js`. Never `git add -A` or `git add .`. Review
   first with `git diff --staged`.
 - One self-contained commit per task; each commit passes the pre-commit hook, whose `test-related` gate runs the tests of the staged files, so the task's own tests run at commit time (`npx vitest run <files>` is for iterating before the commit, not a second run). The full gate and CI run once per chunk PR (4 to 8 tasks, AGENTS.md "Build in chunks").
@@ -80,7 +80,9 @@ scripts/browser-perf.mjs` (v6 by default; `--viewport 3840x2160` and `2560x1440`
 
 ## Ship (only when the user asks to push or open a PR)
 
-One PR per session (user, 2026-11-22): subagents commit on chunk branches cut from the coordinator's `batch/` branch and
+One PR per session (user, 2026-11-22): the coordinator cuts `batch/<date>-<desc>` from fresh `origin/main`; each chunk branch is cut
+from it with `scripts/task-start.sh <type>/<desc> --from batch/<date>-<desc>` (no other base but `origin/main`; no stacked pull
+requests); subagents commit on chunk branches cut from the coordinator's `batch/` branch and
 never push or open a PR; the coordinator merges each into the batch with `--no-ff`, runs the gate, and ships the batch
 once at the end of the session or when the user asks. Run `ship.sh` from the batch branch only; the body covers every chunk.
 
