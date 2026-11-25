@@ -150,10 +150,10 @@ export function tickDefender(scene, world) {
  * counts as caught.
  * @param {Record<string, any>} scene the defender scene
  * A hunter that dies has no episode (only non-hunters open one), so a hunter eaten by a hunter is not counted.
- * @param {{tick: number, slot: number, cause: number, hunter: boolean}} death the death record
+ * @param {{tick: number, slot: number, cause: number, hunter?: boolean}} death the death record
  * @returns {void}
  */
-export function noteDefenderDeath(scene, { tick, slot, cause, hunter }) {
+export function noteDefenderDeath(scene, { tick, slot, cause, hunter = false }) {
     if (hunter) {
         return;
     }

@@ -210,11 +210,12 @@ describe('scene-guilds: the checkpoint cadence', () => {
         w.alive.set([1, 1, 1, 1, 1]);
         w.spec.set([0, 1, 2, 3, 4]);
         const scene = createGuildScene({ maxAgeTicks: 1000, callRadius: 200, initialAgents: 5 });
+        const onTick = /** @type {(s: any, world: any) => void} */ (guildsDetector.onTick);
         w.tick = BURN_IN_TICKS + 100;
-        guildsDetector.onTick(scene, w);
+        onTick(scene, w);
         expect(scene.shareSamples).toBe(0);
         w.tick = BURN_IN_TICKS + GUILD_SAMPLE_TICKS;
-        guildsDetector.onTick(scene, w);
+        onTick(scene, w);
         expect(scene.shareSamples).toBe(1);
         const e = /** @type {any} */ (METRICS)['eval.guild_share.forager'];
         expect(e.nullWhen).toEqual([`no ${GUILD_SAMPLE_TICKS}-tick checkpoint after burn-in`]);
