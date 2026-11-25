@@ -197,7 +197,7 @@ function deaths(w) {
     for (let t = 1; t <= 20000 && died.includes(0); t++) {
         huddlePass(w, rebuild(w));
         sit(w, 1);
-        w.energy.forEach((e, slot) => {
+        w.energy.forEach((/** @type {number} */ e, /** @type {number} */ slot) => {
             if (slot < died.length && died[slot] === 0 && e <= 0) {
                 died[slot] = t;
             }
