@@ -1,4 +1,4 @@
-// reads: scripts/lib/merge-base.mjs, scripts/lib/regen.mjs
+// reads: scripts/lib/merge-base.mjs, scripts/lib/regen.mjs, scripts/check-conventions.sh
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -176,6 +176,16 @@ describe('GENERATORS', () => {
         for (const g of GENERATORS) {
             expect(existsSync(`scripts/${g.script}`), g.script).toBe(true);
             expect(existsSync(g.path), g.path).toBe(true);
+        }
+    });
+
+    it('hold every generator whose committed file a gate checks, so a merge regenerates it rather than conflicting', () => {
+        const conventions = readFileSync('scripts/check-conventions.sh', 'utf8');
+        const checked = [...conventions.matchAll(/node scripts\/([\w-]+\.mjs) --check/g)].map((m) => m[1]);
+        const listed = GENERATORS.map((g) => g.script);
+        expect(checked.length).toBeGreaterThan(5);
+        for (const script of [...checked, 'designs-index.mjs']) {
+            expect(listed, script).toContain(script);
         }
     });
 });

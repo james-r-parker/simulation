@@ -29,6 +29,7 @@ export const GENERATORS = [
     { script: 'traits.mjs', args: ['--write'], path: 'docs/trait-table.md', whole: true },
     { script: 'scene-scorecard.mjs', args: ['--write'], path: 'docs/scene-scorecard.md', whole: true },
     { script: 'data-deps.mjs', args: ['--write'], path: 'test/data-deps.json', whole: true },
+    { script: 'effect-dispatch.mjs', args: ['--write'], path: 'js/sim/effect-dispatch.js', whole: true },
 ];
 
 /**

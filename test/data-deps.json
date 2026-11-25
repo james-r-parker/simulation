@@ -496,6 +496,7 @@
         ".git",
         "docs/notes/2026-11",
         "docs/notes/2026-11/",
+        "scripts/check-conventions.sh",
         "scripts/lib/merge-base.mjs",
         "scripts/lib/regen.mjs",
         "test"
