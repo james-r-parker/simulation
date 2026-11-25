@@ -58,7 +58,7 @@ describe('thresholdReady', () => {
         expect(thresholdReady('eval.born_share')).toBe(true);
         expect(thresholdReady('nope')).toBe(false);
         expect(thresholdReady('bench.step_ms@500')).toBe(false);
-        const live = { nullShare: 0, distinct: 3, report: 'r' };
+        const live = { nullShare: 0, distinct: 3, offModeShare: 0.5, report: 'r' };
         const entry = (
             /** @type {string} */ arithmetic,
             /** @type {string} */ source,

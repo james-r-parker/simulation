@@ -8,6 +8,10 @@ const OFF = 'zero at the defaults: its strength key is 0, so no stack is raised'
 /** Why the call-driven readings are empty at the defaults (metric-noise T27, E276). */
 const NO_CALLS = 'flat at the defaults: no alarm or hunt call fires (alarm-calls.md)';
 
+/** Why the alarm-driven effects are almost never on at the defaults (metric-noise T28, E276). */
+const RARE_CALLS =
+    'near zero at the defaults: an alarm call fires on 1 or 2 of 128 seeds and nowhere else (E276, alarm-calls.md)';
+
 const MODULE = 'js/evo/scene-effects.js';
 const TEST = 'test/evo/scene-effects.test.js';
 
@@ -39,8 +43,12 @@ export const SCENES_EFFECTS = {
     'eval.effect_share.shaken': share('shaken', 'a body whose panic has just ended', OFF),
     'eval.effect_share.rallied': share('rallied', 'a hunter that heard a kin hunter call, for rallyTicks', NO_CALLS),
     'eval.effect_share.answered': share('answered', 'a caller whose rallied pack-mate killed prey it also bit', OFF),
-    'eval.effect_share.hoarse': share('hoarse', 'a caller that wasted a call, for hoarseTicks a stack'),
-    'eval.effect_share.alert': share('alert', 'a non-hunter that heard an alarm raised with a threat in view'),
+    'eval.effect_share.hoarse': share('hoarse', 'a caller that wasted a call, for hoarseTicks a stack', RARE_CALLS),
+    'eval.effect_share.alert': share(
+        'alert',
+        'a non-hunter that heard an alarm raised with a threat in view',
+        RARE_CALLS,
+    ),
     'eval.effect_share.huddled': share('huddled', 'a body with fed kin close by', OFF),
     'eval.effect_share.staggered': share('staggered', 'a hunter a defender shoved (only with staggerThrust above 0)'),
     'eval.rally_bite_share': entry('scenes-effects', {

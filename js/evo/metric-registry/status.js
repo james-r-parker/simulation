@@ -4,6 +4,8 @@
 export const MAX_NULL_SHARE = 0.1;
 /** Fewest distinct values a live metric takes over the seeds. */
 export const MIN_DISTINCT = 2;
+/** Smallest share of a metric's non-null seeds that must differ from its most common value for it to count as live. */
+export const MIN_OFF_MODE_SHARE = 0.05;
 /** Largest false-positive rate a verdict tolerates. */
 export const MAX_FPR = 0.1;
 /** Largest detectable change, as a fraction of the reference mean. */
@@ -17,10 +19,15 @@ export const NEAR_ZERO_MEAN = 0.01;
 
 /**
  * @param {import('./entry.js').Liveness} liveness the entry's liveness read
- * @returns {boolean} whether the metric is `null` on at most 10% of seeds and takes at least 2 values
+ * @returns {boolean} whether the metric is `null` on at most 10% of seeds, takes at least 2 values and differs from its
+ *   most common value on at least 5% of its non-null seeds (one odd seed among 128 is not a metric that moves)
  */
 export function meetsLivenessBar(liveness) {
-    return liveness.nullShare <= MAX_NULL_SHARE && liveness.distinct >= MIN_DISTINCT;
+    return (
+        liveness.nullShare <= MAX_NULL_SHARE &&
+        liveness.distinct >= MIN_DISTINCT &&
+        liveness.offModeShare >= MIN_OFF_MODE_SHARE
+    );
 }
 
 /**
