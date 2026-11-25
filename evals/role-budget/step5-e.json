@@ -1,0 +1,24 @@
+{
+  "sprintStoreEnabled": true,
+  "sprintDrain": 0.01,
+  "entrantEnergy": 700,
+  "herdRunSpeed": 5.5,
+  "coldStackRate": 0.5,
+  "rallyThrust": 0.1,
+  "rallyBurn": 4,
+  "staggerThrust": 0.5,
+  "staggerTicks": 30,
+  "defenderRepelEnergy": 40,
+  "defenderRepelImpulse": 4,
+  "specialisations": {
+    "predator": {
+      "sprintDrainMultiplier": 0.5
+    }
+  },
+  "speedHeat": 0.5,
+  "sprintHeat": 0.0025,
+  "sprintStoreHeat": 0.5,
+  "hearingCost": 0.5,
+  "noseCost": 0.5,
+  "smokeSightRange": 0.5
+}
