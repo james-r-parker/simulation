@@ -14,6 +14,10 @@ const SPREAD = {
     source: 'test/evo/metric-source-genes.test.js',
 };
 
+/** Why a new trait's entry is null at the defaults (metric-noise T27, E276). */
+const NEW_TRAIT_FLAT =
+    'null at the defaults: body-genes T18b keeps the new trait spans at 0, so no spec has the trait in its menu';
+
 export const WORLD_5 = {
     'eval.gene_spread.size': entry('world', {
         ...SPREAD,
@@ -37,71 +41,85 @@ export const WORLD_5 = {
     }),
     'eval.gene_spread.speed': entry('world', {
         ...SPREAD,
+        expectedFlat: NEW_TRAIT_FLAT,
         meaning: 'How much the speed ratio differs between bodies of one spec; 0 is a population of clones.',
         counts: 'At each 1000-tick checkpoint after burn-in, the standard deviation of the speed ratio over the living agents of a spec, averaged over the specs whose menu holds the trait and have two agents alive, then over the checkpoints.',
     }),
     'eval.gene_spread.sprintStore': entry('world', {
         ...SPREAD,
+        expectedFlat: NEW_TRAIT_FLAT,
         meaning: 'How much the sprintStore ratio differs between bodies of one spec; 0 is a population of clones.',
         counts: 'At each 1000-tick checkpoint after burn-in, the standard deviation of the sprintStore ratio over the living agents of a spec, averaged over the specs whose menu holds the trait and have two agents alive, then over the checkpoints.',
     }),
     'eval.gene_spread.fat': entry('world', {
         ...SPREAD,
+        expectedFlat: NEW_TRAIT_FLAT,
         meaning: 'How much the fat ratio differs between bodies of one spec; 0 is a population of clones.',
         counts: 'At each 1000-tick checkpoint after burn-in, the standard deviation of the fat ratio over the living agents of a spec, averaged over the specs whose menu holds the trait and have two agents alive, then over the checkpoints.',
     }),
     'eval.gene_spread.heatBand': entry('world', {
         ...SPREAD,
+        expectedFlat: NEW_TRAIT_FLAT,
         meaning: 'How much the heatBand shift differs between bodies of one spec; 0 is a population of clones.',
         counts: 'At each 1000-tick checkpoint after burn-in, the standard deviation of the heatBand shift over the living agents of a spec, averaged over the specs whose menu holds the trait and have two agents alive, then over the checkpoints.',
     }),
     'eval.gene_spread.burn': entry('world', {
         ...SPREAD,
+        expectedFlat: NEW_TRAIT_FLAT,
         meaning: 'How much the burn ratio differs between bodies of one spec; 0 is a population of clones.',
         counts: 'At each 1000-tick checkpoint after burn-in, the standard deviation of the burn ratio over the living agents of a spec, averaged over the specs whose menu holds the trait and have two agents alive, then over the checkpoints.',
     }),
     'eval.gene_spread.hearing': entry('world', {
         ...SPREAD,
+        expectedFlat: NEW_TRAIT_FLAT,
         meaning: 'How much the hearing ratio differs between bodies of one spec; 0 is a population of clones.',
         counts: 'At each 1000-tick checkpoint after burn-in, the standard deviation of the hearing ratio over the living agents of a spec, averaged over the specs whose menu holds the trait and have two agents alive, then over the checkpoints.',
     }),
     'eval.gene_spread.nose': entry('world', {
         ...SPREAD,
+        expectedFlat: NEW_TRAIT_FLAT,
         meaning: 'How much the nose ratio differs between bodies of one spec; 0 is a population of clones.',
         counts: 'At each 1000-tick checkpoint after burn-in, the standard deviation of the nose ratio over the living agents of a spec, averaged over the specs whose menu holds the trait and have two agents alive, then over the checkpoints.',
     }),
     'eval.gene_spread.smokeSight': entry('world', {
         ...SPREAD,
+        expectedFlat: NEW_TRAIT_FLAT,
         meaning: 'How much the smokeSight ratio differs between bodies of one spec; 0 is a population of clones.',
         counts: 'At each 1000-tick checkpoint after burn-in, the standard deviation of the smokeSight ratio over the living agents of a spec, averaged over the specs whose menu holds the trait and have two agents alive, then over the checkpoints.',
     }),
     'eval.gene_spread.eyesOrEars': entry('world', {
         ...SPREAD,
+        expectedFlat: NEW_TRAIT_FLAT,
         meaning: 'How much the eyesOrEars ratio differs between bodies of one spec; 0 is a population of clones.',
         counts: 'At each 1000-tick checkpoint after burn-in, the standard deviation of the eyesOrEars ratio over the living agents of a spec, averaged over the specs whose menu holds the trait and have two agents alive, then over the checkpoints.',
     }),
     'eval.gene_spread.clearOrSmoke': entry('world', {
         ...SPREAD,
+        expectedFlat: NEW_TRAIT_FLAT,
         meaning: 'How much the clearOrSmoke ratio differs between bodies of one spec; 0 is a population of clones.',
         counts: 'At each 1000-tick checkpoint after burn-in, the standard deviation of the clearOrSmoke ratio over the living agents of a spec, averaged over the specs whose menu holds the trait and have two agents alive, then over the checkpoints.',
     }),
     'eval.gene_spread.agileOrFast': entry('world', {
         ...SPREAD,
+        expectedFlat: NEW_TRAIT_FLAT,
         meaning: 'How much the agileOrFast ratio differs between bodies of one spec; 0 is a population of clones.',
         counts: 'At each 1000-tick checkpoint after burn-in, the standard deviation of the agileOrFast ratio over the living agents of a spec, averaged over the specs whose menu holds the trait and have two agents alive, then over the checkpoints.',
     }),
     'eval.gene_spread.wideOrFar': entry('world', {
         ...SPREAD,
+        expectedFlat: NEW_TRAIT_FLAT,
         meaning: 'How much the wideOrFar ratio differs between bodies of one spec; 0 is a population of clones.',
         counts: 'At each 1000-tick checkpoint after burn-in, the standard deviation of the wideOrFar ratio over the living agents of a spec, averaged over the specs whose menu holds the trait and have two agents alive, then over the checkpoints.',
     }),
     'eval.gene_spread.gut': entry('world', {
         ...SPREAD,
+        expectedFlat: NEW_TRAIT_FLAT,
         meaning: 'How much the gut ratio differs between bodies of one spec; 0 is a population of clones.',
         counts: 'At each 1000-tick checkpoint after burn-in, the standard deviation of the gut ratio over the living agents of a spec, averaged over the specs whose menu holds the trait and have two agents alive, then over the checkpoints.',
     }),
     'eval.gene_spread.nerve': entry('world', {
         ...SPREAD,
+        expectedFlat: NEW_TRAIT_FLAT,
         meaning: 'How much the nerve ratio differs between bodies of one spec; 0 is a population of clones.',
         counts: 'At each 1000-tick checkpoint after burn-in, the standard deviation of the nerve ratio over the living agents of a spec, averaged over the specs whose menu holds the trait and have two agents alive, then over the checkpoints.',
     }),
@@ -114,6 +132,8 @@ export const WORLD_5 = {
         direction: 'watch',
         intended: 'lower',
         nullWhen: ['no agent with a menu (every span is 0) at a checkpoint after burn-in'],
+        expectedFlat:
+            'zero at the defaults: no body reaches 90% of a menu span (size, vision and childShare are the only menus; E276)',
         arithmetic: 'test/evo/scene-genes.test.js',
         source: 'test/evo/metric-source-genes.test.js',
     }),
