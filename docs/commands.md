@@ -198,7 +198,7 @@ Edit `wasm/src`, run `scripts/build-wasm.sh`, then `flock /tmp/claude-1000/cpu.l
 
 ### Screen a grid of config arms
 
-`npm run screen -- --grid <grid.json>` (`--workers <total>` for all arms and seeds, default `defaultWorkers()` (all but 8 cores); `--out`, `--seeds`, `--seed-offset`, `--ticks`, `--force`; takes the CPU lock itself, so do not wrap it in `flock`; resumable per arm; an arm may set `policyOptions` (also in `base`) beside its config keys, part of its resume key; `table.md` and `verdicts.json` in `evals/screens/results/<grid>/`; example `evals/screens/t59.grid.json`)
+`npm run screen -- --grid <grid.json>` (`--workers <total>` for all arms and seeds, default `defaultWorkers()` (all but 8 cores); `--out`, `--seeds`, `--seed-offset`, `--ticks`, `--force`; takes the CPU lock itself, shared (tests, commit hooks and other screens run beside it; a timing job waits), so do not wrap it in `flock`; resumable per arm; an arm may set `policyOptions` (also in `base`) beside its config keys, part of its resume key; `table.md` and `verdicts.json` in `evals/screens/results/<grid>/`; example `evals/screens/t59.grid.json`)
 
 ### Run the skill ladder
 
