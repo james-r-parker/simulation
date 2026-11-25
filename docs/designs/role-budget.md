@@ -1,6 +1,6 @@
 # Role budget
 
-**Status:** In progress - Phases 1 to 6, T24, the guard posture, T24b and the smoke decoy ([smoke-decoy.md](smoke-decoy.md)) are built; with the shove on and `between`, `defender:predator` reads `tight`; the prey rows read `ok` or `tight` (Phase 6). Open: T19a, T25, T30 and T31 and reviews T8, T13, T16, T20, T23.
+**Status:** In progress - Phases 1 to 6, T24, the guard posture, T24b and the smoke decoy ([smoke-decoy.md](smoke-decoy.md)) are built; with the shove on and `between`, `defender:predator` reads `tight`; the prey rows read `ok` or `tight` (Phase 6). Open: T25, T30 and T31 and reviews T8, T13, T16, T20, T23.
 **Validated:** 80f10d18 (2026-11-22)
 **Scheduled by:** [fair-chase.md](fair-chase.md) step 3 - gate 1 of fair-chase.md "Before any training": Phases 1 to 5 are built; open formula/defender gaps (T24a) and reviews remain before Step 5 adoption
 **Depends on:** [body-genes.md](body-genes.md)
