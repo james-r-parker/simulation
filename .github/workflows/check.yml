@@ -371,8 +371,9 @@ jobs:
 
   # A green full run on main closes the red-main issues a red run opened, each with a comment naming the green commit
   # (scripts/miss-ledger.mjs close); one that records an affected-test miss stays open until its edge is declared.
+  # !cancelled(), not success(): success() is false when a job upstream of check was skipped, as some are on a push.
   green-main:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && success() && needs.check.result == 'success'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && !cancelled() && needs.check.result == 'success'
     needs: [check]
     runs-on: ubuntu-latest
     timeout-minutes: 10

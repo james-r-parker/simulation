@@ -270,9 +270,12 @@ describe('check.yml on the push to main', () => {
 
     it('closes the red-main issues after a green full run on main only, with the rights it needs and no more', () => {
         const text = job('green-main');
+        // success() is false when any job upstream of `check` was skipped (coverage and noise are, on a push), so the job
+        // skipped on the green run of 5d678319; !cancelled() lets `needs.check.result` decide, as red-main's always() does.
         expect(text).toContain(
-            "if: github.event_name == 'push' && github.ref == 'refs/heads/main' && success() && needs.check.result == 'success'",
+            "if: github.event_name == 'push' && github.ref == 'refs/heads/main' && !cancelled() && needs.check.result == 'success'",
         );
+        expect(text).not.toContain('success()');
         expect(text).toContain('needs: [check]');
         expect(text).toContain('issues: write');
         expect(text).toContain('run: node scripts/miss-ledger.mjs close');
