@@ -182,7 +182,7 @@ describe('metric-noise CLI', () => {
         expect(() => validateEvidence({ ...power, includeWatch: false }, source)).toThrow('include-watch');
     });
 
-    it('checks the committed E254 table without mutating shared files', () => {
+    it('checks the committed baseline table without mutating shared files', () => {
         expect(main(['--check'])).toBe(0);
     });
 });

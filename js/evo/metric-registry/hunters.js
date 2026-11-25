@@ -92,6 +92,7 @@ export const HUNTERS = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no hunter deaths'],
+        expectedFlat: 'zero at the defaults: no hunter lives to old age or dies of poison in 200000 ticks (E276)',
         arithmetic: 'test/evo/scene-hunters.test.js',
     }),
     'eval.hunter_income_share.kill': entry('hunters', {
@@ -290,6 +291,8 @@ export const HUNTERS = {
         unit: 'share',
         direction: 'higher',
         nullWhen: ['fewer than 3 strata with 5 chases in the over2k band', 'no chase resolved after burn-in'],
+        expectedFlat:
+            'null on 11% of seeds at the defaults: there too few hunters live past 2000 ticks to fill 3 strata (E276)',
         arithmetic: 'test/evo/scene-matched.test.js',
     }),
 };

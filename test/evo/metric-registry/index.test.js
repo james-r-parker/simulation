@@ -324,15 +324,16 @@ describe('the tables the registry replaced', () => {
 });
 
 describe('minSeedsFor', () => {
-    it('gives 32 for the four noisy metrics, as METRIC_MIN_SEEDS did', () => {
+    it('gives the four noisy metrics at least the 32 METRIC_MIN_SEEDS did, at their E276 readings', () => {
         for (const [metric, seeds] of Object.entries(SNAPSHOT.minSeeds)) {
-            expect(minSeedsFor(metric)).toBe(seeds);
+            expect(minSeedsFor(metric)).toBeGreaterThanOrEqual(seeds);
         }
+        // lineages_alive needs 64 at the step 5 defaults (E276); it needed 32 on E254.
         expect(
             ['eval.floor_episodes', 'eval.lineages_alive', 'eval.lineage_turnover', 'eval.predator_share_cv'].map(
                 minSeedsFor,
             ),
-        ).toEqual([32, 32, 32, 32]);
+        ).toEqual([32, 64, 32, 32]);
         expect(Object.keys(SNAPSHOT.minSeeds)).toHaveLength(4);
     });
 
@@ -341,7 +342,7 @@ describe('minSeedsFor', () => {
         expect(MIN_SEEDS).toBe(DEFAULT_MIN_SEEDS);
         expect(minSeedsFor('eval.food_energy_per_1k@20k')).toBe(16);
         expect(minSeedsFor('eval.diversity')).toBe(32);
-        expect(minSeedsFor('eval.qd_score')).toBe(32);
+        expect(minSeedsFor('eval.qd_score')).toBe(64);
         for (const metric of ['mystery', 'toString', 'constructor']) {
             expect(minSeedsFor(metric)).toBe(16);
         }

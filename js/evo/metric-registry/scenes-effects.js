@@ -3,15 +3,21 @@
 
 import { entry } from './entry.js';
 
+/** Why an effect whose strength key is 0 at the defaults never raises a stack (metric-noise T27, E276). */
+const OFF = 'zero at the defaults: its strength key is 0, so no stack is raised';
+/** Why the call-driven readings are empty at the defaults (metric-noise T27, E276). */
+const NO_CALLS = 'flat at the defaults: no alarm or hunt call fires (alarm-calls.md)';
+
 const MODULE = 'js/evo/scene-effects.js';
 const TEST = 'test/evo/scene-effects.test.js';
 
 /**
  * @param {string} effect an effect's name
  * @param {string} trigger when the effect is on
+ * @param {string | null} [expectedFlat] why the share is flat at the defaults, or null
  * @returns {Readonly<import('./entry.js').MetricEntry>} its share entry
  */
-function share(effect, trigger) {
+function share(effect, trigger, expectedFlat = null) {
     return entry('scenes-effects', {
         module: MODULE,
         meaning: `How often the ${effect} effect is on: ${trigger}.`,
@@ -20,6 +26,7 @@ function share(effect, trigger) {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no agent-ticks after burn-in'],
+        ...(expectedFlat === null ? {} : { expectedFlat }),
         arithmetic: TEST,
         source: TEST,
     });
@@ -27,14 +34,14 @@ function share(effect, trigger) {
 
 export const SCENES_EFFECTS = {
     'eval.effect_share.chilled': share('chilled', 'a body that has stayed under its optimal temperature band'),
-    'eval.effect_share.wounded': share('wounded', 'a body a bite left alive, for woundTicks a stack'),
-    'eval.effect_share.panicked': share('panicked', 'a body a bite left alive, for panicTicks'),
-    'eval.effect_share.shaken': share('shaken', 'a body whose panic has just ended'),
-    'eval.effect_share.rallied': share('rallied', 'a hunter that heard a kin hunter call, for rallyTicks'),
-    'eval.effect_share.answered': share('answered', 'a caller whose rallied pack-mate killed prey it also bit'),
+    'eval.effect_share.wounded': share('wounded', 'a body a bite left alive, for woundTicks a stack', OFF),
+    'eval.effect_share.panicked': share('panicked', 'a body a bite left alive, for panicTicks', OFF),
+    'eval.effect_share.shaken': share('shaken', 'a body whose panic has just ended', OFF),
+    'eval.effect_share.rallied': share('rallied', 'a hunter that heard a kin hunter call, for rallyTicks', NO_CALLS),
+    'eval.effect_share.answered': share('answered', 'a caller whose rallied pack-mate killed prey it also bit', OFF),
     'eval.effect_share.hoarse': share('hoarse', 'a caller that wasted a call, for hoarseTicks a stack'),
     'eval.effect_share.alert': share('alert', 'a non-hunter that heard an alarm raised with a threat in view'),
-    'eval.effect_share.huddled': share('huddled', 'a body with fed kin close by'),
+    'eval.effect_share.huddled': share('huddled', 'a body with fed kin close by', OFF),
     'eval.effect_share.staggered': share('staggered', 'a hunter a defender shoved (only with staggerThrust above 0)'),
     'eval.rally_bite_share': entry('scenes-effects', {
         module: MODULE,
@@ -45,6 +52,7 @@ export const SCENES_EFFECTS = {
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['no rally stack resolved after burn-in'],
+        expectedFlat: NO_CALLS,
         arithmetic: TEST,
         source: TEST,
     }),
@@ -56,6 +64,7 @@ export const SCENES_EFFECTS = {
         direction: 'watch',
         intended: 'lower',
         nullWhen: ['no alarm or hunt call after burn-in'],
+        expectedFlat: NO_CALLS,
         arithmetic: TEST,
         source: TEST,
     }),
@@ -68,6 +77,7 @@ export const SCENES_EFFECTS = {
         direction: 'watch',
         intended: 'lower',
         nullWhen: ['no cold band holds both huddled and lone bodies after burn-in'],
+        expectedFlat: OFF,
         arithmetic: TEST,
         source: TEST,
     }),

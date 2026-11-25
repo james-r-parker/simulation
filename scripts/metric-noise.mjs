@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// Regenerates the target-metric power table from active design docs and the saved E254 power reading.
+// Regenerates the target-metric power table from active design docs and the saved power reading of the shared
+// baseline (`BASELINE`, the 128-seed floor-on report under evals/power/).
 import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -9,6 +10,8 @@ import { findTargets, renderTable, replaceTable } from './lib/metric-noise.mjs';
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const DOC = `${ROOT}docs/designs/metric-noise.md`;
+/** The experiment that ran the shared baseline the table reads (metric-noise T27: the season-12 baseline after step 5). */
+export const BASELINE = 'E276';
 
 /** @returns {import('./lib/metric-noise.mjs').Target[]} active targets */
 export function inventory() {
@@ -42,7 +45,7 @@ export function main(args, print = console.log) {
 export function validateEvidence(power, source) {
     const hash = createHash('sha256').update(source).digest('hex');
     if (power.source?.sha256 !== hash) {
-        throw new Error('power source hash differs from E254; re-read power before regenerating');
+        throw new Error(`power source hash differs from ${BASELINE}; re-read power before regenerating`);
     }
     if (!power.includeWatch || JSON.stringify(power.sizes) !== '[16,32,64]') {
         throw new Error('power requires include-watch and arm sizes 16,32,64');
@@ -51,8 +54,8 @@ export function validateEvidence(power, source) {
 
 /** @param {string} mode write or check @param {import('./lib/metric-noise.mjs').Target[]} targets dependencies @param {(text: string) => void} print output @returns {number} exit code */
 function updateTable(mode, targets, print) {
-    const power = JSON.parse(readFileSync(`${ROOT}evals/power/metric-noise-E254.json`, 'utf8'));
-    const source = readFileSync(`${ROOT}evals/power/defaults-floor-on-E254.json`, 'utf8');
+    const power = JSON.parse(readFileSync(`${ROOT}evals/power/metric-noise-${BASELINE}.json`, 'utf8'));
+    const source = readFileSync(`${ROOT}evals/power/defaults-floor-on-${BASELINE}.json`, 'utf8');
     validateEvidence(power, source);
     const report = withCurrentNames(JSON.parse(source));
     const measured = targets.filter((target) => report.metrics[target.metric] !== undefined);
