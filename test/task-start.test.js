@@ -205,4 +205,39 @@ describe('task-start.sh', { timeout: scaleTimeout(30_000) }, () => {
         expect(again.status).toBe(2);
         expect(again.stderr).toContain('branch already exists');
     });
+
+    it('--from cuts the chunk branch from a local batch/ branch, not origin/main', () => {
+        git(main, ['switch', '-c', 'batch/2026-11-25-demo', '--quiet']);
+        writeFileSync(join(main, 'merged.txt'), 'chunk A');
+        git(main, ['add', 'merged.txt']);
+        git(main, ['commit', '-m', 'chunk A']);
+        git(main, ['switch', 'main', '--quiet']);
+        const r = start(['feat/b', '--from', 'batch/2026-11-25-demo']);
+        expect(r.status, r.stderr).toBe(0);
+        const tree = r.stdout.trim().split('\n').at(-1) ?? '';
+        expect(git(tree, ['rev-parse', 'HEAD'])).toBe(git(main, ['rev-parse', 'batch/2026-11-25-demo']));
+        expect(existsSync(join(tree, 'merged.txt'))).toBe(true);
+    });
+
+    it('--from accepts origin/main, and refuses any other base or a batch branch that does not exist', () => {
+        const main1 = start(['feat/m', '--from', 'origin/main']);
+        expect(main1.status, main1.stderr).toBe(0);
+        git(main, ['branch', 'feat/other']);
+        for (const base of ['feat/other', 'main', 'HEAD', 'origin/batch/x']) {
+            const refused = start(['feat/n', '--from', base]);
+            expect(refused.status, base).toBe(2);
+            expect(refused.stderr).toContain('the base is origin/main or a local batch/ branch');
+        }
+        const missing = start(['feat/n', '--from', 'batch/nope']);
+        expect(missing.status).toBe(2);
+        expect(missing.stderr).toContain('no such local branch');
+        expect(existsSync(join(main, '.claude/worktrees/feat-n'))).toBe(false);
+    });
+
+    it('--from with --here measures the commits ahead against the batch branch', () => {
+        git(main, ['branch', 'batch/s', 'origin/main']);
+        const here = start(['feat/here', '--here', '--from', 'batch/s']);
+        expect(here.status, here.stderr).toBe(0);
+        expect(git(main, ['rev-parse', 'HEAD'])).toBe(git(main, ['rev-parse', 'batch/s']));
+    });
 });

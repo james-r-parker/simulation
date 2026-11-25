@@ -14,7 +14,7 @@ Every command an agent runs on Blob Evolution, grouped by job. `rg -n '^### ' do
 
 ### Start a chunk
 
-`scripts/task-start.sh <type>/<desc> [--plan <doc>] [--here]` (fetches, makes the branch from `origin/main` in a worktree under `.claude/worktrees/` or, with `--here`, in this one; hard-links `node_modules` when the lockfiles match, else `npm ci`; `--plan` prints the doc's status, next unbuilt chunk and its task rows; the worktree path is the last line)
+`scripts/task-start.sh <type>/<desc> [--plan <doc>] [--here] [--from <batch>]` (fetches, makes the branch from `origin/main` in a worktree under `.claude/worktrees/` or, with `--here`, in this one; hard-links `node_modules` when the lockfiles match, else `npm ci`; `--from <batch>` cuts it from the session's local `batch/...` branch instead (the only bases accepted are `origin/main`, the default, and an existing local `batch/` branch; anything else exits 2); `--plan` prints the doc's status, next unbuilt chunk and its task rows; the worktree path is the last line)
 
 ### Ship a chunk
 
