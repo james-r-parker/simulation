@@ -1,0 +1,5 @@
+### 2026-11-08 - The roaming mate range harms on 32 floor-on seeds and is deleted (world-balance T102, T103, E146)
+
+- **Run:** `evals/screens/roam-harm.grid.json`, defaults against `mateRoamTicks` 6000 and `mateRoamMax` 900, floor on, policy live, 32 seeds x 200000 ticks, on `bb107b5b`; reports in `evals/screens/results/roam-harm/`.
+- **Keep rule (paired bootstrap, 4000 resamples):** hunters alive at the last tick 27 and 25 of 32 (difference -0.06, interval -0.22 to +0.09); seeds ending under 80 agents 9 and 18 of 32 (+0.28, interval +0.09 to +0.47). `eval:compare`: `eval.predators_at_end` 34.6 to 21.1 (-39%, `worse`), `eval.prey_types_at_end` 3.47 to 2.88 (-17%, `worse`), `eval.behaviour_coverage` +8% (`better`); `eval.prey_summer_min` 108 to 83 and `eval.population_mean` 236 to 211, intervals holding 0.
+- **Reading:** a range that grows after a long stretch alone makes worlds end small, not recover. Ranging wider when alone is realistic, but it harms here, so the keep rule deletes it. The 16-seed floor-off screen (E145) pointed the same way without an interval that excluded 0.

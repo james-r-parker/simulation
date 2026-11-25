@@ -42,7 +42,7 @@ Every command with its flags is in [docs/commands.md](docs/commands.md) (`rg -n 
 The ones used in every session:
 
 - Install: `npm ci`. Run the app: `npm run dev` (Vite, http://localhost:5173).
-- Start a chunk: `scripts/task-start.sh <type>/<desc> [--plan <doc>] [--here]`.
+- Start a chunk: `scripts/task-start.sh <type>/<desc> [--plan <doc>] [--here] [--from batch/<date>-<desc>]`.
 - Ship a chunk: `scripts/ship.sh --title <subject> --body <file> [--base main] [--no-merge]`.
 - Pre-push check (what an agent runs): `scripts/check.sh --fix --quick`; CI is the PR gate: a pull request runs the tests its change reaches (`scripts/affected.mjs`), the push to `main` all of them.
 - Docs-only change: `scripts/check.sh --fix --docs`.
@@ -73,7 +73,7 @@ four columns (`#`, `Task`, `Nature`, `Depends on`), `T`-numbered ids and `[mecha
 2. **Picking work back up** - the `resume-plan` skill re-validates the doc against `origin/main` and names the next
    phase.
 3. **Build one chunk per branch, merged into the session batch** - `scripts/task-start.sh <type>/<desc> --plan <doc>`
-   makes the worktree and names the chunk (cut from the batch branch; see Delegating); commit per task; no push, no PR.
+   makes the worktree and names the chunk (`--from batch/...` cuts it from the batch; no other base; see Delegating); commit per task; no push, no PR.
 4. **Before pushing** - the `create-pr` skill, once per session's batch: a plan-conformance review agent per chunk,
    measurements for each phase's Targets, each phase marked `(built)` and its status line moved in the same PR. Then `scripts/ship.sh --title <subject> --body <file>`
    runs the gate, pushes, opens the PR, turns on auto-merge and waits until it is merged or red (push and PR only when
@@ -148,7 +148,7 @@ Full text: [docs/agent-reference.md](docs/agent-reference.md). The rules:
 - Every change ships with tests for the behaviour it adds, and a bug fix starts with a failing test.
 - A change claiming to improve evolution or performance carries the measurement (`run-evolution-loop`); "it looks
   better" is not a result.
-- Library and platform surprises go into `docs/notes/<YYYY-MM>.md` as `### YYYY-MM-DD - <topic>` entries (not into design
+- Library and platform surprises go into their own file `docs/notes/<YYYY-MM>/<YYYY-MM-DD>-<slug>.md`, headed `### YYYY-MM-DD - <topic>` (not into design
   docs), and `node scripts/notes-index.mjs --write` updates the index in `docs/designs/sim-notes.md` in the same commit.
 - Search with `rg` and `fd`, not `grep -r` and `find`; use `ast-grep` (`sg`) for structural matches.
 - Use `-` rather than em dashes in docs.

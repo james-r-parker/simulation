@@ -106,7 +106,6 @@ beforeEach(() => {
         'ship-body.mjs',
         'ship-wait.mjs',
         'merge-base.mjs',
-        'notes-merge.mjs',
         'regen.mjs',
     ]) {
         cpSync(resolve('scripts/lib', f), join(work, 'scripts/lib', f));

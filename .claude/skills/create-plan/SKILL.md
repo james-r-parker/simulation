@@ -150,7 +150,7 @@ The last task of every phase is the conformance review:
 - A `TBD` cell anywhere except a stub (status detail starting `stub`); fleshing out a stub replaces every `TBD`
   and drops `stub` from the status detail.
 - A phase with Targets but no numbers for what "better" means.
-- Learnings written anywhere but `docs/notes/<YYYY-MM>.md` (one `### YYYY-MM-DD - <topic>` entry per finding, indexed by
+- Learnings written anywhere but `docs/notes/<YYYY-MM>/<YYYY-MM-DD>-<slug>.md` (one file per finding, headed `### YYYY-MM-DD - <topic>`, indexed by
   `node scripts/notes-index.mjs --write`).
 - The plan lives anywhere other than `docs/designs/<kebab-feature>.md`.
 - No `**Validated:**` stamp, or a stamp taken from a local branch instead of `origin/main`.

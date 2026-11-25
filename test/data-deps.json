@@ -220,8 +220,8 @@
     "test/evo/drill-mid.test.js": [
         "test/fixtures/stages/hunt-mid.json"
     ],
-    "test/evo/gate-validity.slow.test.js": [
-        "test/fixtures/train-ladder.json"
+    "test/evo/gate-validity-groups.test.js": [
+        "test/evo"
     ],
     "test/evo/memory-probe-lint.test.js": [
         "./"
@@ -494,9 +494,10 @@
     ],
     "test/merge-base.test.js": [
         ".git",
-        "docs/notes/2026-11.md",
+        "docs/notes/2026-11",
+        "docs/notes/2026-11/",
+        "scripts/check-conventions.sh",
         "scripts/lib/merge-base.mjs",
-        "scripts/lib/notes-merge.mjs",
         "scripts/lib/regen.mjs",
         "test"
     ],
@@ -764,7 +765,6 @@
     "test/workflows/heavy-shards.test.js": [
         ".github/workflows/check.yml",
         "test/bench.slow.test.js",
-        "test/evo/gate-validity.slow.test.js",
         "test/evo/scripted-temperature.slow.test.js",
         "test/train-pool.slow.test.js",
         "test/train.slow.test.js"

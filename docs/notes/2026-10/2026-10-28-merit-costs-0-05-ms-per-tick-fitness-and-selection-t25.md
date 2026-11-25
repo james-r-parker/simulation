@@ -1,0 +1,3 @@
+### 2026-10-28 - merit costs 0.05 ms per tick (fitness-and-selection T25)
+
+- **Merit on, 500 agents, 5-run medians:** the `merit` phase takes 0.054 ms (0.0002 with `meritEnabled` off, so the registered phase is free when off); the whole step goes 3.166 to 3.211 ms against the `defaults` row (+1.4%); the observer adds 0.12 ms. All inside the budgets (0.15, 15% and 0.25 ms), so nothing was optimised. `bench.mjs` has a permanent `merit` tracked row (`MERIT_ON`), and `alloc-check` runs on it: 3800 bytes of heap growth over 1000 ticks, so `trackMerit`, the tally and the cap allocate nothing per tick.

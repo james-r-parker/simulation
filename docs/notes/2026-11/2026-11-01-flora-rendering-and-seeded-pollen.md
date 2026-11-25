@@ -1,0 +1,5 @@
+### 2026-11-01 - Flora rendering and seeded pollen
+
+The flora look packs a six-word food record and a five-word live-patch section. A sick bit and a 12-bit carried-pollen hue travel in the existing unsigned agent flags; dead or reused pollen sources do not draw as carriers. The colour ramp maps the documented linear hue to green through red and magenta and caps luminance at the existing food ceiling. Patch glows and pollen remain below the scenery ceiling.
+
+Pollen particle directions derive from the world seed, genome id and 20-tick emission bucket; no simulation random stream or wall clock is consumed. Disabling the flora look clears pollen particles and rings; restoring it does not replay missed emissions. All four Node golden hashes remain unchanged, the long hashes match Chromium 156, and the worker effect-stream self-pin remains `be9383a3e0039426` (1410 records, no drops). The E69 to E74 screens, power, survival, 4K clip and standalone performance comparisons remain owed; the renderer has not established the ecosystem done criteria.

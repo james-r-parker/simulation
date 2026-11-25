@@ -11,7 +11,6 @@ const PINNED = {
     'heavy-train-pool': 'test/train-pool.slow.test.js',
     'heavy-scripted-temperature': 'test/evo/scripted-temperature.slow.test.js',
     'heavy-train': 'test/train.slow.test.js',
-    'heavy-gate-validity': 'test/evo/gate-validity.slow.test.js',
     'heavy-bench': 'test/bench.slow.test.js',
 };
 

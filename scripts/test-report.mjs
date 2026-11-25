@@ -14,6 +14,7 @@ import { claimWorkers, releaseWorkers } from './lib/test-workers.mjs';
 import { formatReport, selectTests } from './lib/test-report.mjs';
 import { busyScale, testTimeoutFor } from './lib/test-timeout.mjs';
 
+const LIMIT_REPORTER = resolve(fileURLToPath(import.meta.url), '../lib/limit-reporter.mjs');
 const root = resolve(fileURLToPath(import.meta.url), '../..');
 const args = process.argv.slice(2);
 /** @param {string} name a flag @returns {string | undefined} its value */
@@ -52,9 +53,17 @@ try {
         process.exit(0);
     }
     const json = join(tmp, 'result.json');
+    const limitFile = join(tmp, 'limits.json');
     const workers = claimWorkers(process.pid, { root });
     const start = Date.now();
-    const vitest = ['vitest', 'run', '--reporter=json', `--outputFile.json=${json}`, ...pick.filters];
+    const vitest = [
+        'vitest',
+        'run',
+        '--reporter=json',
+        `--reporter=${LIMIT_REPORTER}`,
+        `--outputFile.json=${json}`,
+        ...pick.filters,
+    ];
     const lock = sharedLockCommand({
         lockPath: process.env.CHECK_CPU_LOCK || DEFAULT_LOCK,
         command: 'npx',
@@ -64,7 +73,12 @@ try {
     const run = spawnSync(lock.command, lock.args, {
         cwd: root,
         encoding: 'utf8',
-        env: { ...process.env, ...pick.env, ...(workers === null ? {} : { VITEST_MAX_WORKERS: String(workers) }) },
+        env: {
+            ...process.env,
+            ...pick.env,
+            TEST_LIMIT_OUT: limitFile,
+            ...(workers === null ? {} : { VITEST_MAX_WORKERS: String(workers) }),
+        },
         maxBuffer: 1 << 28,
     });
     let result;
@@ -76,7 +90,13 @@ try {
         process.exit(1);
     }
     const defaultTimeoutMs = testTimeoutFor(['vitest']) * busyScale();
-    console.log(formatReport(result, { root, defaultTimeoutMs, wallMs: Date.now() - start, full }).join('\n'));
+    let limits;
+    try {
+        limits = JSON.parse(readFileSync(limitFile, 'utf8'));
+    } catch {
+        limits = undefined;
+    }
+    console.log(formatReport(result, { root, defaultTimeoutMs, wallMs: Date.now() - start, full, limits }).join('\n'));
     process.exit(result.numFailedTests > 0 || result.numFailedTestSuites > 0 || run.status ? 1 : 0);
 } finally {
     releaseWorkers(process.pid);

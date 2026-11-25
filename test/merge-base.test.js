@@ -1,24 +1,23 @@
-// reads: scripts/lib/merge-base.mjs, scripts/lib/regen.mjs, scripts/lib/notes-merge.mjs
+// reads: scripts/lib/merge-base.mjs, scripts/lib/regen.mjs, scripts/check-conventions.sh
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { mergeBase } from '../scripts/lib/merge-base.mjs';
-import { mergeNotes, splitNotes } from '../scripts/lib/notes-merge.mjs';
 import { GENERATORS } from '../scripts/lib/regen.mjs';
 
 // A fake generator pair in the temporary repo: gen.md is the two source files joined (a whole generated file), and
 // idx.md is its own prose with the headings of the month file listed under `## Index` (a generated tail).
 const GEN_SCRIPT = `
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 const read = (f) => readFileSync(f, 'utf8');
 if (process.argv[2] === 'whole') {
     writeFileSync('gen.md', read('src-a.txt') + read('src-b.txt'));
 } else {
     const idx = read('idx.md');
     const prose = idx.includes('## Index\\n') ? idx.slice(0, idx.indexOf('## Index\\n')) : idx.trimEnd() + '\\n\\n';
-    const heads = read('docs/notes/2026-11.md').split('\\n').filter((l) => l.startsWith('### '));
+    const heads = readdirSync('docs/notes/2026-11').sort().map((f) => read('docs/notes/2026-11/' + f).split('\\n')[0]);
     writeFileSync('idx.md', prose + '## Index\\n' + heads.join('\\n') + '\\n');
 }
 `;
@@ -26,8 +25,7 @@ const GENS = [
     { script: 'gen.mjs', args: ['tail'], path: 'idx.md', whole: false, tail: '## Index' },
     { script: 'gen.mjs', args: ['whole'], path: 'gen.md', whole: true },
 ];
-const NOTES = 'docs/notes/2026-11.md';
-const PREAMBLE = '# Notes\n\nIntro.\n\n';
+const NOTES = 'docs/notes/2026-11';
 
 /** @param {string} cwd @returns {(cmd: string, args: string[]) => {status: number, stdout: string, stderr: string}} */
 function shIn(cwd) {
@@ -77,7 +75,7 @@ describe('mergeBase', () => {
         put('src-b.txt', 'b\n');
         put('code.js', 'one\ntwo\nthree\n');
         put('idx.md', 'Prose.\n');
-        put(NOTES, `${PREAMBLE}### 2026-11-01 - first\n\nBody one.\n`);
+        put(`${NOTES}/2026-11-01-first.md`, '### 2026-11-01 - first\n\nBody one.\n');
         commit('base');
         run('git', ['clone', '-q', '--bare', dir, join(root, 'origin.git')]);
         run('git', ['remote', 'add', 'origin', join(root, 'origin.git')]);
@@ -118,7 +116,7 @@ describe('mergeBase', () => {
             commit('main b');
         });
         const result = mergeBase(sh, 'main', { generators: GENS, cwd: dir });
-        expect(result).toMatchObject({ status: 'resolved', regenerated: ['gen.md'], notes: [] });
+        expect(result).toMatchObject({ status: 'resolved', regenerated: ['gen.md'] });
         expect(text('gen.md')).toBe('a-feat\nb-main\n');
         expect(run('git', ['rev-list', '--parents', '-n', '1', 'HEAD']).trim().split(' ')).toHaveLength(3);
         expect(run('git', ['status', '--porcelain'])).toBe('');
@@ -127,29 +125,21 @@ describe('mergeBase', () => {
         expect(message).toContain('Regenerated: gen.md');
     });
 
-    it('keeps both appended notes entries in date order and regenerates the index', () => {
-        put(NOTES, `${text(NOTES)}\n### 2026-11-22 - from the branch\n\nBranch body.\n`);
+    it('merges two new notes entries without a conflict, and the index lists both', () => {
+        put(`${NOTES}/2026-11-22-from-the-branch.md`, '### 2026-11-22 - from the branch\n\nBranch body.\n');
         commit('feat note');
         advanceMain(() => {
-            put(NOTES, `${text(NOTES)}\n### 2026-11-21 - from main\n\nMain body.\n`);
+            put(`${NOTES}/2026-11-21-from-main.md`, '### 2026-11-21 - from main\n\nMain body.\n');
             commit('main note');
         });
+        // Each pull request adds its own file, so git merges them by itself; idx.md's tail conflicts and is regenerated.
         const result = mergeBase(sh, 'main', { generators: GENS, cwd: dir });
-        expect(result).toMatchObject({ status: 'resolved', notes: [NOTES] });
-        const heads = text(NOTES)
-            .split('\n')
-            .filter((l) => l.startsWith('### '));
-        expect(heads).toEqual([
-            '### 2026-11-01 - first',
-            '### 2026-11-21 - from main',
-            '### 2026-11-22 - from the branch',
-        ]);
-        expect(text(NOTES)).toContain('Branch body.');
-        expect(text(NOTES)).toContain('Main body.');
-        expect(text('idx.md')).toBe(`Prose.\n\n## Index\n${heads.join('\n')}\n`);
-        const message = run('git', ['log', '-1', '--format=%B']);
-        expect(message).toContain('Regenerated: idx.md');
-        expect(message).toContain(`Notes entries kept from both sides: ${NOTES}`);
+        expect(result).toMatchObject({ status: 'resolved', regenerated: ['idx.md'] });
+        expect(text(`${NOTES}/2026-11-22-from-the-branch.md`)).toContain('Branch body.');
+        expect(text(`${NOTES}/2026-11-21-from-main.md`)).toContain('Main body.');
+        expect(text('idx.md')).toBe(
+            'Prose.\n\n## Index\n### 2026-11-01 - first\n### 2026-11-21 - from main\n### 2026-11-22 - from the branch\n',
+        );
         expect(run('git', ['status', '--porcelain'])).toBe('');
     });
 
@@ -168,46 +158,16 @@ describe('mergeBase', () => {
         expect(text('code.js')).toContain('<<<<<<<');
     });
 
-    it('stops when a side edited an existing notes entry', () => {
-        put(NOTES, text(NOTES).replace('Body one.', 'Body one, edited on the branch.'));
+    it('stops when both sides edited the same notes entry', () => {
+        put(`${NOTES}/2026-11-01-first.md`, '### 2026-11-01 - first\n\nBody one, edited on the branch.\n');
         commit('feat edit');
         advanceMain(() => {
-            put(NOTES, `${text(NOTES)}\n### 2026-11-21 - from main\n\nMain body.\n`);
-            commit('main note');
+            put(`${NOTES}/2026-11-01-first.md`, '### 2026-11-01 - first\n\nBody one, edited on main.\n');
+            commit('main edit');
         });
         const result = mergeBase(sh, 'main', { generators: GENS, cwd: dir });
-        expect(result.status).toBe('conflict');
-    });
-});
-
-describe('mergeNotes', () => {
-    const entry = (/** @type {string} */ date, /** @type {string} */ body = 'x') => `### ${date} - t\n\n${body}\n`;
-    const file = (/** @type {string[]} */ ...entries) => `${PREAMBLE}${entries.join('\n')}`;
-
-    it('keeps the base, then both sides appended entries, sorted by date', () => {
-        const base = file(entry('2026-11-02'));
-        const merged = mergeNotes({
-            base,
-            ours: `${base}\n${entry('2026-11-05', 'ours')}`,
-            theirs: `${base}\n${entry('2026-11-03', 'theirs')}`,
-        });
-        expect(splitNotes(merged ?? '').entries.map((e) => e.slice(4, 14))).toEqual([
-            '2026-11-02',
-            '2026-11-03',
-            '2026-11-05',
-        ]);
-    });
-
-    it('does not reorder an unsorted file, and refuses an edited preamble or a removed entry', () => {
-        const base = file(entry('2026-11-09'), entry('2026-11-02'));
-        const added = mergeNotes({ base, ours: `${base}\n${entry('2026-11-05')}`, theirs: base });
-        expect(splitNotes(added ?? '').entries.map((e) => e.slice(4, 14))).toEqual([
-            '2026-11-09',
-            '2026-11-02',
-            '2026-11-05',
-        ]);
-        expect(mergeNotes({ base, ours: base.replace('Intro.', 'Changed.'), theirs: base })).toBeNull();
-        expect(mergeNotes({ base, ours: `${PREAMBLE}${entry('2026-11-09')}`, theirs: base })).toBeNull();
+        expect(result).toMatchObject({ status: 'conflict' });
+        expect(/** @type {any} */ (result).paths).toContain(`${NOTES}/2026-11-01-first.md`);
     });
 });
 
@@ -216,6 +176,16 @@ describe('GENERATORS', () => {
         for (const g of GENERATORS) {
             expect(existsSync(`scripts/${g.script}`), g.script).toBe(true);
             expect(existsSync(g.path), g.path).toBe(true);
+        }
+    });
+
+    it('hold every generator whose committed file a gate checks, so a merge regenerates it rather than conflicting', () => {
+        const conventions = readFileSync('scripts/check-conventions.sh', 'utf8');
+        const checked = [...conventions.matchAll(/node scripts\/([\w-]+\.mjs) --check/g)].map((m) => m[1]);
+        const listed = GENERATORS.map((g) => g.script);
+        expect(checked.length).toBeGreaterThan(5);
+        for (const script of [...checked, 'designs-index.mjs']) {
+            expect(listed, script).toContain(script);
         }
     });
 });

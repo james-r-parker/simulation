@@ -1,0 +1,3 @@
+### 2026-11-18 - Cross-origin isolation on Pages, and the clock it buys
+
+Cloudflare Pages applies `public/_headers` only to static files; a Functions response (`/v/`, `/s/`, `/next/`, `/api/`) needs the headers set in code, which `functions/_middleware.js` does for every route. With `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp` the page is `crossOriginIsolated`, `SharedArrayBuffer` exists, and `performance.now` drops its coarse rounding: on Windows Chrome 157 the `perf:browser` frame times read 4.17 to 4.2 ms where they had read 4.3, and the refresh rate 240.4 Hz where it had read 243.9.

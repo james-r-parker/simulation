@@ -267,4 +267,16 @@ describe('check.yml on the push to main', () => {
         // check does not wait for it: it reports on the run that failed.
         expect(job('check')).not.toContain('red-main');
     });
+
+    it('closes the red-main issues after a green full run on main only, with the rights it needs and no more', () => {
+        const text = job('green-main');
+        expect(text).toContain(
+            "if: github.event_name == 'push' && github.ref == 'refs/heads/main' && success() && needs.check.result == 'success'",
+        );
+        expect(text).toContain('needs: [check]');
+        expect(text).toContain('issues: write');
+        expect(text).toContain('run: node scripts/miss-ledger.mjs close');
+        expect(text).not.toMatch(/contents: write/);
+        expect(job('check')).not.toContain('green-main');
+    });
 });
