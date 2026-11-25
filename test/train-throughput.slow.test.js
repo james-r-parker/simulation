@@ -90,8 +90,8 @@ async function run(name, workers) {
 
 /** What the run wrote before T27 to T32 (recorded on the unchanged code). */
 const PINNED = {
-    archives: 'c4540cecf7f33a2ed73111c8b821f411d48a2d0e69bd31f0b1fdfd6ff96ad80b', // the archive files without their rulesHash stamp (the stamp moves with every rules change)
-    curve: 'd2c482106d746362232a7cb9f250d9e4fa1316c97169ed18e085abeeb3279f40', // moved with the smoke decoy: a hunter whose rays meet a fresh cloud sees a body in it
+    archives: '65c776b1e43c4ae2f5495a68d14e89fc510053957aab39f2f96e36ce3f5bd7df', // the archive files without their rulesHash stamp (the stamp moves with every rules change)
+    curve: 'fb859a89820b24718c6522eb186ac90292a16ea10d640b0588223c99cfc4cc47', // moved with the step 5 defaults (the sprint store, the shove and the status effects are on) after the smoke decoy
 };
 
 describe('archive files at checkpoints only', () => {
