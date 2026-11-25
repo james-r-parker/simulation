@@ -195,6 +195,30 @@ describe('report', () => {
         expect(gh.calls.some((args) => args[0] === 'issue' && args[1] === 'create')).toBe(false);
     });
 
+    it('labels the open issue affected-miss when its comment carries a miss (agent-workflow T51)', () => {
+        const gh = fakeGh({
+            pulls: [PULL],
+            runs: [GREEN],
+            open: [{ number: 40 }],
+            jobs: [{ name: 'test shard-3', conclusion: 'failure' }],
+            affected: { mode: 'affected', tests: ['test/a.test.js'], changed: ['scripts/x.mjs'] },
+        });
+        report({ run: gh.run, env: ENV, log: () => {} });
+        expect(gh.calls.some((args) => args.join(' ') === 'issue edit 40 --add-label affected-miss')).toBe(true);
+        expect(gh.calls.some((args) => args[0] === 'label' && args[2] === 'affected-miss')).toBe(true);
+    });
+
+    it('leaves the open issue unlabelled when its comment carries no miss', () => {
+        const gh = fakeGh({
+            pulls: [PULL],
+            runs: [GREEN],
+            open: [{ number: 40 }],
+            affected: { mode: 'full', tests: [] },
+        });
+        report({ run: gh.run, env: ENV, log: () => {} });
+        expect(gh.calls.some((args) => args[0] === 'issue' && args[1] === 'edit')).toBe(false);
+    });
+
     it('records no miss for a whole-suite pull request, and says so when the list or the pull request is missing', () => {
         const whole = fakeGh({ pulls: [PULL], runs: [GREEN], affected: { mode: 'full', tests: [] } });
         report({ run: whole.run, env: ENV, log: () => {} });
