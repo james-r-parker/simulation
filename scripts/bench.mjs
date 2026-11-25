@@ -218,7 +218,19 @@ function phaseMedians(world, brain) {
 }
 
 /**
- * @param {number} size population size, held fixed by min = max = initial
+ * The bench world's config: today's defaults, the overrides, and the population held at `size`. The floor is an
+ * extinction guard (it refills to `minAgents` only under `floorTrigger`), so the trigger is set to `size` too; without
+ * it the world shrinks over the measured ticks and a base and head with different death rates time different worlds.
+ * @param {number} size population size
+ * @param {Record<string, any>} [overrides] overrides on today's defaults
+ * @returns {Record<string, any>} the config
+ */
+export function benchConfig(size, overrides = {}) {
+    return createConfig({ ...overrides, initialAgents: size, minAgents: size, maxAgents: size, floorTrigger: size });
+}
+
+/**
+ * @param {number} size population size, held fixed by `benchConfig`
  * @param {string} [policyName] a registered policy to bench with its hooks; the reference policy when omitted
  * @param {{suffix?: string, overrides?: Record<string, any>, lean?: boolean}} [variant] a tracked variant: the key
  *   suffix, the overrides on today's defaults and whether the observer is lean; the defaults alone when omitted. A
@@ -226,8 +238,7 @@ function phaseMedians(world, brain) {
  * @returns {Record<string, number>} the metrics for that size
  */
 export function benchSize(size, policyName, variant) {
-    const base = variant?.overrides ?? {};
-    const config = createConfig({ ...base, initialAgents: size, minAgents: size, maxAgents: size });
+    const config = benchConfig(size, variant?.overrides);
     const { brain, advance, observe } = createSubject(config, policyName, variant?.lean === true);
     const world = createWorld(config, brain);
     observe(world);

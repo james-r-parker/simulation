@@ -5,7 +5,18 @@ import { describe, expect, it, vi } from 'vitest';
 import { compareStep, main } from '../scripts/bench-check.mjs';
 import { createConfig } from '../js/sim/config.js';
 import { DEFAULTS } from '../js/sim/config-defaults.js';
-import { TRACKED_VARIANTS, formatLines, formatMetrics, median, parseArgs, recordMetrics } from '../scripts/bench.mjs';
+import { cloneWithNoisePolicy } from '../js/sim/birth-policy.js';
+import { createWorld } from '../js/sim/spawn.js';
+import { step } from '../js/sim/step.js';
+import {
+    TRACKED_VARIANTS,
+    benchConfig,
+    formatLines,
+    formatMetrics,
+    median,
+    parseArgs,
+    recordMetrics,
+} from '../scripts/bench.mjs';
 
 describe('parseArgs', () => {
     it('defaults to the three sizes, text output', () => {
@@ -131,5 +142,27 @@ describe('tracked variants', () => {
             capBirthsEnabled: true,
         });
         expect(createConfig(TRACKED_VARIANTS[0].overrides).maxFood).toBe(DEFAULTS.maxFood);
+    });
+});
+
+describe('benchConfig', () => {
+    it('holds the population at the size on every tick, so a base and head time the same world', () => {
+        const size = 40;
+        const brain = cloneWithNoisePolicy();
+        const world = createWorld(benchConfig(size, { seed: 3 }), brain);
+        let lowest = world.population;
+        for (let i = 0; i < 1500; i++) {
+            step(world, brain);
+            lowest = Math.min(lowest, world.population);
+        }
+        expect(lowest).toBe(size);
+    });
+
+    it('keeps the overrides and pins the population keys over them', () => {
+        const config = benchConfig(25, { meritMateBonus: 0, minAgents: 3, floorTrigger: 1 });
+        expect(config.meritMateBonus).toBe(0);
+        expect([config.initialAgents, config.minAgents, config.maxAgents, config.floorTrigger]).toEqual([
+            25, 25, 25, 25,
+        ]);
     });
 });
