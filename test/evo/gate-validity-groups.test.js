@@ -24,7 +24,7 @@ describe('the gate-validity drill groups', () => {
             0,
         );
         const all = LADDER.reduce(
-            (n, /** @type {any} */ e) =>
+            (/** @type {number} */ n, /** @type {any} */ e) =>
                 n + (e.gate ?? []).filter((/** @type {any} */ c) => c.read.startsWith('drill.')).length,
             0,
         );

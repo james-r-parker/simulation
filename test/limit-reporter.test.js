@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import LimitReporter, { nearLimit } from '../scripts/lib/limit-reporter.mjs';
 
-const c = (name, ms, limitMs) => ({ file: 'test/x.test.js', name, ms, limitMs });
+const c = (/** @type {string} */ name, /** @type {number} */ ms, /** @type {number} */ limitMs) => ({
+    file: 'test/x.test.js',
+    name,
+    ms,
+    limitMs,
+});
 
 describe('nearLimit', () => {
     it('keeps a test over half its own limit, explicit limits included', () => {
