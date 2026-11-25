@@ -5,7 +5,7 @@
 import { PX, inTicks, signReading, ticksReading } from './role-budget-defence-check.js';
 import { roleParams } from './role-budget-params.js';
 import { maxCatchableGap } from './role-budget-frame.js';
-import { budgetWarn, flying, warnTimeline } from './role-budget-warn.js';
+import { flying, warnTimeline } from './role-budget-warn.js';
 import { playWarning } from './role-scenes-warn.js';
 
 /**
@@ -20,7 +20,6 @@ import { playWarning } from './role-scenes-warn.js';
 export function warnCheck(config, model) {
     const [hunter, forager, scout] = ['predator', 'forager', 'scout'].map((s) => roleParams(config, s));
     const chain = warnTimeline({ scout, forager, hunter }, model);
-    const budget = budgetWarn(scout, forager, hunter, model);
     const scene = playWarning(config, {
         reaction: model.reactionTicks,
         threshold: model.hearThreshold,
@@ -32,6 +31,10 @@ export function warnCheck(config, model) {
     // the oracle hunter sprints at effort 1 and only with the forager in view; the forager it chases is the one that has turned
     const reach = maxCatchableGap(hunter, forager, { model, effort: 1, sprint: 'view', ...flying(chain) });
     const oracle = chain.runTick >= 0 && chain.gapAtRun >= reach;
+    // the scene's hunter is the perfect oracle and the budget's `run` reads the reactive tier (Phase 6), so the no-flattery
+    // reading holds the formula to the perfect hunter's reach: a forager that outruns it is not killed in the sim
+    const safeFromPerfect =
+        chain.runTick >= 0 && chain.gapAtRun >= maxCatchableGap(hunter, forager, { model, ...flying(chain) });
     const readings = [
         ticksReading(row, 'alarm tick', [chain.alarmTick, scene.ticks.alarmTick], inTicks(0)),
         ticksReading(row, 'forager hears', [chain.heardTick, scene.ticks.heardTick], inTicks(0)),
@@ -40,7 +43,7 @@ export function warnCheck(config, model) {
         ticksReading(row, 'gap when the forager has turned and runs', [chain.gapAtRun, scene.ticks.gapAtRun], PX),
         signReading(row, 'a forager the formula calls safe is safe in the sim: the formula never flatters it', [
             true,
-            !['ok', 'tight'].includes(budget.cells.run.status) || !scene.outcome.caught,
+            !safeFromPerfect || !scene.outcome.caught,
         ]),
         signReading(
             row,

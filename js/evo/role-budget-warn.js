@@ -35,7 +35,7 @@ export const FORAGER_TURN = Math.PI / 2;
  * @property {Record<string, import('./role-budget-cell.js').Cell>} cells the five cells
  * @property {WarnTimeline} chain the chain with no extra delay
  * @property {{own: number, catchable: number, speed: number}} gaps the gap at which the forager would see the hunter itself,
- *   the largest awareness gap the hunter still closes on it (`maxCatchableGap`) and the hunter's creeping speed
+ *   the largest awareness gap the reactive hunter still closes on it (`maxCatchableGap`) and the hunter's creeping speed
  * @property {{plain: number, alarmed: number}} bites the bites a hunter needs to kill a forager, and with its alarm seen
  * @property {string | null} binding the step of least slack
  */
@@ -137,7 +137,8 @@ function ticksOf(px, speed) {
 
 /**
  * The scout's budget against a hunter closing on a forager. The slack of `run` (and of the `turn` before it) is the ticks
- * the forager's gap at the start of its flight exceeds `maxCatchableGap` by, over the hunter's speed; `warn` the ticks the
+ * the forager's gap at the start of its flight exceeds `maxCatchableGap` of the reactive hunter on the broken bound (Phase 6: the
+ * forager breaks, as a prey's `run` does) by, over the hunter's speed; `warn` the ticks the
  * warning reaches the forager before it would see the hunter itself; `see` the lead the scout's reach has on the forager's
  * (the hunter's size cancels); `hear` the slack of `run`, within the ticks the call is still audible.
  * @param {import('./role-budget-params.js').RoleParams} scout the scout
@@ -150,7 +151,7 @@ export function budgetWarn(scout, forager, hunter, model) {
     const chain = warnTimeline({ scout, forager, hunter }, model);
     const speed = hunter.cap.cruise;
     const own = gapAtAwareness(hunter, forager);
-    const catchable = maxCatchableGap(hunter, forager, { model, ...flying(chain) });
+    const catchable = maxCatchableGap(hunter, forager, { model, tier: 'reactive', bound: 'broken', ...flying(chain) });
     const heard = chain.heardTick >= 0;
     const run = heard ? delaySlack({ scout, forager, hunter }, { model, catchable, step: 'run' }) : null;
     const creep = heard ? ticksOf(chain.gapAtRun - catchable, speed) : null;

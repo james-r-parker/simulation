@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { preStep5Arena } from '../helpers/pre-step5.js';
 import { MODEL_DEFAULTS } from '../../js/evo/role-budget-model.js';
@@ -16,7 +15,6 @@ const budget = (/** @type {Record<string, any>} */ overrides = {}, model = MODEL
     const { scout, forager, hunter } = bodiesOf(overrides);
     return budgetWarn(scout, forager, hunter, model);
 };
-const courser = JSON.parse(readFileSync('evals/fair-chase/courser.json', 'utf8'));
 const margins = (/** @type {ReturnType<typeof budget>} */ b) => Object.values(b.cells).map((c) => c.margin);
 
 describe('warnTimeline at the defaults', () => {
@@ -62,17 +60,20 @@ describe('warnTimeline at the defaults', () => {
 });
 
 describe('budgetWarn', () => {
-    it('at the defaults the warning beats the forager own sight by 7 ticks, and the turned, flying forager leaves 16 more', () => {
+    it('at the defaults the warning beats the forager own sight by 7 ticks, and the turned, flying forager leaves 3 more against the reactive hunter', () => {
+        // Phase 6: `run` reads the reactive hunter on the broken bound (270 px), not the perfect one (86 px on this world), so the
+        // turn and run slack fell from 16 to 3 and `hear` from 28 to 5
         const b = budget();
-        expect(margins(b)).toEqual([12, 28, 7, 16, 16]);
-        expect(b.row.status).toBe('ok');
-        expect(b.binding).toBe('warn');
-        expect(b.gaps).toEqual({ own: 345, catchable: expect.closeTo(86.3, 0), speed: 8 });
+        expect(margins(b)).toEqual([12, 5, 7, 3, 3]);
+        expect(b.row.status).toBe('tight');
+        expect(b.binding).toBe('turn');
+        expect(b.gaps).toEqual({ own: 345, catchable: expect.closeTo(270, 0), speed: 8 });
         expect(b.cells.run.distance).toBeCloseTo(b.chain.gapAtRun - b.gaps.catchable, 6);
     });
 
-    it('on the courser arm the hunter closes on the warned forager: run is impossible and turn is not read', () => {
-        const b = budget(courser);
+    it('when the hunter closes on the warned forager run is impossible and turn is not read (a scout that sees too short)', () => {
+        // the courser arm no longer closes on it once the reactive hunter is read (Phase 6); a scout that warns later does
+        const b = budget({ specialisations: { scout: { visionRange: 350 } } });
         expect(b.cells.run.status).toBe('impossible');
         expect(b.cells.turn.status).toBe('n/a');
         expect(b.cells.hear.margin).toBe(48);

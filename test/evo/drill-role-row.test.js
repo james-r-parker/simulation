@@ -19,13 +19,13 @@ describe('rowOf', () => {
 });
 
 describe('barOf', () => {
-    it('reads the scout row at the defaults as ok and passable, with 7 ticks of slack at the warning (the forager turns and flies)', () => {
+    it('reads the scout row at the defaults as tight and passable, with 3 ticks of slack at the turn (Phase 6: the reactive hunter, the forager turns and flies)', () => {
         expect(barOf('scout:predator', createPreStep5Config())).toEqual({
             row: 'scout:predator',
-            status: 'ok',
-            binding: 'warn',
+            status: 'tight',
+            binding: 'turn',
             passable: true,
-            slackTicks: 7,
+            slackTicks: 3,
         });
     });
 
