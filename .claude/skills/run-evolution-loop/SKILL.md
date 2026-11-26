@@ -50,7 +50,9 @@ the next id (one above the highest on `origin/main` and every `origin/*` branch;
 - `id` (`E<n>`), `date`, `branch` (written by `new`)
 - `hypothesis`: what the change does and why it should help
 - `prediction`: which metrics move, in which direction, and roughly by how much
-- `targets`: the `**Targets:**` metric names from the design doc phase, if any
+- `targets`: the `**Targets:**` metric names from the design doc phase, if any. Targets are headlines (`headline` in
+  `js/evo/metric-registry/`; the scene table of `docs/scene-scorecard.md` names each scene's, and `no headline` says none
+  exists) or say why a diagnostic is the right reading
 - `beforePolicy` and `afterPolicy`: the policy names; readers treat a missing one as `live`
 
 Ids are `E<n>` and unique; `E0` is the calibration (below). If two lanes drew one id before either pushed, the second PR
@@ -98,7 +100,9 @@ For every metric that moved:
 
 1. **Noise.** `npm run eval:compare -- <before>.json <after>.json --targets <m,...> --fail-on-worse` reports a BCa
    bootstrap 95% interval and a verdict per metric, marks the targets and exits 1 if a target is `worse` (`--json`
-   for the verdicts to record). `no-difference` means no difference - do not round it up to "slightly better". A verdict needs the interval to
+   for the verdicts to record). The text prints the headlines and the Targets first (one table), then the keep rule,
+   then every other metric as a diagnostic (`--all` prints the one table of every metric). A decision reads the first
+   table; a diagnostic that moved explains a headline, it does not make the verdict. `no-difference` means no difference - do not round it up to "slightly better". A verdict needs the interval to
    exclude 0 and a mean change of at least 5% of the before mean (`--min-effect`, shown as the `effect` column), so a
    tiny but precise shift stays `no-difference`. A metric of unit `share` uses an absolute 0.02 instead
    (`--share-min-effect`); a metric with at least half its paired differences exactly 0 also needs an exact sign test
@@ -158,7 +162,8 @@ bootstrap or the default config change, as a new entry.
 ## 4. Record
 
 Fill in the experiment record: `outcome` (`adopted`, `not-adopted`, `falsified`, `no-verdict` or `finding`), `before`
-and `after` report paths, the per-metric verdicts (required and non-empty when `kind` is `compare`), `effect` (`better`,
+and `after` report paths, the per-metric verdicts (required and non-empty when `kind` is `compare`; they hold the headlines and the plan's
+Targets, not every metric that moved), `effect` (`better`,
 `worse`, `no-difference`, `exploit`), and a one-line `note`. The `conventions` gate checks every record against
 `evals/experiments.schema.json` and fails an `E<id>` of 151 or more cited in `docs/` or `AGENTS.md` that has no record.
 

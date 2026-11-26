@@ -57,7 +57,10 @@ If unsure, ask the user in one line before writing a doc.
 
 5. Under every `### Phase N - ...` heading, add one `**Targets:**` line: the metrics the phase should move (the
    Metrics table in `evolution-evals.md` once it exists: `eval.*`, `bench.*`, `browser.*`), or
-   `**Targets:** none - <reason>`. The `designs-index` gate fails an unbuilt phase without exactly one.
+   `**Targets:** none - <reason>`. The `designs-index` gate fails an unbuilt phase without exactly one. Name a
+   headline metric (`headline` in `js/evo/metric-registry/`; the scene's row of `docs/scene-scorecard.md`), or say why a
+   diagnostic is the right reading; a scene marked `no headline` gets a task in the plan that owns it, not a Target on a
+   metric that cannot see the change.
 6. Link code repo-relative and by symbol (`forwardAll` in `js/sim/brain.js`), never by line number. Verify
    every named symbol that already exists with `rg -n '\b<symbol>\b' js` or `sg -p '<pattern>' -l js js`. Name a doc
    that does not exist yet in code font, not as a link - the gate rejects links that do not resolve.
