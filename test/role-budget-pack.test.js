@@ -73,4 +73,11 @@ describe('role:budget with the pack row', () => {
         expect(json.amplifiers['pack:forager'].packGain).toBeGreaterThan(0);
         expect(json.rows).toEqual([]);
     });
+
+    it('--check plays the two-hunter scene beside the pack row and reads no drift', async () => {
+        const { text, check } = await run(['--rows', 'pack:forager', '--check']);
+        expect(check.drift).toBe(0);
+        expect(check.defence.map((/** @type {any} */ r) => r.what)).toContain('hearer top speed, px per tick');
+        expect(text).toMatch(/pack:forager\s+rallied stacks of the hearer after one hunt call\s+1\s+1/);
+    });
 });
