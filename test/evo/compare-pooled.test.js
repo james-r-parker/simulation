@@ -142,7 +142,9 @@ describe('compareReports on a pooled metric', () => {
         expect(row.after).toBe(pooledEstimate(skew));
         const meanOfRatios = skew.reduce((t, c) => t + c.num / c.den, 0) / 16;
         expect(row.after).not.toBeCloseTo(meanOfRatios, 3);
-        expect(row.diff).toBe(pooledEstimate(skew) - pooledEstimate(BEFORE));
+        expect(row.diff).toBe(
+            /** @type {number} */ (pooledEstimate(skew)) - /** @type {number} */ (pooledEstimate(BEFORE)),
+        );
     });
 
     it('gives a verdict a seed with no opportunities cannot veto, and the same interval on every call', () => {
@@ -177,5 +179,90 @@ describe('compareReports on a pooled metric', () => {
         ).rows;
         expect(row.verdict).toBe('-');
         expect(row.note).toMatch(/pooled in one report only/);
+    });
+});
+
+describe('pooledInterval at the edges', () => {
+    it('drops a resample with no exposure in an arm, and falls back to the observed difference when every one is dropped', () => {
+        const before = [
+            { num: 1, den: 2 },
+            { num: 3, den: 4 },
+        ];
+        const after = [
+            { num: 0, den: 0 },
+            { num: 2, den: 4 },
+        ];
+        const diffs = resampledDiffs(before, after, fork(createRng(1), 'bootstrap'), 400);
+        expect(diffs.length).toBeGreaterThan(0);
+        expect(diffs.length).toBeLessThan(400);
+        // Five seeds, one with exposure: the single resample of this stream draws only seeds without it.
+        const lone = [{ num: 1, den: 2 }, ...Array.from({ length: 4 }, () => ({ num: 0, den: 0 }))];
+        expect(resampledDiffs(lone, lone, fork(createRng(1), 'bootstrap'), 1)).toHaveLength(0);
+        expect(pooledInterval(lone, lone, { level: 0.95, resamples: 1 })).toEqual({ low: 0, high: 0 });
+    });
+
+    it('has no acceleration when every seed alone differs the same but the pooled differences move', () => {
+        const before = [
+            { num: 1, den: 2 },
+            { num: 4, den: 10 },
+        ];
+        const after = [
+            { num: 0.6, den: 1 },
+            { num: 5, den: 10 },
+        ];
+        const { low, high } = pooledInterval(before, after, { level: 0.95, resamples: 200 });
+        expect(low).toBeLessThanOrEqual(high);
+        expect(low).toBeCloseTo(0.0924, 3);
+    });
+
+    it('skips a leave-one-out difference with no exposure left in an arm', () => {
+        const before = [
+            { num: 1, den: 2 },
+            { num: 0, den: 0 },
+        ];
+        const after = [
+            { num: 1, den: 2 },
+            { num: 1, den: 1 },
+        ];
+        const { low, high } = pooledInterval(before, after, { level: 0.9, resamples: 500 });
+        expect(low).toBeLessThanOrEqual(high);
+    });
+
+    it('reads a zero effect as no effect without dividing by the reference', () => {
+        const zero = BEFORE.map((c) => ({ num: 0, den: c.den }));
+        const options = {
+            status: () => 'verified',
+            direction: () => /** @type {'lower'} */ ('lower'),
+            minSeedsFor: () => 16,
+        };
+        const [row] = compareReports(
+            report({ 'pool.rate': metric(zero) }, 16),
+            report({ 'pool.rate': metric(zero) }, 16),
+            options,
+        ).rows;
+        expect(row).toMatchObject({ effect: null, verdict: 'no-difference', diff: 0 });
+    });
+});
+
+describe('a metric without pooled cells still refuses a null seed', () => {
+    it('gives no verdict and says so', () => {
+        const plain = (/** @type {(number | null)[]} */ values) => ({
+            values,
+            reasons: values.map((v) => (v === null ? 'none' : null)),
+            mean: 1,
+            sd: 0,
+        });
+        const withNull = plain(BEFORE.map((_, i) => (i === 0 ? null : 1)));
+        const options = {
+            status: () => 'verified',
+            direction: () => /** @type {'lower'} */ ('lower'),
+            minSeedsFor: () => 16,
+        };
+        const [row] = compareReports(
+            report({ 'plain.rate': withNull }, 16),
+            report({ 'plain.rate': plain(BEFORE.map(() => 1)) }, 16),
+            options,
+        ).rows;
+        expect(row).toMatchObject({ verdict: '-', note: 'null in a seed' });
     });
 });

@@ -191,7 +191,7 @@ describe('eval.bite_idle_pooled', () => {
         }
         const m = biteMetrics(scene);
         expect(m['eval.bite_idle_pooled']).toEqual({ value: 0.6, num: 3, den: 5 });
-        expect(m['eval.bite_idle_pooled'].value).toBe(m['eval.bite_idle'].value);
+        expect(m['eval.bite_idle_pooled']?.value).toBe(m['eval.bite_idle']?.value);
     });
 
     it('counts a hunter with a body in the jaws as no opportunity, and a seed with none as zero exposure', () => {

@@ -32,12 +32,12 @@ export function pooledEstimate(cells) {
 }
 
 /**
- * @param {readonly ({ num?: number, den?: number } | undefined)[]} cells one metric result per seed
+ * @param {readonly (Record<string, any> | undefined)[]} cells one metric result per seed
  * @returns {PooledCell[] | undefined} each seed's sufficient statistics (zero exposure for a seed that gave none), or
  *   undefined when no seed gave any (the metric is not pooled)
  */
 export function pooledCells(cells) {
-    const has = (/** @type {{ num?: number, den?: number } | undefined} */ c) =>
+    const has = (/** @type {Record<string, any> | undefined} */ c) =>
         typeof c?.num === 'number' && typeof c.den === 'number';
     if (!cells.some(has)) {
         return undefined;

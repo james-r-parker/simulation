@@ -62,6 +62,7 @@ describe('pooledEstimate', () => {
 describe('pooledCells', () => {
     it('is undefined for a metric no seed gave sufficient statistics for', () => {
         expect(pooledCells([{ value: 1 }, { value: null, reason: 'x' }])).toBeUndefined();
+        expect(pooledCells([undefined])).toBeUndefined();
     });
 
     it('reads a seed without them as zero exposure', () => {
@@ -133,6 +134,10 @@ describe('validateReport on a pooled metric', () => {
         expect(() => checkPooled({ values: [null], reasons: ['x'], pooled: [{ num: 1, den: 2 }] }, 'm', 1)).toThrow(
             /m.pooled\[0\]/,
         );
+    });
+
+    it('rejects a cell that is not an object', () => {
+        expect(() => checkPooled({ values: [null], reasons: ['x'], pooled: [null] }, 'm', 1)).toThrow(/m.pooled\[0\]/);
     });
 
     it('rejects a number with no exposure behind it', () => {

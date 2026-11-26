@@ -248,32 +248,44 @@ function withVerdict(filled, { direction, options, stats, diffs }) {
 }
 
 /**
- * A pooled metric (`report-pooled.js`): each arm is the ratio of sums of its seeds' `{num, den}`, and the interval
+ * A pooled metric's arms (`report-pooled.js`): each is the ratio of sums of its seeds' `{num, den}`, and the interval
  * resamples whole seeds. A seed with no opportunities is zero exposure, not a null that blocks the comparison; an arm
  * with none in any seed stays null.
- * @param {{ row: CompareRow, b: Record<string, any>, a: Record<string, any> }} read the row so far and the two
- *   reports' metric entries
- * @param {{ direction: ReturnType<typeof metricDirection>, level: number,
- *   floors: { minEffect: number, shareMinEffect: number }, options: Record<string, any> }} context what `compareMetric` read
- * @returns {CompareRow} the row
+ * @param {Record<string, any>} b the before report's metric entry
+ * @param {Record<string, any>} a the after report's metric entry
+ * @param {number} level the confidence level
+ * @returns {{ note: string } | { diff: number, low: number, high: number }} why there is no comparison, or the pooled
+ *   difference of the arms and its interval
  */
-function comparePooled({ row, b, a }, { direction, level, floors, options }) {
+function pooledStats(b, a, level) {
     if (b.pooled === undefined || a.pooled === undefined) {
-        return { ...row, note: 'pooled in one report only' };
+        return { note: 'pooled in one report only' };
     }
     const diff = pooledDiff(b.pooled, a.pooled, b.pooled.keys());
     if (diff === null) {
-        return { ...row, before: b.mean, after: a.mean, note: 'no opportunities in an arm' };
+        return { note: 'no opportunities in an arm' };
     }
-    const { low, high } = pooledInterval(b.pooled, a.pooled, { level, resamples: RESAMPLES });
-    const ref = reference(b.mean, a.mean);
-    const filled = { ...row, diff, effect: ref === 0 ? null : diff / ref, low, high };
-    return withVerdict(filled, {
-        direction,
-        options: /** @type {any} */ (options),
-        diffs: null,
-        stats: { low, high, diff, ref, floor: effectFloor(row.metric, ref, floors) },
-    });
+    return { diff, ...pooledInterval(b.pooled, a.pooled, { level, resamples: RESAMPLES }) };
+}
+
+/**
+ * @param {Record<string, any>} b the before report's metric entry
+ * @param {Record<string, any>} a the after report's metric entry
+ * @param {number} level the confidence level
+ * @returns {{ note: string } | { diff: number, low: number, high: number, diffs: number[] | null }} why the metric has
+ *   no comparison, or its difference, interval and the paired seed differences (null for a pooled metric, whose seeds
+ *   carry no difference of their own, so the sparse sign test does not apply)
+ */
+function armStats(b, a, level) {
+    if (b.pooled !== undefined || a.pooled !== undefined) {
+        const stats = pooledStats(b, a, level);
+        return 'note' in stats ? stats : { ...stats, diffs: null };
+    }
+    if (b.values.includes(null) || a.values.includes(null)) {
+        return { note: 'null in a seed' };
+    }
+    const diffs = a.values.map((/** @type {number} */ v, /** @type {number} */ i) => v - b.values[i]);
+    return { diff: mean(diffs), ...bootstrapInterval(diffs, level), diffs };
 }
 
 /**
@@ -306,18 +318,14 @@ function compareMetric(metric, before, after, options) {
     }
     const direction = directionOf(metric);
     const fitness = FITNESS_PREFIXES.some((prefix) => metric.startsWith(prefix));
-    if (b.pooled !== undefined || a.pooled !== undefined) {
-        return comparePooled({ row, b, a }, { direction, level, floors, options });
-    }
-    if (b.values.includes(null) || a.values.includes(null)) {
-        return { ...row, note: 'null in a seed' };
+    const stats = armStats(b, a, level);
+    if ('note' in stats) {
+        return { ...row, note: stats.note };
     }
     if (fitness && before.fitnessName !== after.fitnessName) {
         return { ...row, note: `fitnessName differs: ${before.fitnessName} vs ${after.fitnessName}` };
     }
-    const diffs = a.values.map((/** @type {number} */ v, /** @type {number} */ i) => v - b.values[i]);
-    const { low, high } = bootstrapInterval(diffs, level);
-    const diff = mean(diffs);
+    const { diff, low, high, diffs } = stats;
     const ref = reference(b.mean, a.mean);
     const filled = { ...row, diff, effect: ref === 0 ? null : diff / ref, low, high };
     return withVerdict(filled, {
