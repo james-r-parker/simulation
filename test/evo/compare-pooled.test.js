@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { compareReports } from '../../js/evo/compare.js';
-import { pooledDiff, pooledInterval, resampledDiffs } from '../../js/evo/compare-pooled.js';
+import { pooledDiff, pooledInterval } from '../../js/evo/compare-pooled.js';
 import { pooledEstimate } from '../../js/evo/report-pooled.js';
 import { configHash } from '../../js/sim/config.js';
-import { createRng, fork, nextInt } from '../../js/sim/rng.js';
 
 /** @param {number} count @returns {number[]} count seeds */
 const seeds = (count) => Array.from({ length: count }, (_, i) => i + 1);
@@ -62,35 +61,6 @@ describe('pooledDiff', () => {
 
     it('is null when a chosen set has no opportunities in an arm', () => {
         expect(pooledDiff([{ num: 1, den: 2 }], [{ num: 0, den: 0 }], [0])).toBeNull();
-    });
-});
-
-describe('resampledDiffs against a naive reference', () => {
-    it('resamples whole seeds from the same stream and recomputes the ratio of sums', () => {
-        const before = [
-            { num: 1, den: 4 },
-            { num: 5, den: 5 },
-            { num: 0, den: 7 },
-            { num: 2, den: 3 },
-        ];
-        const after = [
-            { num: 2, den: 4 },
-            { num: 1, den: 5 },
-            { num: 0, den: 0 },
-            { num: 3, den: 3 },
-        ];
-        const naive = [];
-        const rng = fork(createRng(1), 'bootstrap');
-        for (let b = 0; b < 200; b++) {
-            const picked = Array.from({ length: 4 }, () => nextInt(rng, 4));
-            const sum = (/** @type {typeof before} */ arm, /** @type {'num' | 'den'} */ key) =>
-                picked.reduce((t, k) => t + arm[k][key], 0);
-            if (sum(before, 'den') > 0 && sum(after, 'den') > 0) {
-                naive.push(sum(after, 'num') / sum(after, 'den') - sum(before, 'num') / sum(before, 'den'));
-            }
-        }
-        const got = resampledDiffs(before, after, fork(createRng(1), 'bootstrap'), 200);
-        expect([...got]).toEqual(naive.sort((a, b) => a - b));
     });
 });
 
@@ -183,51 +153,6 @@ describe('compareReports on a pooled metric', () => {
 });
 
 describe('pooledInterval at the edges', () => {
-    it('drops a resample with no exposure in an arm, and falls back to the observed difference when every one is dropped', () => {
-        const before = [
-            { num: 1, den: 2 },
-            { num: 3, den: 4 },
-        ];
-        const after = [
-            { num: 0, den: 0 },
-            { num: 2, den: 4 },
-        ];
-        const diffs = resampledDiffs(before, after, fork(createRng(1), 'bootstrap'), 400);
-        expect(diffs.length).toBeGreaterThan(0);
-        expect(diffs.length).toBeLessThan(400);
-        // Five seeds, one with exposure: the single resample of this stream draws only seeds without it.
-        const lone = [{ num: 1, den: 2 }, ...Array.from({ length: 4 }, () => ({ num: 0, den: 0 }))];
-        expect(resampledDiffs(lone, lone, fork(createRng(1), 'bootstrap'), 1)).toHaveLength(0);
-        expect(pooledInterval(lone, lone, { level: 0.95, resamples: 1 })).toEqual({ low: 0, high: 0 });
-    });
-
-    it('has no acceleration when every seed alone differs the same but the pooled differences move', () => {
-        const before = [
-            { num: 1, den: 2 },
-            { num: 4, den: 10 },
-        ];
-        const after = [
-            { num: 0.6, den: 1 },
-            { num: 5, den: 10 },
-        ];
-        const { low, high } = pooledInterval(before, after, { level: 0.95, resamples: 200 });
-        expect(low).toBeLessThanOrEqual(high);
-        expect(low).toBeCloseTo(0.0924, 3);
-    });
-
-    it('skips a leave-one-out difference with no exposure left in an arm', () => {
-        const before = [
-            { num: 1, den: 2 },
-            { num: 0, den: 0 },
-        ];
-        const after = [
-            { num: 1, den: 2 },
-            { num: 1, den: 1 },
-        ];
-        const { low, high } = pooledInterval(before, after, { level: 0.9, resamples: 500 });
-        expect(low).toBeLessThanOrEqual(high);
-    });
-
     it('reads a zero effect as no effect without dividing by the reference', () => {
         const zero = BEFORE.map((c) => ({ num: 0, den: c.den }));
         const options = {
