@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { formatKeepRule, GUARD_METRICS, HELD_POPULATION, heldFlags, keepRule } from '../../js/evo/keep-rule.js';
 
 import { METRICS } from '../../js/evo/metric-registry/index.js';
-import { metricStatus } from '../../js/evo/metric-registry/status.js';
+import { isFlat, metricStatus } from '../../js/evo/metric-registry/status.js';
 
 const N = 32;
 const SEEDS = Array.from({ length: N }, (_, i) => i + 1);
@@ -223,6 +223,14 @@ describe('GUARD_METRICS (metric-noise T12, D3)', () => {
         const whole = METRICS['eval.hunter_catches_per_1k'];
         expect(metricStatus(settled)).toBe('verified');
         expect(settled.power?.mde64 ?? Infinity).toBeLessThanOrEqual(whole.power?.mde64 ?? 0);
+    });
+});
+
+describe('GUARD_METRICS are not flat (metric-noise T29)', () => {
+    it('names no metric that misses the liveness bar and carries expectedFlat', () => {
+        for (const name of GUARD_METRICS) {
+            expect(isFlat(/** @type {Record<string, any>} */ (METRICS)[name]), name).toBe(false);
+        }
     });
 });
 
