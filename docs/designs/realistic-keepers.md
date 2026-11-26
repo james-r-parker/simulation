@@ -156,7 +156,7 @@ three go into the combined run (T21).** The prediction held for coverConceals an
 touch 0 (it spans it widely), so the "perhaps touching 0" was too pessimistic; rewardedHebb's hunters-alive upper bound sits exactly at 0.000, the closest
 call. Non-guard readings, recorded for the combined run to watch: predatorRestTicks lowers `eval.coverage` (-11.1%), `eval.qd_score` (-11.9%) and
 `eval.p90_fitness.reproducer` (-7.0%), each flagged worse; coverConceals lowers `eval.basin_lineage_effective` (-11.5%) and reproducer mean and p90 fitness
-(-8%), and raises `eval.alarm_rate` from about 1e-6 to 8e-6 (flagged worse by direction, still near zero). None is on the keep rule's guard list, so none is
+(-8%), and raises `eval.alarm_rate` from about 1e-6 to 8e-6 (flagged worse by direction, still near zero, and judged only on arms where calls fire). None is on the keep rule's guard list, so none is
 harm under the rule as written.
 
 **E138 - the combined run (T21).** All seven kept mechanisms on together (`satedBite`, `predatorRestTicks` 60,

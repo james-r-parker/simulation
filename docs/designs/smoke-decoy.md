@@ -44,7 +44,9 @@ Effect on prey that smoke while fleeing: the decoy is a body-sized target close 
 
 ### Phase 1 - The decoy
 
-**Targets:** eval.smoke_escapes, eval.smoke_precision
+**Targets:** none - the decoy is judged by the scripted scene (T6), since no metric of smoke use moves at the defaults
+
+Also read, judged only on seeds where an agent releases smoke (they read null otherwise: smoke is released on 1 and 7 of 128 seeds, E276): eval.smoke_escapes, eval.smoke_precision.
 
 Tasks T2 to T6 build the rule, its key, the re-pins, the calculator and the scene. T7 and T8 read the evolution metrics.
 

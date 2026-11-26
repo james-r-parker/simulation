@@ -149,6 +149,42 @@ describe('flat metrics as Targets (metric-noise T29)', () => {
     });
 });
 
+describe('a precondition clause (metric-noise T29a)', () => {
+    const flat = { ...registry['eval.a'], liveness: { nullShare: 0, distinct: 2, offModeShare: 0, report: 'r' } };
+    const withFlat = { ...registry, 'eval.alarm_rate': { ...flat, expectedFlat: 'no calls' } };
+    const names = (/** @type {string} */ text) => findTargets({ 'p.md': doc(text) }, withFlat).map((t) => t.metric);
+
+    it('exempts the metrics of a clause that says judged only when a feature is on', () => {
+        expect(names('**Targets:** eval.alarm_rate (judged only when calls fire)')).toEqual([]);
+        expect(names('**Targets:** eval.a; eval.alarm_rate, judged only with calls on')).toEqual(['eval.a']);
+        expect(names('Done: eval.alarm_rate is up, judged only after calls fire. eval.a is up.')).toEqual(['eval.a']);
+    });
+
+    it('keeps a flat metric in a neighbouring clause or table cell a Target', () => {
+        expect(names('**Targets:** eval.alarm_rate; eval.a (judged only when calls fire)')).toEqual([
+            'eval.alarm_rate',
+        ]);
+        expect(names('| Done: `eval.alarm_rate` | judged only when calls fire |')).toEqual(['eval.alarm_rate']);
+    });
+
+    it('exempts only the metric the note follows, or the list a judged-only lead-in introduces', () => {
+        expect(names('Done: eval.a and eval.alarm_rate (judged only when calls fire) both move.')).toEqual(['eval.a']);
+        expect(names('| Done: feature `eval.a`, `eval.alarm_rate` (judged only when a herd returns) |')).toEqual([
+            'eval.a',
+        ]);
+        expect(names('Also read, judged only on arms where calls fire: eval.alarm_rate.')).toEqual([]);
+        expect(names('Done: eval.a moves, and eval.alarm_rate stays put (judged only with calls on).')).toEqual([
+            'eval.a',
+        ]);
+    });
+
+    it('fails the check while a plan names a flat metric as a Target', () => {
+        const output = [];
+        const flatTarget = [{ metric: 'eval.alarm_rate', references: [{ plan: 'p.md', line: 5, kind: 'Targets' }] }];
+        expect(reportFlat(flatTarget, (s) => output.push(s))).toBe(1);
+    });
+});
+
 describe('power bars and table', () => {
     it('requires both FPR and MDE, accepts boundary values and treats null as failure', () => {
         expect(passes(row(16, 0.2, 0.1), unverified, 10)).toBe(true);
@@ -225,7 +261,7 @@ describe('metric-noise CLI', () => {
         const flat = [{ metric: 'eval.alarm_rate', references: [{ plan: 'p.md', line: 5, kind: 'Targets' }] }];
         expect(reportFlat(flat, (s) => output.push(s))).toBe(1);
         expect(output).toEqual([
-            'warning: flat metric named as a Target: eval.alarm_rate in p.md:5 (misses the liveness bar)',
+            'error: flat metric named as a Target: eval.alarm_rate in p.md:5 (misses the liveness bar)',
         ]);
         expect(reportFlat([], (s) => output.push(s))).toBe(0);
         expect(output).toHaveLength(1);

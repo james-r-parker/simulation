@@ -178,7 +178,9 @@ Inside the `bench-check` margin; `fadeEffects` is a new phase row of `bench:part
 
 ### Phase 3 - The numbers
 
-**Targets:** eval.pack_kills_per_eaten_death, eval.hunt_call_answer, eval.alarm_response, eval.hunter_catches_per_1k_settled
+**Targets:** eval.pack_kills_per_eaten_death, eval.hunter_catches_per_1k_settled
+
+Also read, judged only on arms where calls fire (alarm-calls.md Phase 2; they read flat at the defaults, E276): eval.hunt_call_answer, eval.alarm_response.
 
 The numbers are chosen with the calculator and read on the default world with [body-genes.md](body-genes.md) Phase 3, in the same screen and the same keep-rule pair. No trained brain is needed.
 

@@ -10,7 +10,7 @@ Lead docs in priority order - 1 is built next. Set in each doc's `**Priority:**`
 1. [Agent workflow](agent-workflow.md) - Workflow lead (dev tooling: cheap, and it speeds every step after it). Tooling that changes no sim rule; every session and every subagent pays the Phase 1 cost on its first token and every chunk ships through Phase 5, so both are built before the next training chunk
     1. [Quality gates and test tiers](quality-gates-and-test-tiers.md) - the rest of Phase 3
     2. [v6 tidy-up and docs](v6-tidy-up-and-docs.md) - the last legacy and docs tasks (T7 to T10), after the context diet has moved the docs
-2. [Metric noise](metric-noise.md) - Measurement lead (needed to judge every balance read after it). Phases 1, 4 and 6 code are built (registries.md Phases 1 and 3 built). Gate 2 is met (T27, E276); T28 (the liveness bar) and T29 (flat metrics out of Targets) are built. Next: Phase 5 (headline metrics)
+2. [Metric noise](metric-noise.md) - Measurement lead (needed to judge every balance read after it). Phases 1, 4 and 6 code are built (registries.md Phases 1 and 3 built). Gate 2 is met (T27, E276); T28 (the liveness bar), T29 (flat metrics out of Targets) and T29a (every plan clears them) are built. Next: Phase 5 (headline metrics)
     1. [Registries](registries.md) - the detector interface is built before metric-noise.md Phase 6 adds the role metrics, since each detector added today touches 12 to 22 files
     2. [Detector baseline](detector-baseline.md) - the wave's `bench.observe_ms@500` price (T4) and the detector tasks of the plans it serves, read after Phase 4 corrects the power readings
     3. [Lean observer](lean-observer.md) - one task left (T6); the lean observer is what training episodes run on (training-loop.md T31)
