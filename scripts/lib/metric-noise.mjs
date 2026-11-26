@@ -1,6 +1,6 @@
 // Finds active plans' metric dependencies and renders their measured power without changing the registry.
 import { renderTable as markdownTable } from '../metrics-doc.mjs';
-import { metricStatus, meetsPowerBar } from '../../js/evo/metric-registry/status.js';
+import { isFlat, metricStatus, meetsPowerBar } from '../../js/evo/metric-registry/status.js';
 
 /** @typedef {{plan: string, line: number, kind: string}} Reference */
 /** @typedef {{metric: string, references: Reference[]}} Target */
@@ -100,7 +100,7 @@ function addReference(targets, metric, reference) {
     targets.set(metric, target);
 }
 
-/** @param {Record<string, string>} docs markdown by filename @param {Readonly<Record<string, any>>} registry entries @returns {Target[]} */
+/** @param {Record<string, string>} docs markdown by filename @param {Readonly<Record<string, any>>} registry entries @returns {Target[]} the unverified and the flat metrics active plans name */
 export function findTargets(docs, registry) {
     /** @type {Map<string, Target>} */
     const targets = new Map();
@@ -111,12 +111,18 @@ export function findTargets(docs, registry) {
         }
         for (const block of dependencyBlocks(text)) {
             const matches = metricTokens(block.text, names, block.kind).filter(
-                (metric) => registry[metric] && metricStatus(registry[metric]) === 'unverified',
+                (metric) =>
+                    registry[metric] && (metricStatus(registry[metric]) === 'unverified' || isFlat(registry[metric])),
             );
             matches.forEach((metric) => addReference(targets, metric, { plan, line: block.line, kind: block.kind }));
         }
     }
     return [...targets.values()].sort((a, b) => a.metric.localeCompare(b.metric));
+}
+
+/** @param {Target[]} targets inventory @param {Readonly<Record<string, any>>} registry entries @returns {Target[]} the targets that read flat: they miss the liveness bar and carry `expectedFlat`, so no plan may judge on them */
+export function flatTargets(targets, registry) {
+    return targets.filter((target) => registry[target.metric] && isFlat(registry[target.metric]));
 }
 
 /** @param {any} row power row @param {any} entry registry entry @param {number} mean reference mean @returns {boolean} */
@@ -161,7 +167,7 @@ export function renderTable(targets, rows, report, registry) {
             .map((plan) => `[${plan}](${plan})`)
             .join(', ');
         lines.push([
-            `\`${target.metric}\``,
+            `\`${target.metric}\`${isFlat(registry[target.metric]) ? ' (flat)' : ''}`,
             ...readings.map(reading),
             String(minimum?.size ?? 'fails through 64'),
             plans,
