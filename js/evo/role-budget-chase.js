@@ -91,7 +91,8 @@ function biteSlack(run, hunter) {
 function cellsOf(hunter, prey, frame, run) {
     const { model } = frame;
     const unread = () => cell(undefined, model);
-    const margin = maxCatchableGap(hunter, prey, frame) - gapAtAwareness(hunter, prey);
+    // the headline reach: the best of the sweep and the reactive tier (`maxCatchableGap`), the margin `catchMargin` reads
+    const margin = maxCatchableGap(hunter, prey, { model }) - gapAtAwareness(hunter, prey);
     if (run.contactTick !== null && !run.gate) {
         return { see: unread(), turn: unread(), run: unread(), bite: cell(null, model) };
     }

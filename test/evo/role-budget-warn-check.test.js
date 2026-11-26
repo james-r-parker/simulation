@@ -49,6 +49,16 @@ describe('warnCheck at the defaults', () => {
         }
     });
 
+    it('reads the reactive sign as true without playing it when the run is not ok or tight, or the forager never hears', () => {
+        const what = 'a forager whose run reads ok or tight is not caught by the reactive oracle hunter';
+        const late = warnCheck(preStep5Arena({ specialisations: { scout: { visionRange: 350 } } }), MODEL_DEFAULTS);
+        const deaf = warnCheck(preStep5Arena(), { ...MODEL_DEFAULTS, defenderGap: 5000 });
+        for (const read of [late, deaf]) {
+            const reading = read.readings.find((r) => r.what === what);
+            expect([reading?.formula, reading?.scene, reading?.drift]).toEqual([true, true, false]);
+        }
+    });
+
     it('flags a reading outside its tolerance: a scout that sees a tick late no longer matches the scene', () => {
         const late = warnCheck(preStep5Arena(), { ...MODEL_DEFAULTS, reactionTicks: 3 });
         expect(late.drift).toBe(0);
