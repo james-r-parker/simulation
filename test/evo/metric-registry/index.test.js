@@ -19,7 +19,7 @@ const REPORT_NAMES = JSON.parse(readFileSync(new URL('../../fixtures/metric-name
 describe('METRICS', () => {
     it('is frozen and keyed by exactly the names of the live report', () => {
         expect(Object.isFrozen(METRICS)).toBe(true);
-        expect(REPORT_NAMES).toHaveLength(431);
+        expect(REPORT_NAMES).toHaveLength(435);
         expect(Object.keys(METRICS).sort()).toEqual(REPORT_NAMES);
     });
 
@@ -140,6 +140,10 @@ const GENE_METRICS = [
     ...TRAITS.filter((trait) => trait.kind !== 'raw').map((trait) => `eval.gene_sd.${trait.name}`),
     'eval.gene_edge_share',
     'eval.bite_idle_pooled', // metric-noise T3: the pooled bite_idle, beside the old one
+    'eval.food_contact_bite_share_pooled', // metric-noise T3: the pooled twin of the old share
+    'eval.carcass_hunter_share_pooled', // metric-noise T3: the pooled twin of the old share
+    'eval.mating_share_pooled', // metric-noise T3: the pooled twin of the old share
+    'eval.gap_never_share_pooled', // metric-noise T3: the pooled twin of the old share
 ];
 /** Metrics registered after the snapshot was taken (T25 added the mean beside the renamed median). */
 const ADDED_AFTER_T8 = [
@@ -305,6 +309,7 @@ const ADDED_INTENDED_LOWER = [
     'eval.hunter_defender_bite_ratio',
     'eval.gene_edge_share',
     'eval.bite_idle_pooled', // metric-noise T3: the pooled bite_idle, beside the old one
+    'eval.gap_never_share_pooled', // metric-noise T3: the pooled twin of the old share
     'eval.winter_shelter_distance', // metric-noise T25: negative is towards shelter, so lower is intended (was higher)
 ];
 const SNAPSHOT = JSON.parse(readFileSync(new URL('../../fixtures/metric-directions.json', import.meta.url), 'utf8'));

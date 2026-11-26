@@ -249,10 +249,11 @@ describe('the sample', () => {
 });
 
 describe('the registry', () => {
-    it('lists the three detectors with their directions', () => {
+    it('lists the detectors with their directions', () => {
         expect(namesOf('js/evo/scene-eat.js')).toEqual([
             'eval.fat_speed_ratio',
             'eval.food_contact_bite_share',
+            'eval.food_contact_bite_share_pooled',
             'eval.full_contact_bite_share',
         ]);
         expect(directionOf('eval.food_contact_bite_share')).toBe('watch');

@@ -111,6 +111,9 @@ const SOURCE_METRICS = [
     'eval.freeze_under_threat',
     'eval.chase_reacquire_share',
     'eval.scavenge_approach_share',
+    // metric-noise T3: the pooled twins, last because shares-pooled.js is the last file the registry spreads
+    'eval.carcass_hunter_share_pooled',
+    'eval.gap_never_share_pooled',
 ];
 
 const FLORA = ['grass', 'berry', 'nut', 'flower', 'fungus', 'toxiccap'];
@@ -184,7 +187,7 @@ describe('ecology metrics from a scripted source run', () => {
         const registryNames = Object.entries(METRICS)
             .filter(([, entry]) => entry.family === 'scenes-ecology')
             .map(([name]) => name);
-        expect(names).toHaveLength(103);
+        expect(names).toHaveLength(105);
         expect(names).toEqual(registryNames);
         expect(Object.fromEntries(names.map((name) => [name, actual[name]]))).toEqual(expected);
         expect(run.observer.deathCount).toBe(2);
