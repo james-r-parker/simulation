@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { GUARD_METRICS } from '../../../js/evo/keep-rule.js';
 import {
     WORLD_HEADLINES,
+    withHeadlines,
     headlineCandidates,
     pickHeadlines,
     scenesWithoutHeadline,
@@ -68,6 +69,36 @@ describe('pickHeadlines', () => {
             'Boom and bust',
         ]);
         expect(picked).toEqual({ Abort: 'one', Refuge: 'two' });
+    });
+});
+
+describe('withHeadlines', () => {
+    const world = Object.fromEntries(WORLD_HEADLINES.map((name) => [name, fake({ scenes: undefined })]));
+
+    it('flags each scene pick `scene` and each world metric `world`, and no other entry', () => {
+        const flagged = withHeadlines(
+            { ...world, pick: fake(), other: fake({ power: { mde64: 0.05, referenceMean: 0.3 } }) },
+            ['Abort'],
+        );
+        expect(flagged.pick.headline).toBe('scene');
+        expect(flagged.other.headline).toBeUndefined();
+        expect(/** @type {any} */ (flagged)[WORLD_HEADLINES[0]].headline).toBe('world');
+    });
+
+    it('throws when a world headline has no entry', () => {
+        expect(() => withHeadlines({ pick: fake() }, ['Abort'])).toThrow('unknown metric eval.food_energy_per_1k');
+    });
+});
+
+describe('headlineCandidates without a measurement', () => {
+    it('skips an entry with no power read, no liveness read or no mean', () => {
+        const entries = {
+            noPower: fake({ power: null }),
+            noLiveness: fake({ liveness: null }),
+            zeroMean: fake({ power: { mde64: 0.05, referenceMean: 0 } }),
+            noMde: fake({ power: { mde64: null, referenceMean: 0.4 } }),
+        };
+        expect(headlineCandidates(entries, 'Abort')).toEqual([]);
     });
 });
 
