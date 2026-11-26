@@ -18,9 +18,10 @@ describe('a pooled entry', () => {
                 METRICS[/** @type {keyof typeof METRICS} */ (name)],
             ];
             expect([b.unit, b.direction, b.module]).toEqual([a.unit, a.direction, a.module]);
-            expect(b.liveness).toBeNull();
-            expect(b.power).toBeNull();
-            expect(b.minSeeds).toBeNull();
+            // Measured on its own report cells (E278), not inherited from the old metric.
+            expect(b.liveness).not.toBeNull();
+            expect(b.power).not.toBeNull();
+            expect(b.power).not.toEqual(a.power);
         },
     );
 });
