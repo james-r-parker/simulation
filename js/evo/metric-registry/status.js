@@ -24,6 +24,7 @@ export const SIGNED_UNITS = Object.freeze([
     'slope',
     'speed change over max speed',
     'balance',
+    'catch per prior chase',
 ]);
 
 /**
