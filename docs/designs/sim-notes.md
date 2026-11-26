@@ -156,6 +156,7 @@ in the same commit.
 - 2026-11-22 - Vitest `--no-isolate` breaks the fast tier, and a function-prefix env var leaks to children - [2026-11](../notes/2026-11/2026-11-22-vitest-no-isolate-breaks-the-fast-tier-and-a-function.md)
 - 2026-11-25 - bench-compare --self noise on hosted runners - [2026-11](../notes/2026-11/2026-11-25-bench-compare-self-noise-on-hosted-runners.md)
 - 2026-11-25 - A Vitest reporter sees each test's own timeout; the JSON report does not - [2026-11](../notes/2026-11/2026-11-25-vitest-reporter-sees-each-test-s-own-timeout.md)
+- 2026-11-26 - The BCa interval under-covers pooled ratios and skewed per-seed metrics at 16 to 64 seeds - [2026-11](../notes/2026-11/2026-11-26-pooled-ratio-interval-undercovers.md)
 - 2026-10-11 - Git hooks export GIT_DIR and GIT_INDEX_FILE - [2026-10](../notes/2026-10/2026-10-11-git-hooks-export-git-dir-and-git-index-file.md)
 - 2026-10-11 - jscpd 5 has no exitCode option - [2026-10](../notes/2026-10/2026-10-11-jscpd-5-has-no-exitcode-option.md)
 - 2026-10-11 - WebGPU in WSL Chromium is SwiftShader only - [2026-10](../notes/2026-10/2026-10-11-webgpu-in-wsl-chromium-is-swiftshader-only.md)
