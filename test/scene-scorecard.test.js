@@ -124,6 +124,14 @@ describe('renderScorecard', () => {
         expect(stateOf('Abort')).toContain('no verified detector');
     });
 
+    it('names the scene headline in a Headline column, or `no headline`', () => {
+        const flagged = { ...FAKE, 'fake.live': { ...FAKE['fake.live'], headline: /** @type {const} */ ('scene') } };
+        const lines = renderScorecard(flagged, REPORT, REPORT_PATH).split('\n');
+        expect(lines.find((l) => l.startsWith('| Scene ') && l.includes('Headline'))).toBeDefined();
+        expect(lines.find((l) => l.startsWith('| A real chase ') && l.includes('present'))).toContain('`fake.live`');
+        expect(lines.find((l) => l.startsWith('| Abort ') && l.includes('no verified'))).toContain('no headline');
+    });
+
     it('prints the flagged failures and goals as a second table', () => {
         expect(doc).toContain('## What the user flagged');
         expect(doc).toMatch(/\| G3 +\| Hunting in packs +\| present +\|/);
