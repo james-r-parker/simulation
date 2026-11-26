@@ -76,6 +76,7 @@ export const SCENES_ECOLOGY = {
         meaning: 'Whether blobs eat toxic plants less often than they meet them (positive) or more (negative).',
         counts: '(p - r) / (p + r), p the share of plant items with toxin above 0 sampled at 1000-tick checkpoints, r the share of plant meals that were toxic, after burn-in.',
         unit: 'balance',
+        signed: true,
         direction: 'watch',
         intended: 'higher',
         nullWhen: [

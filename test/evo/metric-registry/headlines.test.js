@@ -32,7 +32,9 @@ describe('mdeAgainstBar', () => {
     it('reads a share against 0.05, a mean near 0 against 0.1 absolute, else against 20% of the mean', () => {
         expect(mdeAgainstBar('share', 0.03, 0.4)).toEqual({ change: 0.03, bar: 0.05 });
         expect(mdeAgainstBar('trend', 0.5, 0.1).bar).toBe(0.1);
-        expect(mdeAgainstBar('share difference', 0.5, 0.005).change).toBeCloseTo(0.0025);
+        expect(mdeAgainstBar('share difference', 0.5, 0.005, true).change).toBeCloseTo(0.0025);
+        expect(mdeAgainstBar('ticks', 0.5, 0.005, true)).toEqual({ change: 0.0025, bar: 0.1 });
+        expect(mdeAgainstBar('share difference', 0.5, 0.005)).toEqual({ change: 0.5, bar: 0.2 });
         expect(mdeAgainstBar('ticks', 0.5, 0.005)).toEqual({ change: 0.5, bar: 0.2 });
         expect(mdeAgainstBar('ticks', 0.1, 100)).toEqual({ change: 0.1, bar: 0.2 });
     });
@@ -59,6 +61,43 @@ describe('headlineCandidates', () => {
             tight: fake({ power: { mde64: 0.03, referenceMean: 0.9 } }),
         };
         expect(headlineCandidates(entries, 'Abort').map((c) => c.name)).toEqual(['tight', 'a', 'b', 'wide']);
+    });
+});
+
+describe('headlineCandidates and the seed spread (metric-noise T31)', () => {
+    const live = (/** @type {number | undefined} */ spread) => ({
+        nullShare: 0,
+        distinct: 50,
+        offModeShare: 1,
+        spread,
+    });
+    // A signed difference around 0 whose whole spread over the seeds is 5e-4: a change of 1e-3 uses 1% of the 0.10 bar
+    // and two spreads of the metric.
+    const tiny = (/** @type {number | undefined} */ spread) =>
+        fake({
+            unit: 'share difference',
+            signed: true,
+            scenes: ['Refuge'],
+            power: { mde64: 1, referenceMean: -0.001 },
+            liveness: live(spread),
+        });
+    const steady = fake({ scenes: ['Refuge'], power: { mde64: 0.03, referenceMean: 0.3 } });
+
+    it('ranks a signed metric by its change over its seed spread when the spread is below the bar', () => {
+        const [first, second] = headlineCandidates({ tiny: tiny(0.0005), steady }, 'Refuge');
+        expect([first.name, second.name]).toEqual(['steady', 'tiny']);
+        expect(second.barUse).toBeCloseTo(2);
+    });
+
+    it('keeps the share of the absolute bar when the spread is wider than the bar, or was not read', () => {
+        expect(headlineCandidates({ tiny: tiny(0.5), steady }, 'Refuge')[0].name).toBe('tiny');
+        expect(headlineCandidates({ tiny: tiny(undefined), steady }, 'Refuge')[0].name).toBe('tiny');
+        expect(headlineCandidates({ tiny: tiny(0.5) }, 'Refuge')[0].barUse).toBeCloseTo(0.01);
+    });
+
+    it('does not read the spread of an unsigned metric', () => {
+        const plain = fake({ scenes: ['Refuge'], liveness: live(0.001), power: { mde64: 0.03, referenceMean: 0.3 } });
+        expect(headlineCandidates({ plain }, 'Refuge')[0].barUse).toBeCloseTo(0.6);
     });
 });
 

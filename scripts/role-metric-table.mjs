@@ -53,7 +53,7 @@ function powerCell(name) {
     const mde = [16, 32, 64].map(read).join(' / ');
     const refMean = old.metrics[name].mean;
     /** @type {any} */
-    const reading = { unit: e.unit, power: { referenceMean: refMean } };
+    const reading = { unit: e.unit, signed: e.signed, power: { referenceMean: refMean } };
     for (const n of [16, 32, 64]) {
         reading.power[`fpr${n}`] = by[n]?.falsePositive ?? null;
         reading.power[`mde${n}`] = by[n]?.detectable ?? null;

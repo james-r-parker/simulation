@@ -249,6 +249,9 @@
     "test/evo/metric-registry/scenes.test.js": [
         "js/evo/metrics.js"
     ],
+    "test/evo/metric-registry/signed.test.js": [
+        "evals/power/defaults-floor-on-E276.json"
+    ],
     "test/evo/metric-registry/status.test.js": [
         "js/evo/metrics.js"
     ],

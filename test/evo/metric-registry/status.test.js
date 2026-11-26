@@ -67,6 +67,10 @@ describe('metricStatus', () => {
         expect(metricStatus({ ...full(), ...patch })).toBe('unverified');
     });
 
+    it('is unverified when unverifiedWhy says the power bar cannot be read, however good the read looks (metric-noise T30)', () => {
+        expect(metricStatus({ ...full(), unverifiedWhy: 'scale below every bar' })).toBe('unverified');
+    });
+
     it('accepts a liveness that misses the bar when expectedFlat says why', () => {
         const flat = { ...full(), liveness: { nullShare: 1, distinct: 0, offModeShare: 0, report: 'r.json' } };
         expect(metricStatus(flat)).toBe('unverified');
@@ -141,14 +145,28 @@ describe('meetsPowerBar', () => {
         expect(at('trend', power(0.05, 0.6, 0.2))).toBe(false);
     });
 
-    it('uses the absolute 0.10 for a signed unit whose reference mean is within 0.01 of 0', () => {
-        expect(at('share difference', power(0.05, 5, 0.01))).toBe(true);
-        expect(at('share difference', power(0.05, 5, -0.01))).toBe(true);
-        expect(at('share difference', power(0.05, 5, 0.02))).toBe(false);
+    it('uses the absolute 0.10 for a signed metric whose reference mean is within 0.01 of 0 (metric-noise T30: the `signed` flag, not the unit)', () => {
+        const at0 = (/** @type {number} */ mean, signed = true) =>
+            meetsPowerBar({ unit: 'share difference', signed, power: power(0.05, 5, mean) }, 16);
+        expect(at0(0.01)).toBe(true);
+        expect(at0(-0.01)).toBe(true);
+        expect(at0(0.02)).toBe(false);
+    });
+
+    it('keeps the relative bar for an unsigned metric whatever its unit is called', () => {
+        expect(at('share difference', power(0.05, 5, 0.005))).toBe(false);
+        expect(at('slope', power(0.05, 5, 0.005))).toBe(false);
+    });
+
+    it('reads a signed metric of a unit shared with unsigned ones against the absolute bar (E276: eval.mother_wait_by_condition, ticks)', () => {
+        expect(meetsPowerBar({ unit: 'ticks', signed: true, power: power(0.05, 5, 0.005) }, 16)).toBe(true);
+        expect(meetsPowerBar({ unit: 'ticks', power: power(0.05, 5, 0.005) }, 16)).toBe(false);
     });
 
     it('reads a per-chase slope that sits around 0 against the absolute bar (E276: eval.hunter_conversion_by_dose, mean -0.0018, seeds from -0.08 to 0.02)', () => {
-        expect(at('catch per prior chase', power(0.05, 5, -0.0018))).toBe(true);
+        expect(meetsPowerBar({ unit: 'catch per prior chase', signed: true, power: power(0.05, 5, -0.0018) }, 16)).toBe(
+            true,
+        );
     });
 
     it('holds a small but positive magnitude to 0.20 of its mean, not the absolute bar (metric-noise T16)', () => {
