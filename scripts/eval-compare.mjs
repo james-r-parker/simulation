@@ -9,9 +9,10 @@ import { validateReport } from '../js/evo/report.js';
 import { METRICS } from '../js/evo/metric-registry/index.js';
 import { metricsForRole, ROLES } from '../js/evo/metric-registry/roles.js';
 import { parseFlags } from './lib/cli-args.mjs';
+import { splitHeadlines } from './lib/compare-headlines.mjs';
 
 const USAGE =
-    'usage: eval:compare <before.json> <after.json> [--targets <m,...>] [--fail-on-worse] [--allow-config-diff <key,...>] [--allow-seed-diff] [--min-effect <fraction>] [--share-min-effect <fraction>] [--keep-rule] [--role <spec|herd>] [--json]';
+    'usage: eval:compare <before.json> <after.json> [--targets <m,...>] [--fail-on-worse] [--allow-config-diff <key,...>] [--allow-seed-diff] [--min-effect <fraction>] [--share-min-effect <fraction>] [--keep-rule] [--role <spec|herd>] [--all] [--json]';
 
 /**
  * @param {string | undefined} value a comma-separated list
@@ -68,7 +69,7 @@ export function roleRows({ rows }, role) {
 
 /**
  * @param {string[]} argv command-line arguments after the script name
- * @returns {{ files: string[], targets: string[], failOnWorse: boolean, allowConfigDiff: string[], allowSeedDiff: boolean, minEffect: number, shareMinEffect: number, keepRule: boolean, json: boolean, role: string | null }}
+ * @returns {{ files: string[], targets: string[], failOnWorse: boolean, allowConfigDiff: string[], allowSeedDiff: boolean, minEffect: number, shareMinEffect: number, keepRule: boolean, json: boolean, role: string | null, all: boolean }}
  *   parsed options
  */
 export function parseArgs(argv) {
@@ -90,6 +91,7 @@ export function parseArgs(argv) {
             '--fail-on-worse': 'failOnWorse',
             '--json': 'json',
             '--keep-rule': 'keepRule',
+            '--all': 'all',
             '--allow-seed-diff': 'allowSeedDiff',
         },
         defaults: {
@@ -99,6 +101,7 @@ export function parseArgs(argv) {
             allowConfigDiff: [],
             failOnWorse: false,
             keepRule: false,
+            all: false,
             json: false,
             role: null,
             allowSeedDiff: false,
@@ -133,9 +136,10 @@ const marker = ({ metric, note }, targets) => [targets.includes(metric) ? '*' : 
 /**
  * @param {{ rows: any[], level: number, paired: boolean }} result the comparison
  * @param {readonly string[]} targets the target metric names
+ * @param {{ note?: boolean }} [options] `note: false` leaves out the unpaired-arms line
  * @returns {string[]} the table lines
  */
-export function formatTable({ rows, level, paired }, targets) {
+export function formatTable({ rows, level, paired }, targets, { note = true } = {}) {
     const head = ['metric', 'before', 'after', 'diff', 'effect', `${Math.round(level * 100)}% interval`, 'verdict', ''];
     const body = rows.map((r) => [
         r.metric,
@@ -154,7 +158,7 @@ export function formatTable({ rows, level, paired }, targets) {
             .join('  ')
             .trimEnd(),
     );
-    return paired ? lines : [...lines, 'arms are paired by position, not by seed (--allow-seed-diff)'];
+    return paired || !note ? lines : [...lines, 'arms are paired by position, not by seed (--allow-seed-diff)'];
 }
 
 /**
@@ -191,6 +195,31 @@ function optionsOf([before, after]) {
 }
 
 /**
+ * @param {ReturnType<typeof keepRule> | null} keep the keep-rule result
+ * @returns {string[]} its lines, or none
+ */
+const keepLines = (keep) => (keep ? formatKeepRule(keep) : []);
+
+/**
+ * The default text: the headlines and the Targets, the keep rule, then every other metric.
+ * @param {ReturnType<typeof compareReports>} result the comparison
+ * @param {readonly string[]} targets the target metric names
+ * @param {ReturnType<typeof keepRule> | null} keep the keep-rule result
+ * @returns {string[]} the lines
+ */
+function sections(result, targets, keep) {
+    const { head, rest } = splitHeadlines(result.rows, targets);
+    const table = (/** @type {any[]} */ rows, /** @type {boolean} */ note) =>
+        formatTable({ ...result, rows }, targets, { note });
+    return [
+        'Headlines',
+        ...(head.length > 0 ? table(head, rest.length === 0) : ['(none of the headline metrics is in this report)']),
+        ...keepLines(keep),
+        ...(rest.length > 0 ? ['', 'Other metrics', ...table(rest, true)] : []),
+    ];
+}
+
+/**
  * @param {{ args: ReturnType<typeof parseArgs>, result: ReturnType<typeof compareReports>, options: ReturnType<typeof optionsOf>,
  *   keep: ReturnType<typeof keepRule> | null }} parts what to print
  * @returns {string} the JSON document, or the table, the keep-rule lines and the policy-options note
@@ -201,8 +230,9 @@ function render({ args, result, options, keep }) {
         return JSON.stringify({ ...result, targets: args.targets, policyOptions: options, ...extra }, null, 2);
     }
     return [
-        ...formatTable(result, args.targets),
-        ...(keep ? formatKeepRule(keep) : []),
+        ...(args.all
+            ? [...formatTable(result, args.targets), ...keepLines(keep)]
+            : sections(result, args.targets, keep)),
         ...(options.differ ? [`policyOptions differ: before ${options.before}, after ${options.after}`] : []),
     ].join('\n');
 }

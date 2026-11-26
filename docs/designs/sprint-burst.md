@@ -53,6 +53,8 @@ Baseline (`evals/power/defaults-floor-on-E210.json`, 128 seeds, 200000 ticks, `r
 
 Verdict (E210): The Phase 1 prediction was falsified: `eval.sprint_share.hunter` (0.4086) is not above 0.5, though `eval.chase_sprint_lift` (1.117) is under 1.2. `eval.sprint_share.hunter` (0.4086) and `eval.sprint_share.prey` (0.4463) are both at or under 0.5, and `eval.sprint_cost_share` (0.05363) is above 0.02 (`eval.chase_sprint_lift` is 1.117, under 1.2). The Phase 2 gate is not met; Phase 2 is not built and this doc closes with the Phase 1 detectors kept.
 
+Re-read on the season 12 baseline (`evals/power/defaults-floor-on-E276.json`, 128 seeds, 200000 ticks; detector-baseline.md T9, 2026-11-26): the prediction is falsified again, on both clauses: `eval.sprint_share.hunter` is 0.1283 (range 0.02844 to 0.5759) and `eval.chase_sprint_lift` is 1.397, now above 1.2. `eval.sprint_share.prey` is 0.139 and `eval.flee_sprint_lift` 0.9862. The values fell from E210 because E276 runs with `sprintStoreEnabled` on, and a sprinting tick counts by its graded `sprintEffort` (fair-chase.md T7a), not as 0 or 1. `eval.sprint_cost_share` is 0.01745, under 0.02, so the gate's second clause now reads met on the new definition; Phase 2 is already built and judged by fair-chase.md, so nothing here reopens. Power and liveness for all five are in the registry from E276.
+
 ### Phase 2 - The store
 
 Built and judged by [fair-chase.md](fair-chase.md), which adds a per-specialisation drain and reads the chase envelope and the `hunt` rung before the world. T5 to T10 here, the 16-seed screen and this doc's definition of `eval.chase_spent_share` are superseded by that doc's tasks, its three-step judgement and its definition; the flag's deletion task is that doc's T15 (or T8a).

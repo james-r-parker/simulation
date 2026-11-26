@@ -100,6 +100,22 @@ T1a reads the body table and the catch grid of `npm run audit:chase` ([senses-an
 
 Prediction, written before the run (`E-CP-1`): the oracle evader escapes on more than 0.8 of trials inside half of view; jitter is above 0.25; reverse-thrust escapes are under a tenth, so the reverse lever does not open.
 
+Baseline (`evals/power/defaults-floor-on-E276.json`, 128 seeds, 200000 ticks), through `npm run baseline:table -- --plan chase-physics`:
+
+| Metric                              | Mean      | Range                | Null | MDE 16 | MDE 32 | MDE 64 | Seeds a verdict needs |
+| ----------------------------------- | --------- | -------------------- | ---- | ------ | ------ | ------ | --------------------- |
+| `eval.chase_overshoot_share`        | 0.2911    | 0 to 0.4824          | 0    | 0.1    | 0.075  | 0.05   | 64                    |
+| `eval.chase_cover_use_share`        | 0.00252   | 0 to 0.0142          | 0    | 0.03   | 0.03   | 0.03   | 16                    |
+| `eval.chase_turn_jitter`            | 0.2218    | 0.1628 to 0.3783     | 0    | 0.05   | 0.03   | 0.03   | 16                    |
+| `eval.chase_catch_share`            | 0.2511    | 0.1305 to 0.4375     | 0    | 0.075  | 0.05   | 0.03   | 32                    |
+| `eval.chase_escape_share`           | 0.335     | 0 to 0.4879          | 0    | 0.1    | 0.05   | 0.05   | 32                    |
+| `eval.hunt_abort_rate`              | 0.4078    | 0.3254 to 0.75       | 0    | 0.075  | 0.05   | 0.03   | 32                    |
+| `eval.chase_ticks_p50`              | 46.95     | 38 to 60             | 0    | 0.1    | 0.1    | 0.1    | 16                    |
+| `eval.hunter_catches_per_1k`        | 1.288     | 0.1545 to 2.064      | 0    | 0.5    | 0.2    | 0.15   | 32                    |
+| `eval.refuge_prey_use_under_threat` | -0.002487 | -0.01212 to 0.004361 | 0    | -      | 1      | 0.75   | 32                    |
+
+Verdict (`E-CP-1`, detector clause read on E276; detector-baseline.md T9, 2026-11-26): the jitter clause is falsified: `eval.chase_turn_jitter` is 0.2218 (range 0.1628 to 0.3783), not above 0.25, so the angular-inertia lever does not open on the baseline. The oracle-evader and reverse-thrust clauses are not read by the shared run: they need `npm run audit:chase` and the share of escapes on reverse thrust, which stay with T1a. `eval.chase_overshoot_share` (0.2911) and `eval.chase_cover_use_share` (0.0025) have no prediction; the cover reading is near 0, as the plan's note that patch-rim cover is unbuilt implies.
+
 ### One lever per arm
 
 Phase 2's three mechanisms sit behind three numbers, and `kinematicsEnabled` only gates them. The screen isolates each, so a verdict names a mechanism.

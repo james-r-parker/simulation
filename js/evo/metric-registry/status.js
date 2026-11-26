@@ -16,6 +16,16 @@ export const MAX_SHARE_MDE = 0.05;
 export const MAX_ABSOLUTE_MDE = 0.1;
 /** A reference mean within this of 0 uses the absolute bar. */
 export const NEAR_ZERO_MEAN = 0.01;
+/** Units whose values are signed and can sit around 0 (a difference, a change, a slope); only these take the absolute
+ * bar near a zero mean. A small positive magnitude (a rate, a spread, a ratio) keeps the relative bar (metric-noise T16). */
+export const SIGNED_UNITS = Object.freeze([
+    'share difference',
+    'share change',
+    'slope',
+    'speed change over max speed',
+    'balance',
+    'catch per prior chase',
+]);
 
 /**
  * @param {import('./entry.js').Liveness} liveness the entry's liveness read
@@ -34,18 +44,30 @@ export function meetsLivenessBar(liveness) {
  * @param {string} unit the entry's unit
  * @param {number} mde the detectable change: absolute for a `share` (T29a), else a fraction of `referenceMean`
  * @param {number} referenceMean the reference mean
- * @returns {boolean} whether the detectable change is within the bar for the unit: absolute 0.05 for `share`, absolute
- *   0.10 for `correlation`, `trend` or a mean within 0.01 of 0, else 0.20 of the mean
+ * @returns {{change: number, bar: number}} the detectable change in the bar's own terms and the bar for the unit:
+ *   absolute 0.05 for `share`, absolute 0.10 (the change is `mde` times the mean) for `correlation`, `trend` or a signed
+ *   unit (`SIGNED_UNITS`) whose mean is within 0.01 of 0, else 0.20 (a fraction of the mean)
+ */
+export function mdeAgainstBar(unit, mde, referenceMean) {
+    if (unit === 'share') {
+        return { change: mde, bar: MAX_SHARE_MDE };
+    }
+    const signedNearZero = SIGNED_UNITS.includes(unit) && Math.abs(referenceMean) <= NEAR_ZERO_MEAN;
+    if (unit === 'correlation' || unit === 'trend' || signedNearZero) {
+        return { change: mde * Math.abs(referenceMean), bar: MAX_ABSOLUTE_MDE };
+    }
+    return { change: mde, bar: MAX_RELATIVE_MDE };
+}
+
+/**
+ * @param {string} unit the entry's unit
+ * @param {number} mde the detectable change (see `mdeAgainstBar`)
+ * @param {number} referenceMean the reference mean
+ * @returns {boolean} whether the detectable change is within the bar for the unit
  */
 function mdeWithinBar(unit, mde, referenceMean) {
-    if (unit === 'share') {
-        return mde <= MAX_SHARE_MDE;
-    }
-    const absolute = mde * Math.abs(referenceMean);
-    if (unit === 'correlation' || unit === 'trend' || Math.abs(referenceMean) <= NEAR_ZERO_MEAN) {
-        return absolute <= MAX_ABSOLUTE_MDE;
-    }
-    return mde <= MAX_RELATIVE_MDE;
+    const { change, bar } = mdeAgainstBar(unit, mde, referenceMean);
+    return change <= bar;
 }
 
 /**

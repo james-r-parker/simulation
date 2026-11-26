@@ -38,6 +38,8 @@
  * @property {Power | null} power from the T27 read
  * @property {16 | 32 | 64 | null} minSeeds the fewest seeds a verdict needs; `null` when no seed count meets the power bar
  * @property {readonly string[]} [scenes] the scenes, failures and goals it detects (`SCENES` in `scenes.js`); a tag only, it changes no reading
+ * @property {'scene' | 'world'} [headline] set by `withHeadlines` (`headlines.js`): `scene` for the pick of a scene of docs/principles.md, `world` for one of the four world headlines; a decision reads headlines, the rest are diagnostics
+ * @property {readonly string[]} [headlineScenes] set with `headline: 'scene'`: the scenes this metric is the pick of (a metric tagged with several scenes may serve only one)
  * @property {readonly string[]} [roles] the roles whose job it reads (`ROLES` in `roles.js`, set from `ROLE_METRICS`); a tag only, it changes no reading
  */
 

@@ -141,9 +141,22 @@ describe('meetsPowerBar', () => {
         expect(at('trend', power(0.05, 0.6, 0.2))).toBe(false);
     });
 
-    it('uses the absolute 0.10 when the reference mean is within 0.01 of 0', () => {
-        expect(at('count', power(0.05, 5, 0.01))).toBe(true);
-        expect(at('count', power(0.05, 5, 0.02))).toBe(false);
+    it('uses the absolute 0.10 for a signed unit whose reference mean is within 0.01 of 0', () => {
+        expect(at('share difference', power(0.05, 5, 0.01))).toBe(true);
+        expect(at('share difference', power(0.05, 5, -0.01))).toBe(true);
+        expect(at('share difference', power(0.05, 5, 0.02))).toBe(false);
+    });
+
+    it('reads a per-chase slope that sits around 0 against the absolute bar (E276: eval.hunter_conversion_by_dose, mean -0.0018, seeds from -0.08 to 0.02)', () => {
+        expect(at('catch per prior chase', power(0.05, 5, -0.0018))).toBe(true);
+    });
+
+    it('holds a small but positive magnitude to 0.20 of its mean, not the absolute bar (metric-noise T16)', () => {
+        // E276: eval.gene_spread.size (ratio, mean 0.006, change 0.3 of it) and eval.herd_seeded_patches (mean
+        // 0.008, change 0.75) passed through the absolute bar although they cannot see a 30% or 75% change.
+        expect(at('ratio', power(0.05, 0.3, 0.006))).toBe(false);
+        expect(at('patches per 1k ticks', power(0.05, 0.75, 0.008))).toBe(false);
+        expect(at('count', power(0.05, 0.2, 0.005))).toBe(true);
     });
 
     it('fails when the change or the rate was not measured', () => {
