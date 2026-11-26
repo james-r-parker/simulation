@@ -24,6 +24,19 @@ function offModeShare(present) {
 }
 
 /**
+ * @param {number[]} present the non-null values of one metric
+ * @returns {number} their sample standard deviation (n - 1, as the report's own `sd`); 0 for fewer than two values
+ */
+function spreadOf(present) {
+    if (present.length < 2) {
+        return 0;
+    }
+    const mean = present.reduce((sum, value) => sum + value, 0) / present.length;
+    const squares = present.reduce((sum, value) => sum + (value - mean) ** 2, 0);
+    return Math.sqrt(squares / (present.length - 1));
+}
+
+/**
  * @param {Record<string, any>} rawReport an eval report, possibly holding old metric names
  * @param {string} reportPath the repo-relative path to record in the registry
  * @param {Readonly<Record<string, any>>} [metrics] the registry (injectable for tests)
@@ -46,6 +59,7 @@ export function measureLiveness(rawReport, reportPath, metrics = METRICS) {
             nullShare: (values.length - present.length) / values.length,
             distinct: new Set(present).size,
             offModeShare: offModeShare(present),
+            spread: spreadOf(present),
             report: reportPath,
         };
     }
@@ -66,6 +80,7 @@ export function renderLivenessModule(readings) {
                 `        nullShare: ${value.nullShare},\n` +
                 `        distinct: ${value.distinct},\n` +
                 `        offModeShare: ${value.offModeShare},\n` +
+                `        spread: ${value.spread},\n` +
                 `        report: ${quote(value.report)},\n` +
                 '    }),',
         )

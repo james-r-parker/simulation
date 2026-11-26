@@ -5,6 +5,7 @@
  * @property {number} nullShare the share of seeds on which the metric is `null`
  * @property {number} distinct the number of distinct values it takes over the seeds
  * @property {number} offModeShare the share of non-null seeds whose value is not the most common one (0 when all agree)
+ * @property {number} [spread] the sample standard deviation of the non-null seed values (absent in a read made before metric-noise T31); the headline pick compares a signed metric's detectable change with it
  * @property {string} report the repo path of the report the read came from
  */
 
@@ -27,6 +28,8 @@
  * @property {string} meaning one sentence: what a higher value means in the world
  * @property {string} counts what is counted, from which events or world fields, over which ticks
  * @property {string} unit `share`, `count`, `ticks`, `correlation`, `trend`, ...
+ * @property {boolean} [signed] set by the author when the metric's values go below 0 (a difference, a change, a slope, a correlation, a net): only a signed metric reads against the absolute 0.10 bar near a zero mean (`mdeAgainstBar`); a test holds it to the shared baseline (metric-noise T30)
+ * @property {string} [unverifiedWhy] why the power bar cannot be read for this metric (its scale is smaller than any bar); when set the status is `unverified` and `minSeeds` is `null` whatever the power read says
  * @property {'higher' | 'lower' | 'watch'} direction what `eval:compare` scores as better
  * @property {'higher' | 'lower'} [intended] for a `watch` metric, the direction `eval:power --include-watch` plants
  * @property {readonly string[]} nullWhen each `none` reason the module can give
@@ -65,7 +68,7 @@ export const SOURCE_BY_MODULE = Object.freeze({
 /**
  * Builds a frozen entry with the unmeasured fields at their empty values.
  * @param {string} family the family file's name
- * @param {Pick<MetricEntry, 'module' | 'meaning' | 'counts' | 'unit' | 'direction' | 'nullWhen' | 'scenes'> & {intended?: 'higher' | 'lower', arithmetic?: string, source?: string, deprecated?: string, expectedFlat?: string, renamedFrom?: readonly string[]}} fields what the author wrote
+ * @param {Pick<MetricEntry, 'module' | 'meaning' | 'counts' | 'unit' | 'signed' | 'unverifiedWhy' | 'direction' | 'nullWhen' | 'scenes'> & {intended?: 'higher' | 'lower', arithmetic?: string, source?: string, deprecated?: string, expectedFlat?: string, renamedFrom?: readonly string[]}} fields what the author wrote
  * @returns {Readonly<MetricEntry>} the entry
  */
 export function entry(family, fields) {

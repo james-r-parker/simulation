@@ -64,7 +64,11 @@ export function withPower(entries, readings = POWER) {
     for (const [name, entry] of Object.entries(merged)) {
         if (Object.hasOwn(readings, name)) {
             const power = readings[name];
-            merged[name] = Object.freeze({ ...entry, power, minSeeds: minSeedsFromPower({ unit: entry.unit, power }) });
+            merged[name] = Object.freeze({
+                ...entry,
+                power,
+                minSeeds: entry.unverifiedWhy === undefined ? minSeedsFromPower({ ...entry, power }) : null,
+            });
         }
     }
     return /** @type {T} */ (/** @type {unknown} */ (Object.freeze(merged)));

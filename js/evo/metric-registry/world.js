@@ -279,16 +279,6 @@ export const WORLD = {
         arithmetic: 'test/evo/metrics-merit.test.js',
         source: 'test/evo/metric-source-world-fitness.test.js',
     }),
-    'eval.merit_fitness_corr': entry('world', {
-        module: 'js/evo/metrics-merit.js',
-        meaning: 'Higher means merit tracks the policy fitness.',
-        counts: 'Spearman correlation of merit at death against fitness over mature deaths after burn-in with a fitness; needs 30 such deaths.',
-        unit: 'correlation',
-        direction: 'higher',
-        nullWhen: ['fewer than MIN_CORRELATION_DEATHS mature deaths with a fitness', 'merit or fitness is constant'],
-        arithmetic: 'test/evo/metrics-merit.test.js',
-        source: 'test/evo/metric-source-world-fitness.test.js',
-    }),
     'eval.split_parent_delib_share': entry('world', {
         module: 'js/evo/metrics-diet.js',
         meaning: 'How deliberately the parent of a split child ate.',

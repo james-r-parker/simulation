@@ -2,7 +2,7 @@
 // each scene of docs/principles.md, and the four world metrics beside them. The scene pick is a pure function of the
 // registry; `withHeadlines` applies it, and a test recomputes it so a committed flag cannot drift from the rule.
 
-import { isFlat, mdeAgainstBar, metricStatus } from './status.js';
+import { MAX_ABSOLUTE_MDE, isFlat, mdeAgainstBar, metricStatus } from './status.js';
 
 /** A scene detector null on this share of seeds or more is not live (the scorecard's `NULL_LIMIT`). */
 export const HEADLINE_MAX_NULL_SHARE = 0.5;
@@ -24,7 +24,8 @@ export const WORLD_HEADLINES = Object.freeze([
  * @typedef {object} Candidate a metric that may be a scene's headline
  * @property {string} name the metric
  * @property {number} barUse the detectable change at 64 seeds over the bar for its unit (`mdeAgainstBar`), so a
- *   relative and an absolute change compare the way `meetsPowerBar` reads them; smaller is better
+ *   relative and an absolute change compare the way `meetsPowerBar` reads them; for a `signed` metric read against the
+ *   absolute bar, over the narrower of the bar and its seed spread (`scaleOf`); smaller is better
  * @property {number} relative the detectable change as a fraction of the reference mean (the tie-break; a `share`'s change is absolute, so it is divided by the mean)
  */
 
@@ -36,6 +37,18 @@ export const WORLD_HEADLINES = Object.freeze([
 function isLiveDetector(entry, scene) {
     const live = entry.liveness !== null && entry.liveness.nullShare < HEADLINE_MAX_NULL_SHARE;
     return entry.scenes?.includes(scene) === true && metricStatus(entry) === 'verified' && !isFlat(entry) && live;
+}
+
+/**
+ * @param {import('./entry.js').MetricEntry} entry a registry entry
+ * @param {number} bar the bar `mdeAgainstBar` read for it
+ * @returns {number} what the detectable change is divided by: the bar, or for a `signed` metric on the absolute bar
+ *   its seed spread when that is narrower (metric-noise T31)
+ */
+function scaleOf(entry, bar) {
+    const spread = entry.liveness?.spread;
+    const spreadApplies = entry.signed === true && bar === MAX_ABSOLUTE_MDE && spread !== undefined && spread > 0;
+    return spreadApplies ? Math.min(bar, spread) : bar;
 }
 
 /**
@@ -51,13 +64,20 @@ function candidateOf(name, entry, scene) {
     if (!isLiveDetector(entry, scene) || mde === null || mean === 0) {
         return null;
     }
-    const { change, bar } = mdeAgainstBar(entry.unit, mde, mean);
+    const { change, bar } = mdeAgainstBar(entry.unit, mde, mean, entry.signed);
     const relative = entry.unit === 'share' ? mde / Math.abs(mean) : mde;
-    return relative <= HEADLINE_MAX_RELATIVE_MDE ? { name, barUse: change / bar, relative } : null;
+    return relative <= HEADLINE_MAX_RELATIVE_MDE ? { name, barUse: change / scaleOf(entry, bar), relative } : null;
 }
 
 /**
- * The rule, ordered by `barUse`, then `relative`, then name.
+ * The rule, ordered by `barUse`, then `relative`, then name. `barUse` is the share of the unit's bar the detectable
+ * change uses, so a relative and an absolute change compare. For a `signed` metric that reads against the absolute 0.10
+ * (its mean sits near 0) the share of that bar alone is no fair score: a difference whose whole spread over the
+ * baseline seeds is 0.002 uses 1% of 0.10 with a change of 0.001, yet 0.001 is half of everything the metric does.
+ * Such a metric is scored by its detectable change over its seed spread (`Liveness.spread`, a standard deviation) when
+ * that is narrower than the bar, so it cannot win on the width of the bar alone and a change a quarter of its spread
+ * is told from one the size of its spread. A metric on a relative or `share` bar, or with no spread read, keeps the
+ * share of its bar.
  *
  * @param {Readonly<Record<string, import('./entry.js').MetricEntry>>} entries the registry
  * @param {string} scene a scene name
