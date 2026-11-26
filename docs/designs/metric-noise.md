@@ -1,6 +1,6 @@
 # Metric noise
 
-**Status:** In progress - Phases 1, 4, 5 and 6 are built; gate 2 is met (E276; E278 is the shared baseline). Phase 2 T3 to T5 are built for the pooled bite and terminal hunter families (E277, E278; both unverified), and every interval is studentised (D7, D8, T32 to T34). T28 to T31 are built. Next: Phase 2 for the next family, then Phase 3.
+**Status:** In progress - Phases 1, 4, 5 and 6 are built; gate 2 is met (E276; E279 is the shared baseline). Phase 2 T3 to T5 are built for the pooled bite, terminal hunter and pooled share families (E277 to E279; two pooled shares verified), and every interval is studentised (D7, D8, T32 to T34). T28 to T31 are built. Next: Phase 2 for the next family, then Phase 3.
 **Validated:** 5d678319 (2026-11-25)
 **Priority:** 2 - Measurement lead (needed to judge every balance read after it). Phases 1, 4 and 6 code are built (registries.md Phases 1 and 3 built). Gate 2 is met (T27, E276); T28 (the liveness bar), T29 (flat metrics out of Targets) and T29a (every plan clears them) are built. Phase 5 is built and reviewed (T16 to T19: headlines in the registry, `eval:compare`, the scorecard, the skills). Phase 2 T3 to T5 and D7, D8 are built. Next: Phase 2 for the next family, then Phase 3.
 **Depends on:** [metric-trust.md](metric-trust.md)
@@ -291,9 +291,22 @@ and one seed reads exactly the old share (each scene test pins that). Their regi
 
 The gap share counts lineages, not ticks, so a pooled seed adds its lineages: a seed with many lineages weighs more,
 which is the ratio of sums the Contract asks for. No old share of this chunk was skipped: each is a plain ratio of two counters the detector already keeps. The
-herd-carcass and call shares are other chunks. Every entry is unmeasured (`liveness`, `power` and
-`minSeeds` are `null`): the coordinator reads them on 128 seeds per floor setting with the studentised interval, as for
-`eval.bite_idle_pooled`, and the entries stay unverified until that read.
+herd-carcass and call shares are other chunks. E279 read all four on 128 seeds per floor setting with the studentised
+interval, all live on both:
+
+| Pooled metric                         | 64-seed change, pooled | Old share | Status                 |
+| ------------------------------------- | ---------------------- | --------- | ---------------------- |
+| `eval.food_contact_bite_share_pooled` | 0.03                   | 0.075     | verified from 16 seeds |
+| `eval.carcass_hunter_share_pooled`    | 0.05                   | 0.10      | verified from 32 seeds |
+| `eval.mating_share_pooled`            | 0.075                  | 0.075     | unverified             |
+| `eval.gap_never_share_pooled`         | 0.15 (0.10 floor off)  | 0.15      | unverified             |
+
+The change is the same on both floor settings unless the table says otherwise. Pooling pays where a world's share
+tracks its exposure, so the low-exposure worlds hold the outlying shares. Their correlation with log exposure is -0.79
+for food contact and 0.78 for carcass energy. For mating it is 0, and pooling buys nothing there, as for idle bites. The
+pooled estimate weighs the busiest worlds most (0.046 against a per-world mean of 0.096 for food contact), a different
+question from the old share; Phase 3 decides per scene which question a retirement keeps. The carcass share is the first
+Scavenge headline. E279 is the shared baseline (`evals/decisions/E279-pooled-shares/results.md`).
 
 #### Terminal hunter count
 

@@ -1,5 +1,5 @@
 // The pooled share registry entries: complete fields, real module and source tests, and each pooled name beside its old
-// one with the old unit, direction, intended direction, module and scenes. Unmeasured until the 128-seed run.
+// one with the old unit, direction, intended direction, module and scenes. Measured on E279, each with its own power.
 
 import { describe, expect, it } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
@@ -32,8 +32,16 @@ describe('shares-pooled registry entries', () => {
         expect(readFileSync(new URL(e.tests.arithmetic, ROOT), 'utf8')).toContain(name.replace(/^eval\./, ''));
     });
 
-    it.each(Object.keys(SHARES_POOLED))('%s is unmeasured: no liveness, no power, no minimum seed count', (name) => {
+    it.each(Object.keys(SHARES_POOLED))('%s is measured on E279 with its own power reading', (name) => {
         const e = at(name);
-        expect([e.liveness, e.power, e.minSeeds]).toEqual([null, null, null]);
+        expect(e.liveness).not.toBeNull();
+        expect(e.power).not.toBeNull();
+        expect(e.power).not.toEqual(at(name.replace(/_pooled$/, '')).power);
+    });
+
+    it('verifies the pooled carcass hunter share at 32 seeds: 0.05 absolute where the per-seed share needs 0.10 at 64', () => {
+        const pooled = at('eval.carcass_hunter_share_pooled');
+        expect([pooled.power.mde32, pooled.power.mde64, pooled.minSeeds]).toEqual([0.05, 0.05, 32]);
+        expect(at('eval.carcass_hunter_share').power.mde64).toBe(0.1);
     });
 });

@@ -185,7 +185,8 @@ describe('the committed headlines', () => {
 
     it('leave the scenes with no qualifying detector without a headline', () => {
         const none = scenesWithoutHeadline(METRICS, PRINCIPLE_SCENES);
-        // Cross or stay lost eval.herd_seeded_patches when the absolute bar was kept to signed units (T16).
-        expect(none).toEqual(["Call, or don't", 'Scavenge', 'Cross or stay', 'Something unnamed']);
+        // Cross or stay lost eval.herd_seeded_patches when the absolute bar was kept to signed units (T16). Scavenge gained
+        // eval.carcass_hunter_share_pooled, verified on E279 (metric-noise T4).
+        expect(none).toEqual(["Call, or don't", 'Cross or stay', 'Something unnamed']);
     });
 });

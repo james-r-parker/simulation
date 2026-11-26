@@ -11,7 +11,7 @@ import { findTargets, flatTargets, renderTable, replaceTable } from './lib/metri
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const DOC = `${ROOT}docs/designs/metric-noise.md`;
 /** The experiment that ran the shared baseline the table reads (metric-noise T27: the season-12 baseline after step 5). */
-export const BASELINE = 'E278';
+export const BASELINE = 'E279';
 
 /** @returns {import('./lib/metric-noise.mjs').Target[]} active targets */
 export function inventory() {
