@@ -1,10 +1,8 @@
-// The studentised (bootstrap-t) interval of a mean, for the small arms where the BCa interval under-covers
-// (metric-noise.md D4: 9.3% of null intervals exclude 0 at 16 seeds, 13.8% on a skewed difference). Pure and seeded.
+// The studentised (bootstrap-t) interval of a mean, used at every arm size because the BCa interval it replaced
+// under-covers (metric-noise.md D4: 9.3% of null intervals exclude 0 at 16 seeds; D8: worse on skewed data at 32
+// and 64). Pure and seeded.
 
 import { nextInt } from '../sim/rng.js';
-
-/** Under this many seeds `bootstrapInterval` uses the studentised interval. */
-export const STUDENTISED_BELOW = 32;
 
 /**
  * @param {readonly number[]} values the sample

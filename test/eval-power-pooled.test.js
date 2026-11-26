@@ -111,7 +111,8 @@ describe('a report with no pooled metric', () => {
         const digest = createHash('sha256')
             .update(JSON.stringify({ rows, pr: power }))
             .digest('hex');
-        // Recorded from the code before this change, on the same report.
-        expect(digest).toBe('886130957f36ada3669a8c664b8fcd0c28c2d778ce1eccbaa1d06e6289d49493');
+        // Re-pinned 2026-11-26 (metric-noise D8): the interval is studentised at every size, which moves the compare
+        // rows' intervals; the pre-change digest was 886130957f36ada3669a8c664b8fcd0c28c2d778ce1eccbaa1d06e6289d49493.
+        expect(digest).toBe('ed917e6281cf7ba2037e7271feaa486a47a8df70dfc8f44280199eb39caeac4f');
     });
 });

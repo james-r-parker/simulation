@@ -41,9 +41,10 @@ describe('sparseSignP', () => {
 });
 
 describe('compareReports on sparse paired differences (T29c)', () => {
-    it('keeps 2 of 32 at a drop of 100 as no-difference, with the sign p in the note', () => {
-        expect(sparse(2)).toMatchObject({ verdict: 'no-difference', note: 'sparse: sign p 0.5' });
-        expect(sparse(2).high).toBeLessThan(0);
+    it('keeps 2 of 32 at a drop of 100 as no-difference: the studentised interval already reaches 0', () => {
+        expect(sparse(2)).toMatchObject({ verdict: 'no-difference' });
+        expect(sparse(2).note).toBeUndefined();
+        expect(sparse(2).high).toBeGreaterThanOrEqual(0);
     });
 
     it('gives 6 of 32 the verdict worse, and 5 of 32 not', () => {

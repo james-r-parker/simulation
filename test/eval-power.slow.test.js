@@ -64,7 +64,7 @@ describe('eval power on a hand-built report', () => {
 
 describe('eval power on the recorded defaults (evals/power/defaults-floor-on-E150.json)', () => {
     it(
-        'detects eval.born_share at 0.02 or 0.03 absolute with 32-seed arms, not at 0.1 (metric-trust T29a)',
+        'detects eval.born_share at 0.02 to 0.05 absolute with 32-seed arms, not at 0.1 (metric-trust T29a)',
         { timeout: scaleTimeout(60_000) },
         () => {
             const report = withCurrentNames(
@@ -77,7 +77,9 @@ describe('eval power on the recorded defaults (evals/power/defaults-floor-on-E15
                 includeWatch: true,
             });
             expect(row.detectableKind).toBe('absolute');
-            expect([0.02, 0.03]).toContain(row.detectable);
+            // Was 0.02 or 0.03 under BCa. The studentised interval (metric-noise D8) is wider on this near-discrete share:
+            // the false-positive rate reads 0.01 and the detectable change 0.05.
+            expect([0.02, 0.03, 0.05]).toContain(row.detectable);
             expect(/** @type {number} */ (row.falsePositive)).toBeLessThanOrEqual(0.1);
         },
     );
