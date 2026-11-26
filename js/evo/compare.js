@@ -1,10 +1,10 @@
-// Compare two eval reports: paired BCa bootstrap intervals and verdicts. Pure: no clock, no files, seeded randomness.
+// Compare two eval reports: paired studentised bootstrap intervals and verdicts. Pure: no clock, no files, seeded randomness.
 
 import { configHash } from '../sim/config.js';
 import { pooledDiff, pooledInterval } from './compare-pooled.js';
 import { normalCdf, normalQuantile } from './normal.js';
-import { createRng, fork, nextInt } from '../sim/rng.js';
-import { STUDENTISED_BELOW, studentisedInterval } from './bootstrap-t.js';
+import { createRng, fork } from '../sim/rng.js';
+import { studentisedInterval } from './bootstrap-t.js';
 import { DEFAULT_MIN_SEEDS, METRICS, minSeedsFor } from './metric-registry/index.js';
 import { withCurrentNames } from './metric-registry/renames.js';
 import { effectFloor, SHARE_MIN_EFFECT, SIGN_ALPHA, sparseSignP, statusOf } from './compare-rules.js';
@@ -52,48 +52,10 @@ export function metricDirection(metric) {
 const mean = (values) => values.reduce((sum, v) => sum + v, 0) / values.length;
 
 /**
- * Jackknife acceleration: skewness of the leave-one-out means.
- * @param {readonly number[]} values the sample
- * @returns {number} the acceleration, 0 when the leave-one-out means are all equal
- */
-function acceleration(values) {
-    const n = values.length;
-    const total = values.reduce((sum, v) => sum + v, 0);
-    const loo = values.map((v) => (total - v) / (n - 1));
-    const centre = mean(loo);
-    let squares = 0;
-    let cubes = 0;
-    for (const m of loo) {
-        squares += (centre - m) * (centre - m);
-        cubes += (centre - m) * (centre - m) * (centre - m);
-    }
-    return squares === 0 ? 0 : cubes / (6 * squares * Math.sqrt(squares));
-}
-
-/**
- * @param {readonly number[]} values the sample
- * @param {import('../sim/rng.js').Rng} rng the stream to draw resample indices from
- * @returns {Float64Array} the means of `RESAMPLES` resamples with replacement, sorted ascending
- */
-function bootstrapMeans(values, rng) {
-    const n = values.length;
-    const means = new Float64Array(RESAMPLES);
-    for (let b = 0; b < RESAMPLES; b++) {
-        let sum = 0;
-        for (let i = 0; i < n; i++) {
-            sum += values[nextInt(rng, n)];
-        }
-        means[b] = sum / n;
-    }
-    return means.sort();
-}
-
-/**
- * Bootstrap confidence interval of the mean: studentised under `STUDENTISED_BELOW` (32) values, where BCa under-covers (D4),
- * BCa from there. BCa: bias correction z0 is the normal quantile of the share of bootstrap
- * means below the observed mean (clamped to half a resample from 0 and 1); acceleration comes from the jackknife.
- * Equal values give [v, v] without drawing. Each call forks `createRng(1)` as `bootstrap`, so a metric's interval does
- * not depend on which other metrics are compared.
+ * Studentised (bootstrap-t) confidence interval of the mean at every size: BCa under-covers on skewed and zero-heavy
+ * samples at 16 to 64 seeds and the studentised interval is never worse (D4, D8). Equal values give [v, v] without
+ * drawing. Each call forks `createRng(1)` as `bootstrap`, so a metric's interval does not depend on which other
+ * metrics are compared.
  * @param {readonly number[]} values the sample (here the paired per-seed differences)
  * @param {number} [level] the confidence level
  * @returns {{ low: number, high: number }} the interval
@@ -103,26 +65,11 @@ export function bootstrapInterval(values, level = 0.95) {
     if (values.length < 2 || !(level > 0 && level < 1)) {
         throw new Error('bootstrapInterval: need at least 2 values and a level in (0, 1)');
     }
-    const observed = mean(values);
     if (values.every((v) => v === values[0])) {
         return { low: values[0], high: values[0] };
     }
     const rng = fork(createRng(BOOTSTRAP_SEED), 'bootstrap');
-    if (values.length < STUDENTISED_BELOW) {
-        return studentisedInterval(values, { rng, resamples: RESAMPLES, level });
-    }
-    const means = bootstrapMeans(values, rng);
-    let below = 0;
-    while (below < RESAMPLES && means[below] < observed) {
-        below++;
-    }
-    const share = Math.min(1 - 0.5 / RESAMPLES, Math.max(0.5 / RESAMPLES, below / RESAMPLES));
-    const z0 = normalQuantile(share);
-    const a = acceleration(values);
-    const adjust = (/** @type {number} */ z) => normalCdf(z0 + (z0 + z) / (1 - a * (z0 + z)));
-    const pick = (/** @type {number} */ p) => means[Math.min(RESAMPLES - 1, Math.max(0, Math.floor(p * RESAMPLES)))];
-    const tail = (1 - level) / 2;
-    return { low: pick(adjust(normalQuantile(tail))), high: pick(adjust(normalQuantile(1 - tail))) };
+    return studentisedInterval(values, { rng, resamples: RESAMPLES, level });
 }
 
 /**

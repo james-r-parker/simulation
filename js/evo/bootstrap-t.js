@@ -1,10 +1,31 @@
-// The studentised (bootstrap-t) interval of a mean, for the small arms where the BCa interval under-covers
-// (metric-noise.md D4: 9.3% of null intervals exclude 0 at 16 seeds, 13.8% on a skewed difference). Pure and seeded.
+// The studentised (bootstrap-t) interval of a mean, used at every arm size because the BCa interval it replaced
+// under-covers (metric-noise.md D4: 9.3% of null intervals exclude 0 at 16 seeds; D8: worse on skewed data at 32
+// and 64). Pure and seeded.
 
 import { nextInt } from '../sim/rng.js';
 
-/** Under this many seeds `bootstrapInterval` uses the studentised interval. */
-export const STUDENTISED_BELOW = 32;
+/**
+ * @param {import('../sim/rng.js').Rng} rng the stream
+ * @param {ArrayLike<number> & { [i: number]: number }} out the array to fill with indices drawn with replacement from 0 to its length
+ * @returns {void}
+ */
+export function fillIndices(rng, out) {
+    for (let i = 0; i < out.length; i++) {
+        out[i] = nextInt(rng, out.length);
+    }
+}
+
+/**
+ * @param {Float64Array} stats the resample t statistics, sorted ascending and not empty
+ * @param {{ observed: number, se: number, level: number }} centre the observed estimate, its standard error and the level
+ * @returns {{ low: number, high: number }} the observed estimate less the upper and lower quantiles of `stats` times `se`
+ */
+export function tInterval(stats, { observed, se, level }) {
+    const tail = (1 - level) / 2;
+    const at = (/** @type {number} */ p) =>
+        stats[Math.min(stats.length - 1, Math.max(0, Math.floor(p * stats.length)))];
+    return { low: observed - at(1 - tail) * se, high: observed - at(tail) * se };
+}
 
 /**
  * @param {readonly number[]} values the sample
@@ -42,11 +63,13 @@ function studentisedStatistics(values, { rng, resamples }) {
     const n = values.length;
     const observed = meanOf(values);
     const pick = new Array(n);
+    const index = new Int32Array(n);
     const stats = new Float64Array(resamples);
     let count = 0;
     for (let b = 0; b < resamples; b++) {
+        fillIndices(rng, index);
         for (let i = 0; i < n; i++) {
-            pick[i] = values[nextInt(rng, n)];
+            pick[i] = values[index[i]];
         }
         const m = meanOf(pick);
         const se = standardError(pick, m);
@@ -71,8 +94,5 @@ export function studentisedInterval(values, { rng, resamples, level }) {
     if (stats.length === 0) {
         return { low: observed, high: observed };
     }
-    const tail = (1 - level) / 2;
-    const at = (/** @type {number} */ p) =>
-        stats[Math.min(stats.length - 1, Math.max(0, Math.floor(p * stats.length)))];
-    return { low: observed - at(1 - tail) * se, high: observed - at(tail) * se };
+    return tInterval(stats, { observed, se, level });
 }
