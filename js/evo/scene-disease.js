@@ -1,5 +1,5 @@
 // The contagion's detectors (docs/designs/disease.md, Detectors), read from the tick's events and a 1000-tick family
-// checkpoint (`BASIN_CHECKPOINT_TICKS`, fed by `observer-scenes.js`). Nothing here touches the world.
+// checkpoint (`BASIN_CHECKPOINT_TICKS`, fed by `tickDetectors` from the `DETECTORS` list of `detectors.js`). Nothing here touches the world.
 //
 // - `eval.disease_deaths_share`: deaths with cause `DISEASE` over all deaths after burn-in.
 // - `eval.strains_per_100k`: `STRAIN_EMERGED` events per 100000 ticks.
