@@ -117,6 +117,18 @@ describe('renderMetricsDoc', () => {
         expect(doc.indexOf('eval.alpha')).toBeLessThan(doc.indexOf('eval.zeta'));
     });
 
+    it('marks a metric that misses the liveness bar with an expectedFlat reason as flat, and no other', () => {
+        const flat = {
+            ...verified,
+            liveness: { nullShare: 0, distinct: 2, offModeShare: 1 / 128, report: 'r.json' },
+            expectedFlat: 'no calls at the defaults',
+        };
+        const doc = renderMetricsDoc({ 'eval.flat': flat, 'eval.alpha': verified });
+        expect(cellsOf(doc, 'eval.flat')[0][4]).toBe('verified (flat)');
+        expect(cellsOf(doc, 'eval.alpha')[0][4]).toBe('verified');
+        expect(doc).toContain('2 verified');
+    });
+
     it('reads "none" when no seed count detects a change, and the legacy 32 for a noisy metric', () => {
         const noisy = { ...verified, power: { ...verified.power, mde32: null }, minSeeds: null };
         const doc = renderMetricsDoc({ 'eval.floor_episodes': noisy });
