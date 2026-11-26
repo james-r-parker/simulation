@@ -1,6 +1,7 @@
 // Eval report: the JSON shape `scripts/eval.mjs` writes, and its validation. Pure: no clock, no files.
 
 import { configHash } from '../sim/config.js';
+import { checkPooled, pooledCells, pooledEstimate } from './report-pooled.js';
 
 export const REPORT_VERSION = 1;
 
@@ -24,8 +25,9 @@ function summarise(values) {
 
 /**
  * @param {readonly Record<string, { value: number | null, reason?: string }>[]} perSeed one metrics object per seed
- * @returns {Record<string, { values: (number | null)[], reasons: (string | null)[], mean: number | null, sd: number | null }>}
- *   every metric any seed has, keys sorted, values in seed order
+ * @returns {Record<string, { values: (number | null)[], reasons: (string | null)[], mean: number | null, sd: number | null, pooled?: import('./report-pooled.js').PooledCell[] }>}
+ *   every metric any seed has, keys sorted, values in seed order; a pooled metric also carries each seed's `{num, den}`
+ *   and its `mean` is the ratio of sums (`report-pooled.js`)
  */
 function collectMetrics(perSeed) {
     const names = [...new Set(perSeed.flatMap((metrics) => Object.keys(metrics)))].sort();
@@ -35,7 +37,11 @@ function collectMetrics(perSeed) {
         const cells = perSeed.map((metrics) => metrics[name]);
         const values = cells.map((cell) => (typeof cell?.value === 'number' ? cell.value : null));
         const reasons = cells.map((cell, i) => (values[i] === null ? (cell?.reason ?? 'not computed') : null));
-        out[name] = { values, reasons, ...summarise(values) };
+        const pooled = pooledCells(cells);
+        out[name] =
+            pooled === undefined
+                ? { values, reasons, ...summarise(values) }
+                : { values, reasons, ...summarise(values), mean: pooledEstimate(pooled), pooled };
     }
     return out;
 }
@@ -161,6 +167,9 @@ function checkMetric(metric, path, count) {
     }
     for (const key of ['mean', 'sd']) {
         need(metric[key] === null || Number.isFinite(metric[key]), `${path}.${key}`, 'a finite number or null');
+    }
+    if (metric.pooled !== undefined) {
+        checkPooled(metric, path, count);
     }
 }
 

@@ -1,12 +1,15 @@
 // Compare two eval reports: paired BCa bootstrap intervals and verdicts. Pure: no clock, no files, seeded randomness.
 
 import { configHash } from '../sim/config.js';
-import { detExp, detLog } from '../sim/det-math.js';
+import { pooledDiff, pooledInterval } from './compare-pooled.js';
+import { normalCdf, normalQuantile } from './normal.js';
 import { createRng, fork, nextInt } from '../sim/rng.js';
 import { STUDENTISED_BELOW, studentisedInterval } from './bootstrap-t.js';
 import { DEFAULT_MIN_SEEDS, METRICS, minSeedsFor } from './metric-registry/index.js';
 import { withCurrentNames } from './metric-registry/renames.js';
 import { effectFloor, SHARE_MIN_EFFECT, SIGN_ALPHA, sparseSignP, statusOf } from './compare-rules.js';
+
+export { normalCdf, normalQuantile };
 
 /** @typedef {import('./metric-registry/index.js').MetricName} MetricName */
 
@@ -40,89 +43,6 @@ export function metricDirection(metric) {
         return 'higher';
     }
     return metric.startsWith('bench.') ? 'lower' : null;
-}
-
-/**
- * Standard normal CDF (Hart's rational approximation as given by West 2005; absolute error about 1e-15).
- * @param {number} x a value
- * @returns {number} P(Z <= x)
- */
-export function normalCdf(x) {
-    const a = Math.abs(x);
-    if (a > 37) {
-        return x > 0 ? 1 : 0;
-    }
-    const e = detExp(-a * a * 0.5);
-    let tail;
-    if (a < 7.07106781186547) {
-        let num = 3.52624965998911e-2 * a + 0.700383064443688;
-        for (const c of [6.37396220353165, 33.912866078383, 112.079291497871, 221.213596169931, 220.206867912376]) {
-            num = num * a + c;
-        }
-        let den = 8.83883476483184e-2 * a + 1.75566716318264;
-        for (const c of [16.064177579207, 86.7807322029461, 296.564248779674, 637.333633378831, 793.826512519948]) {
-            den = den * a + c;
-        }
-        tail = (e * num) / (den * a + 440.413735824752);
-    } else {
-        let build = a + 0.65;
-        for (const k of [4, 3, 2, 1]) {
-            build = a + k / build;
-        }
-        tail = e / build / 2.506628274631;
-    }
-    return x > 0 ? 1 - tail : tail;
-}
-
-const ACKLAM_A = [
-    -39.69683028665376, 220.9460984245205, -275.9285104469687, 138.357751867269, -30.66479806614716, 2.506628277459239,
-];
-const ACKLAM_B = [-54.47609879822406, 161.5858368580409, -155.6989798598866, 66.80131188771972, -13.28068155288572];
-const ACKLAM_C = [
-    -0.007784894002430293, -0.3223964580411365, -2.400758277161838, -2.549732539343734, 4.374664141464968,
-    2.938163982698783,
-];
-const ACKLAM_D = [0.007784695709041462, 0.3224671290700398, 2.445134137142996, 3.754408661907416];
-const ACKLAM_LOW = 0.02425;
-
-/**
- * @param {number[]} coeffs polynomial coefficients, highest degree first
- * @param {number} x the argument
- * @returns {number} the polynomial at x
- */
-function horner(coeffs, x) {
-    return coeffs.reduce((acc, c) => acc * x + c);
-}
-
-/**
- * @param {number} p a probability in (0, 1)
- * @returns {number} Acklam's rational approximation of the quantile (relative error about 1e-9)
- */
-function acklam(p) {
-    if (p < ACKLAM_LOW || p > 1 - ACKLAM_LOW) {
-        const q = Math.sqrt(-2 * detLog(p < 0.5 ? p : 1 - p));
-        const z = horner(ACKLAM_C, q) / (horner(ACKLAM_D, q) * q + 1);
-        return p < 0.5 ? z : -z;
-    }
-    const q = p - 0.5;
-    const r = q * q;
-    return (horner(ACKLAM_A, r) * q) / (horner(ACKLAM_B, r) * r + 1);
-}
-
-/**
- * Inverse of the standard normal CDF: Acklam's approximation, refined by one Halley step against `normalCdf`.
- * @param {number} p a probability in (0, 1)
- * @returns {number} z with P(Z <= z) = p
- * @throws {Error} when p is outside (0, 1)
- */
-export function normalQuantile(p) {
-    if (!(p > 0 && p < 1)) {
-        throw new Error(`normalQuantile: p must be in (0, 1), got ${p}`);
-    }
-    const z = acklam(p);
-    const err = normalCdf(z) - p;
-    const u = (err * 2.506628274631) / detExp(-z * z * 0.5);
-    return z - u / (1 + (z * u) / 2);
 }
 
 /**
@@ -301,8 +221,9 @@ function verdictFor(direction, { low, high, diff, ref, floor }) {
  * @param {CompareRow} filled the row with its numbers
  * @param {{ direction: ReturnType<typeof metricDirection>, options: { status: (metric: string) => string,
  *   log?: { log: (level: string, event: string, fields: object) => void } },
- *   stats: { low: number, high: number, diff: number, ref: number, floor: number }, diffs: number[] }} context the
- *   metric's direction, the status and log options, the stats `verdictFor` reads and the paired differences
+ *   stats: { low: number, high: number, diff: number, ref: number, floor: number }, diffs: number[] | null }} context the
+ *   metric's direction, the status and log options, the stats `verdictFor` reads and the paired differences (null for a
+ *   pooled metric, whose seeds carry no difference of their own, so the sparse sign test does not apply)
  * @returns {CompareRow} the row with its verdict: none for a `watch` metric, `unverified` (and a `CompareUnverified`
  *   record) for a metric that is not `verified`, a note for an unknown one
  */
@@ -319,11 +240,52 @@ function withVerdict(filled, { direction, options, stats, diffs }) {
         return { ...filled, verdict: 'unverified' };
     }
     const verdict = verdictFor(direction, stats);
-    const p = verdict === 'no-difference' ? null : sparseSignP(diffs);
+    const p = verdict === 'no-difference' || diffs === null ? null : sparseSignP(diffs);
     if (p !== null && p >= SIGN_ALPHA) {
         return { ...filled, verdict: 'no-difference', note: `sparse: sign p ${Number(p.toPrecision(2))}` };
     }
     return { ...filled, verdict };
+}
+
+/**
+ * A pooled metric's arms (`report-pooled.js`): each is the ratio of sums of its seeds' `{num, den}`, and the interval
+ * resamples whole seeds. A seed with no opportunities is zero exposure, not a null that blocks the comparison; an arm
+ * with none in any seed stays null.
+ * @param {Record<string, any>} b the before report's metric entry
+ * @param {Record<string, any>} a the after report's metric entry
+ * @param {number} level the confidence level
+ * @returns {{ note: string } | { diff: number, low: number, high: number }} why there is no comparison, or the pooled
+ *   difference of the arms and its interval
+ */
+function pooledStats(b, a, level) {
+    if (b.pooled === undefined || a.pooled === undefined) {
+        return { note: 'pooled in one report only' };
+    }
+    const diff = pooledDiff(b.pooled, a.pooled, b.pooled.keys());
+    if (diff === null) {
+        return { note: 'no opportunities in an arm' };
+    }
+    return { diff, ...pooledInterval(b.pooled, a.pooled, { level, resamples: RESAMPLES }) };
+}
+
+/**
+ * @param {Record<string, any>} b the before report's metric entry
+ * @param {Record<string, any>} a the after report's metric entry
+ * @param {number} level the confidence level
+ * @returns {{ note: string } | { diff: number, low: number, high: number, diffs: number[] | null }} why the metric has
+ *   no comparison, or its difference, interval and the paired seed differences (null for a pooled metric, whose seeds
+ *   carry no difference of their own, so the sparse sign test does not apply)
+ */
+function armStats(b, a, level) {
+    if (b.pooled !== undefined || a.pooled !== undefined) {
+        const stats = pooledStats(b, a, level);
+        return 'note' in stats ? stats : { ...stats, diffs: null };
+    }
+    if (b.values.includes(null) || a.values.includes(null)) {
+        return { note: 'null in a seed' };
+    }
+    const diffs = a.values.map((/** @type {number} */ v, /** @type {number} */ i) => v - b.values[i]);
+    return { diff: mean(diffs), ...bootstrapInterval(diffs, level), diffs };
 }
 
 /**
@@ -356,15 +318,14 @@ function compareMetric(metric, before, after, options) {
     }
     const direction = directionOf(metric);
     const fitness = FITNESS_PREFIXES.some((prefix) => metric.startsWith(prefix));
-    if (b.values.includes(null) || a.values.includes(null)) {
-        return { ...row, note: 'null in a seed' };
+    const stats = armStats(b, a, level);
+    if ('note' in stats) {
+        return { ...row, note: stats.note };
     }
     if (fitness && before.fitnessName !== after.fitnessName) {
         return { ...row, note: `fitnessName differs: ${before.fitnessName} vs ${after.fitnessName}` };
     }
-    const diffs = a.values.map((/** @type {number} */ v, /** @type {number} */ i) => v - b.values[i]);
-    const { low, high } = bootstrapInterval(diffs, level);
-    const diff = mean(diffs);
+    const { diff, low, high, diffs } = stats;
     const ref = reference(b.mean, a.mean);
     const filled = { ...row, diff, effect: ref === 0 ? null : diff / ref, low, high };
     return withVerdict(filled, {

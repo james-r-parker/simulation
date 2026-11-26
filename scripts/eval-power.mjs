@@ -8,6 +8,7 @@ import { compareReports, metricDirection } from '../js/evo/compare.js';
 import { isShare } from '../js/evo/compare-rules.js';
 import { METRICS } from '../js/evo/metric-registry/index.js';
 import { withCurrentNames } from '../js/evo/metric-registry/renames.js';
+import { pooledEstimate } from '../js/evo/report-pooled.js';
 import { validateReport } from '../js/evo/report.js';
 import { createRng, fork, nextInt } from '../js/sim/rng.js';
 import { intValue, parseFlags } from './lib/cli-args.mjs';
@@ -78,17 +79,24 @@ export function shuffled(count, rng) {
 /**
  * @param {Record<string, any>} report the 64-seed report
  * @param {string} metric the metric to carry
- * @param {{ seeds: number[], values: (number | null)[] }} arm one arm's seeds and values
+ * @param {{ seeds: number[], values: (number | null)[], pooled?: import('../js/evo/report-pooled.js').PooledCell[] }} arm one
+ *   arm's seeds and values, and for a pooled metric each seed's `{num, den}`
  * @returns {Record<string, any>} a report with that metric alone, so a compare costs one interval
  */
-function armReport(report, metric, { seeds, values }) {
+function armReport(report, metric, { seeds, values, pooled }) {
     const present = /** @type {number[]} */ (values.filter((v) => v !== null));
     const mean = present.length === 0 ? null : present.reduce((a, b) => a + b, 0) / present.length;
-    return {
-        ...report,
-        seeds,
-        metrics: { [metric]: { values, reasons: values.map(() => null), mean, sd: 0 } },
-    };
+    const entry =
+        pooled === undefined
+            ? { values, reasons: values.map(() => null), mean, sd: 0 }
+            : {
+                  values,
+                  reasons: values.map((v) => (v === null ? 'none' : null)),
+                  mean: pooledEstimate(pooled),
+                  sd: 0,
+                  pooled,
+              };
+    return { ...report, seeds, metrics: { [metric]: entry } };
 }
 
 /**
@@ -100,12 +108,17 @@ function armReport(report, metric, { seeds, values }) {
  * @returns {string} the verdict, or `-` when the metric has no verdict here (watch, null, below its seed minimum)
  */
 function splitVerdict(report, metric, { order, size, shift, direction }) {
-    const all = report.metrics[metric].values;
+    const { values: all, pooled: cells } = report.metrics[metric];
     const first = order.slice(0, size);
     const second = order.slice(size, 2 * size);
     const arm = (/** @type {number[]} */ idx, /** @type {number} */ add) => ({
         seeds: idx.map((i) => report.seeds[i]),
         values: idx.map((i) => (all[i] === null ? null : all[i] + add)),
+        // A pooled metric is shifted on the rate: each seed's numerator moves by `add` times its own exposure, so the
+        // ratio of sums moves by exactly `add` and a seed with no exposure stays without.
+        ...(cells === undefined
+            ? {}
+            : { pooled: idx.map((i) => ({ num: cells[i].num + add * cells[i].den, den: cells[i].den })) }),
     });
     const { rows } = compareReports(
         armReport(report, metric, arm(first, 0)),

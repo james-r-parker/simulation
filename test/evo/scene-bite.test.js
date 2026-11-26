@@ -180,3 +180,29 @@ describe('pooled view shares', () => {
         expect(read(other, T)['eval.bite_off_other_view']).toEqual({ value: 1 });
     });
 });
+
+describe('eval.bite_idle_pooled', () => {
+    it('carries the idle wishes and the idle hunter-ticks of the seed, and reads their ratio like bite_idle', () => {
+        const w = world({ bodies: [HUNTER], bites: [1], pairs: [] });
+        const scene = createBiteScene({ maxAgents: N });
+        for (const wish of [1, 1, 1, 0, 0]) {
+            w.outputs[OUTPUT_INDEX.BITE] = wish;
+            tickBite(scene, w);
+        }
+        const m = biteMetrics(scene);
+        expect(m['eval.bite_idle_pooled']).toEqual({ value: 0.6, num: 3, den: 5 });
+        expect(m['eval.bite_idle_pooled']?.value).toBe(m['eval.bite_idle']?.value);
+    });
+
+    it('counts a hunter with a body in the jaws as no opportunity, and a seed with none as zero exposure', () => {
+        const touching = world({ bodies: [HUNTER, PREY], bites: [1, 0], pairs: [[0, 1]] });
+        const m = read(touching, T);
+        expect(m['eval.bite_idle_pooled']).toEqual({
+            value: null,
+            reason: '0 hunter-ticks with that body in the jaws (a share needs 1)',
+            num: 0,
+            den: 0,
+        });
+        expect(m['eval.bite_idle'].value).toBeNull();
+    });
+});
