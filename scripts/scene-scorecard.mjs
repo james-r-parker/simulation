@@ -14,6 +14,7 @@ import { METRICS } from '../js/evo/metric-registry/index.js';
 import { withCurrentNames } from '../js/evo/metric-registry/renames.js';
 import { FAILURES, GOALS, PRINCIPLE_SCENES, SCENES } from '../js/evo/metric-registry/scenes.js';
 import { metricStatus } from '../js/evo/metric-registry/status.js';
+import { pooledEstimate } from '../js/evo/report-pooled.js';
 import { rulesHash } from '../js/sim/config.js';
 import { BASELINE_DIR, BASELINE_PREFIX, readReport } from './lib/baseline-report.mjs';
 import { renderTable } from './metrics-doc.mjs';
@@ -57,13 +58,17 @@ const num = (value) => String(Number(value.toPrecision(4)));
 
 /**
  * @param {readonly (number | null)[]} values a metric's per-seed values
- * @returns {{ mean: number | null, nullShare: number, seen: boolean }} the mean of the non-null values, the share of null
- *   seeds, and whether the detector read anything: under half the seeds null and a mean other than 0
+ * @param {readonly import('../js/evo/report-pooled.js').PooledCell[]} [pooled] a pooled metric's per-seed cells; its
+ *   mean is then the ratio of sums, the estimate its verdicts and power read
+ * @returns {{ mean: number | null, nullShare: number, seen: boolean }} the mean of the non-null values (the pooled
+ *   estimate for a pooled metric), the share of null seeds, and whether the detector read anything: under half the
+ *   seeds null and a mean other than 0
  */
-export function reading(values) {
+export function reading(values, pooled) {
     const live = /** @type {number[]} */ (values.filter((v) => v !== null));
     const nullShare = values.length === 0 ? 1 : (values.length - live.length) / values.length;
-    const mean = live.length === 0 ? null : live.reduce((a, b) => a + b, 0) / live.length;
+    const perSeed = live.length === 0 ? null : live.reduce((a, b) => a + b, 0) / live.length;
+    const mean = pooled === undefined ? perSeed : pooledEstimate(pooled);
     return { mean, nullShare, seen: nullShare < NULL_LIMIT && live.some((v) => v !== 0) };
 }
 
@@ -101,7 +106,7 @@ export function detectorsByScene(metrics, report) {
     const byScene = new Map(SCENES.map((scene) => [scene, []]));
     for (const name of Object.keys(metrics).sort()) {
         const entry = metrics[name];
-        const read = reading(report.metrics[name]?.values ?? []);
+        const read = reading(report.metrics[name]?.values ?? [], report.metrics[name]?.pooled);
         for (const scene of entry.scenes ?? []) {
             const list = byScene.get(scene);
             if (list === undefined) {

@@ -71,6 +71,23 @@ describe('reading', () => {
         expect(reading([0, 0, 0, 0]).seen).toBe(false);
         expect(reading([])).toEqual({ mean: null, nullShare: 1, seen: false });
     });
+
+    it('reads a pooled metric as its ratio of sums, not the mean of its per-seed ratios', () => {
+        // Seed 1: 1 of 1; seed 2: 1 of 9. Per-seed mean (1 + 1/9) / 2 = 0.556; pooled 2 / 10 = 0.2.
+        const pooled = [
+            { num: 1, den: 1 },
+            { num: 1, den: 9 },
+        ];
+        expect(reading([1, 1 / 9], pooled)).toEqual({ mean: 0.2, nullShare: 0, seen: true });
+    });
+
+    it('lets a zero-exposure seed count as null and add nothing to the pooled mean', () => {
+        const pooled = [
+            { num: 3, den: 4 },
+            { num: 0, den: 0 },
+        ];
+        expect(reading([0.75, null], pooled)).toEqual({ mean: 0.75, nullShare: 0.5, seen: false });
+    });
 });
 
 describe('sceneState', () => {

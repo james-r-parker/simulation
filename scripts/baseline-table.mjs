@@ -5,6 +5,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { METRICS } from '../js/evo/metric-registry/index.js';
 import { withCurrentNames } from '../js/evo/metric-registry/renames.js';
+import { pooledEstimate } from '../js/evo/report-pooled.js';
 import { newestBaselinePath, readReport } from './lib/baseline-report.mjs';
 import { exitCodeOf, parseFlags } from './lib/cli-args.mjs';
 
@@ -47,15 +48,19 @@ function reading(value) {
 
 /**
  * @param {(number | null)[]} all a metric's values, one per seed
+ * @param {import('../js/evo/report-pooled.js').PooledCell[]} [pooled] a pooled metric's per-seed cells; the mean is
+ *   then the ratio of sums, the estimate its verdicts read
  * @returns {string[]} the mean, the range and the null share as table cells
  */
-function summary(all) {
+function summary(all, pooled) {
     const values = /** @type {number[]} */ (all.filter((v) => v !== null));
     const nulls = all.length > 0 ? num((all.length - values.length) / all.length) : '-';
     if (values.length === 0) {
         return ['-', '-', nulls];
     }
-    const mean = num(values.reduce((a, b) => a + b, 0) / values.length);
+    // A non-null value has a seed with exposure, so the pooled estimate is a number here.
+    const pooledMean = pooled === undefined ? null : /** @type {number} */ (pooledEstimate(pooled));
+    const mean = num(pooledMean ?? values.reduce((a, b) => a + b, 0) / values.length);
     return [mean, `${num(Math.min(...values))} to ${num(Math.max(...values))}`, nulls];
 }
 
@@ -69,7 +74,7 @@ function row(name, report, metrics) {
     const { power, minSeeds } = metrics[name] ?? {};
     const seeds = String(minSeeds ?? 'more than 64');
     const mde = [power?.mde16, power?.mde32, power?.mde64].map(reading);
-    return `| \`${name}\` | ${[...summary(report.metrics[name]?.values ?? []), ...mde, seeds].join(' | ')} |`;
+    return `| \`${name}\` | ${[...summary(report.metrics[name]?.values ?? [], report.metrics[name]?.pooled), ...mde, seeds].join(' | ')} |`;
 }
 
 /**
