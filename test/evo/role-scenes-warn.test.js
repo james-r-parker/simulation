@@ -4,7 +4,10 @@ import { OUTPUT_COUNT, OUTPUT_INDEX } from '../../js/sim/brain-layout.js';
 import { ARENA_CENTRE, stageArena } from '../../js/evo/chase-arena.js';
 import { preStep5Arena } from '../helpers/pre-step5.js';
 import { fleerBrain, stalkerBrain } from '../../js/evo/chase-oracles.js';
-import { playWarning } from '../../js/evo/role-scenes-warn.js';
+import { MODEL_DEFAULTS } from '../../js/evo/role-budget-model.js';
+import { playFrame } from '../../js/evo/role-budget-frame.js';
+import { roleParams } from '../../js/evo/role-budget-params.js';
+import { playReactiveFlight, playWarning } from '../../js/evo/role-scenes-warn.js';
 
 const COURSER = JSON.parse(readFileSync('evals/fair-chase/courser.json', 'utf8'));
 const OPTIONS = { reaction: 2, threshold: 0.1, side: 150, goAt: 16 };
@@ -92,5 +95,32 @@ describe('playWarning', () => {
         const far = playWarning(preStep5Arena(), { ...OPTIONS, side: 350, goAt: 60 });
         expect(far.ticks.heardTick).toBe(-1);
         expect(far.ticks.startTick).toBe(-1);
+    });
+});
+
+describe('the reactive hunter oracle of the flight', () => {
+    const config = preStep5Arena();
+    const [hunter, forager] = ['predator', 'forager'].map((n) => roleParams(config, n));
+
+    it('starts at rest and clamps the start gap to its sight, so the forager is further than the gap it is aware at', () => {
+        expect(playReactiveFlight(config, { reaction: 2, aware: 100 }).gap).toBe(429);
+        expect(playReactiveFlight(config, { reaction: 2, aware: 500 }).gap).toBe(500);
+    });
+
+    it('catches a forager that is aware too late and not one that is aware in time (the kill is not monotone in the gap)', () => {
+        expect(playReactiveFlight(config, { reaction: 2, aware: 40 }).outcome.caught).toBe(true);
+        expect(playReactiveFlight(config, { reaction: 2, aware: 100 }).outcome.caught).toBe(false);
+    });
+
+    it('agrees with the reactive frame of the formula on whether the forager is caught, moving or standing', () => {
+        for (const preyStart of [undefined, { speed: 7, offset: 0.1 }]) {
+            for (const aware of [40, 100, 200, 314]) {
+                const sim = playReactiveFlight(config, { reaction: 2, aware, preyStart }).outcome.caught;
+                const frame = { tier: /** @type {const} */ ('reactive'), model: MODEL_DEFAULTS, preyStart };
+                expect(sim, `aware ${aware} ${JSON.stringify(preyStart)}`).toBe(
+                    playFrame(hunter, forager, aware, frame).killTick !== null,
+                );
+            }
+        }
     });
 });

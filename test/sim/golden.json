@@ -78,7 +78,7 @@
         "coldMarginWidth": 0
       },
       "ticks": 300,
-      "worldHash": "3218dd713705828e"
+      "worldHash": "b686eb878dd5bb93"
     },
     {
       "name": "disease",
@@ -98,7 +98,7 @@
         "diseaseSeedRate": 0.01
       },
       "ticks": 300,
-      "worldHash": "f88d366af3d5cfee"
+      "worldHash": "a553e47282f07a45"
     },
     {
       "name": "sprint-store",

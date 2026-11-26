@@ -50,7 +50,7 @@ describe('readAmplifiers', () => {
         const read = /** @type {any} */ (readAmplifiers(config, MODEL_DEFAULTS, ['pack:forager']));
         expect(read.data['pack:forager'].packGain).toBeGreaterThan(0);
         expect(read.text).not.toMatch(/by construction/);
-        expect(read.text).toMatch(/lone -102\.3 {2}rallied \+/);
+        expect(read.text).toMatch(/lone -57\.8 {2}rallied \+/);
     });
 });
 
@@ -72,5 +72,12 @@ describe('role:budget with the pack row', () => {
         const json = JSON.parse(done.text);
         expect(json.amplifiers['pack:forager'].packGain).toBeGreaterThan(0);
         expect(json.rows).toEqual([]);
+    });
+
+    it('--check plays the two-hunter scene beside the pack row and reads no drift', async () => {
+        const { text, check } = await run(['--rows', 'pack:forager', '--check']);
+        expect(check.drift).toBe(0);
+        expect(check.defence.map((/** @type {any} */ r) => r.what)).toContain('hearer top speed, px per tick');
+        expect(text).toMatch(/pack:forager\s+rallied stacks of the hearer after one hunt call\s+1\s+1/);
     });
 });

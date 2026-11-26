@@ -3,8 +3,11 @@
 // reading carries the field name of the formula it checks (`WarnTimeline` of role-budget-warn.js), so `--check` compares
 // field by field.
 
+import { OUTPUT_COUNT } from '../sim/brain-layout.js';
+import { detCos, detSin } from '../sim/det-math.js';
 import { ARENA_CENTRE, stageArena } from './chase-arena.js';
-import { callerBrain, fleerBrain, stalkerBrain } from './chase-oracles.js';
+import { callerBrain, evaderBrain, fleerBrain, pursuerBrain, stalkerBrain } from './chase-oracles.js';
+import { gapAtSight } from './role-budget-frame.js';
 import { norm } from './role-budget-kinematics.js';
 import { roleParams } from './role-budget-params.js';
 import { runScene } from './role-scenes-defence.js';
@@ -110,4 +113,60 @@ export function playWarning(config, { reaction, threshold, side, goAt, runAt = g
     ticks.heardTick = fleer.state.heardTick;
     ticks.startTick = fleer.state.startTick;
     return { ticks, outcome: { caught: ticks.killTick !== null } };
+}
+
+/**
+ * The reactive hunter's chase of the forager that has turned (docs/designs/role-budget.md, T30): the frame of
+ * `maxCatchableGap` at `tier: 'reactive'` played in the sim. The hunter starts at rest at the arena's centre, does nothing
+ * for `reaction` ticks and then pursues at its sprint, flat out; the forager starts `max(sight, aware)` ahead of it, moving as
+ * it is when it has turned (`preyStart`), holds nothing until the gap has fallen to `aware`, and then runs as the oracle
+ * evader does.
+ * @param {Readonly<Record<string, any>>} config an `arenaConfig`
+ * @param {{reaction: number, aware: number, preyStart?: {speed: number, offset: number}}} options the hunter's reaction ticks,
+ *   the gap at which the forager is aware (the gap it has when it runs) and how it moves then (default: at rest, facing away)
+ * @returns {{outcome: {caught: boolean}, gap: number}} whether the forager was killed within the follow-up, and the start gap
+ */
+export function playReactiveFlight(config, { reaction, aware, preyStart = { speed: 0, offset: 0 } }) {
+    const [hunter, forager] = ['predator', 'forager'].map((s) => roleParams(config, s));
+    const specs = /** @type {Record<string, any>} */ (config.specialisations);
+    const gap = Math.max(gapAtSight(hunter, forager), aware);
+    const { x, y } = ARENA_CENTRE;
+    const staged = stageArena(config, [
+        { spec: specs.predator.index, x, y, angle: 0 },
+        { spec: specs.forager.index, x: x + gap, y, angle: preyStart.offset },
+    ]);
+    staged.world.vx[PREY_SLOT] = preyStart.speed * detCos(preyStart.offset);
+    staged.world.vy[PREY_SLOT] = preyStart.speed * detSin(preyStart.offset);
+    const chase = pursuerBrain({ pursuer: HUNTER, evader: PREY_SLOT, sprint: true });
+    const flee = evaderBrain({ pursuer: HUNTER, evader: PREY_SLOT, sprint: true });
+    let killed = false;
+    runScene(staged, {
+        brains: [
+            (world) => (world.tick >= reaction ? chase(world) : standing(world, HUNTER)),
+            (world) => (gapOf(world) > aware ? standing(world, PREY_SLOT) : flee(world)),
+        ],
+        observe(world) {
+            killed = world.alive[PREY_SLOT] === 0;
+            return killed || world.alive[HUNTER] === 0 || world.tick > reaction + CHASE_TICKS;
+        },
+    });
+    return { outcome: { caught: killed }, gap };
+}
+
+/**
+ * @param {Record<string, any>} world the world
+ * @returns {number} the centre gap from the hunter to the forager
+ */
+function gapOf(world) {
+    return norm(world.x[PREY_SLOT] - world.x[HUNTER], world.y[PREY_SLOT] - world.y[HUNTER]);
+}
+
+/**
+ * Holds nothing: a body that has not acted yet.
+ * @param {Record<string, any>} world the world
+ * @param {number} slot the body
+ * @returns {void}
+ */
+function standing(world, slot) {
+    world.outputs.fill(0, slot * OUTPUT_COUNT, (slot + 1) * OUTPUT_COUNT);
 }

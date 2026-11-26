@@ -19,7 +19,8 @@ export const HUNT_FROM = 3;
 /**
  * Notes a call as the last one that gave the hearer a stack, on the tick the call starts only: a call is counted once, not
  * once a tick, however many live calls the hearer is in range of (`heardFrom` keeps just the last call, so comparing it
- * against a call that is still running would see a new one every tick). A hearer that comes into range later hears the call
+ * against a call that is still running would see a new one every tick), and once however many hash cells the hearer's body
+ * covers (a repeat of the call this tick is not counted). A hearer that comes into range later hears the call
  * but gains no stack from it.
  * @param {any} world the world
  * @param {number} hearer the hearing slot
@@ -33,6 +34,9 @@ function noteCall(world, hearer, caller, half) {
         return false;
     }
     const row = hearer * HEARD_FROM_STRIDE + half;
+    if (world.heardFrom[row + 2] === world.tick && world.heardFrom[row + 1] === world.genomeId[caller]) {
+        return false; // the hash lists a body in each cell its box covers, so the same call reaches it once per cell
+    }
     world.heardFrom[row] = caller;
     world.heardFrom[row + 1] = world.genomeId[caller];
     world.heardFrom[row + 2] = world.tick;
