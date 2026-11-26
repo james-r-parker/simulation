@@ -128,15 +128,30 @@ export function sceneState(detectors) {
 }
 
 /**
+ * @param {Readonly<Record<string, import('../js/evo/metric-registry/entry.js').MetricEntry>>} metrics the registry
+ * @param {string} scene a scene name
+ * @returns {string} the scene's headline metric (the entry whose `headlineScenes` holds it), else `no headline`
+ */
+function headlineOf(metrics, scene) {
+    const names = Object.keys(metrics)
+        .filter((name) => metrics[name].headlineScenes?.includes(scene))
+        .sort();
+    return names.length === 0 ? 'no headline' : names.map((name) => `\`${name}\``).join(', ');
+}
+
+/**
  * @param {readonly string[]} names the scenes of one table
  * @param {Map<string, Detector[]>} byScene the detectors of every scene
- * @param {Readonly<Record<string, string>>} [labels] a label per name, for the flagged failures and goals
+ * @param {{ labels?: Readonly<Record<string, string>>, metrics?: Readonly<Record<string, import('../js/evo/metric-registry/entry.js').MetricEntry>> }} [options]
+ *   `labels`: a label per name, for the flagged failures and goals; `metrics`: the registry, for the Headline column
+ *   of the scenes table (the flagged table has none)
  * @returns {string[]} the state table, then the detector table
  */
-function tables(names, byScene, labels) {
+function tables(names, byScene, { labels, metrics } = {}) {
     const head = labels ? ['Id', 'Flagged'] : ['Scene'];
     const lead = (/** @type {string} */ name) => (labels ? [name, labels[name]] : [name]);
-    const states = names.map((name) => [...lead(name), sceneState(byScene.get(name) ?? [])]);
+    const tail = (/** @type {string} */ name) => (metrics ? [headlineOf(metrics, name)] : []);
+    const states = names.map((name) => [...lead(name), sceneState(byScene.get(name) ?? []), ...tail(name)]);
     const rows = names.flatMap((name) => {
         const list = byScene.get(name) ?? [];
         return list.length === 0
@@ -144,7 +159,7 @@ function tables(names, byScene, labels) {
             : list.map((d) => [...lead(name), `\`${d.name}\``, d.status, ...d.cells]);
     });
     return [
-        ...renderTable([[...head, 'State'], ...states]),
+        ...renderTable([[...head, 'State', ...(metrics ? ['Headline'] : [])], ...states]),
         '',
         ...renderTable([[...head, 'Detector', 'Status', 'Mean', 'Null', 'MDE 64'], ...rows]),
     ];
@@ -170,6 +185,8 @@ export function renderScorecard(metrics, report, reportPath) {
         '',
         '- **State** reads the `verified` detectors only: `absent` when every one is null on at least half the seeds or reads 0, `present`',
         '  when one reads something, `no verified detector` when none is verified (the clip shows the scene, and a PR says so).',
+        "- **Headline** is the one metric a decision reads for the scene (`headline: 'scene'` in the registry; the pick is",
+        '  `pickHeadlines` in `js/evo/metric-registry/headlines.js`): `no headline` when no verified, live detector can see a change smaller than its own value.',
         '- **Mean** and **Null** are over the baseline seeds (Null is the share of seeds with no value). **MDE 64** is the smallest change',
         '  a verdict detects at 64 seeds per arm: a percentage of the mean, or `abs` for a share; `-` before it is measured.',
         '- The selection rules have their own detectors (`eval.birth_source_share.<cause>`, `eval.skill_heritability`,',
@@ -177,13 +194,13 @@ export function renderScorecard(metrics, report, reportPath) {
         '',
         '## Scenes',
         '',
-        ...tables(PRINCIPLE_SCENES, byScene),
+        ...tables(PRINCIPLE_SCENES, byScene, { metrics }),
         '',
         '## What the user flagged',
         '',
         'The failures (N) and goals (G) the user listed, each with the metrics that read it.',
         '',
-        ...tables([...FAILURES, ...GOALS], byScene, FLAGGED),
+        ...tables([...FAILURES, ...GOALS], byScene, { labels: FLAGGED }),
     ];
     return `${out.join('\n')}\n`;
 }

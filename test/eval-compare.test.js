@@ -88,6 +88,7 @@ describe('parseArgs', () => {
                 'k',
             ]),
         ).toEqual({
+            all: false,
             files: ['a.json', 'b.json'],
             targets: ['x', 'y'],
             failOnWorse: true,
@@ -289,5 +290,42 @@ describe('roleRows', () => {
         expect(roleRows({ rows }, 'scout').map((r) => r.metric)).toEqual(['eval.alarm_lift']);
         expect(roleRows({ rows }, 'forager').map((r) => r.metric)).toEqual(['eval.food_energy_per_1k@20k']);
         expect(roleRows({ rows }, 'herd').map((r) => r.metric)).toEqual([rows[2].metric]);
+    });
+});
+
+describe('the headline table', () => {
+    /** @param {string[]} extra flags @returns {string[]} the printed lines of one comparison of two reports with a headline and a diagnostic */
+    function lines(extra) {
+        const mixed = (/** @type {number[]} */ v) => {
+            const r = report(v);
+            r.metrics['eval.alarm_lift'] = { ...r.metrics['eval.food_energy_per_1k@20k'] };
+            return r;
+        };
+        const a = write('mixed-a.json', mixed(BASE));
+        const b = write('mixed-b.json', mixed(BASE.map((v) => v + 3)));
+        return run([a, b, ...extra]).out[0].split('\n');
+    }
+
+    it('prints the headlines first, then the keep rule, then the other metrics', () => {
+        const out = lines(['--keep-rule']);
+        const at = (/** @type {RegExp} */ re) => out.findIndex((l) => re.test(l));
+        expect(out[0]).toBe('Headlines');
+        expect(at(/eval\.food_energy_per_1k/)).toBeLessThan(at(/keep rule:/));
+        expect(at(/keep rule:/)).toBeLessThan(at(/^Other metrics/));
+        expect(at(/^Other metrics/)).toBeLessThan(at(/eval\.alarm_lift/));
+        expect(out.slice(0, at(/^Other metrics/)).some((l) => /eval\.alarm_lift/.test(l))).toBe(false);
+    });
+
+    it('prints one table of every metric, as before, under --all', () => {
+        const out = lines(['--all']);
+        expect(out[0]).toMatch(/^metric\s+before\s+after/);
+        expect(out.filter((l) => /^(Headlines|Other metrics)/.test(l))).toEqual([]);
+        expect(out.some((l) => /eval\.alarm_lift/.test(l))).toBe(true);
+    });
+
+    it('leaves the JSON as it was', () => {
+        const a = write('j-a.json', report(BASE));
+        const b = write('j-b.json', report(BASE));
+        expect(Object.keys(JSON.parse(run([a, b, '--json']).out[0]))).not.toContain('headlines');
     });
 });
