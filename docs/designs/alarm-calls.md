@@ -194,7 +194,9 @@ Chunks:
 
 ### Phase 2 - Mechanisms behind switches
 
-**Targets:** eval.alarm_lift, eval.alarm_response, eval.kin_within_call_radius, eval.idle_signals_per_1k, eval.social_return, eval.hunt_abort_rate
+**Targets:** eval.social_return, eval.hunt_abort_rate
+
+Also read, judged only on the arms with the switches on, where calls fire (at the defaults they read flat: calls fire on 1 or 2 of 128 seeds, E276): eval.alarm_lift, eval.alarm_response, eval.kin_within_call_radius, eval.idle_signals_per_1k.
 
 Three switches, each its own commit and test, all default off:
 
@@ -225,7 +227,9 @@ Chunks:
 
 ### Phase 3 - Screen and confirm
 
-**Targets:** eval.alarm_lift, eval.alarm_response, eval.kin_within_call_radius, eval.idle_signals_per_1k, eval.social_return, eval.hunt_abort_rate
+**Targets:** eval.social_return, eval.hunt_abort_rate
+
+Also read, judged only on the arms with the switches on, where calls fire (at the defaults they read flat: calls fire on 1 or 2 of 128 seeds, E276): eval.alarm_lift, eval.alarm_response, eval.kin_within_call_radius, eval.idle_signals_per_1k.
 
 Runs only, no code. The screen (8 seeds, 200,000 ticks, floor on; orders the work, never judges) has the arms `reflex`,
 `deterrence`, `eavesdrop`, `reflex+deterrence`, `reflex+deterrence+eavesdrop`, `guard-0.8`, `guard-0.6` and `guard-0.4` (each
@@ -246,7 +250,9 @@ Chunks:
 
 ### Phase 4 - Adopt and delete
 
-**Targets:** eval.alarm_lift, eval.alarm_response, eval.idle_signals_per_1k
+**Targets:** none - a switch is adopted on the keep rule even when its scene metric does not move
+
+Also read, judged only on the arms with the adopted switches on, where calls fire (flat at the defaults before them, E276): eval.alarm_lift, eval.alarm_response, eval.idle_signals_per_1k.
 
 One verdict per switch from the Phase 3 results. A switch that does no harm is adopted (default on) even when its scene
 metric does not move ([realistic-keepers.md](realistic-keepers.md) keep rule); a switch that harms is deleted with its

@@ -211,7 +211,9 @@ balance pass: hunters alive at the last tick fall from about 46 to 40 of 64 seed
 
 ### Phase 5 - A call changes the bite (parked)
 
-**Targets:** eval.alarm_rate, eval.alarm_lift, eval.alarm_calls_with_threat_per_1k
+**Targets:** none - parked; no metric of calling moves at the defaults, so the arm that makes calls fire reads them below
+
+Also read, judged only on the arm where a call changes the bite, so calls fire (they read flat at the defaults: calls fire on 1 or 2 of 128 seeds, E276): eval.alarm_rate, eval.alarm_lift, eval.alarm_calls_with_threat_per_1k.
 
 | Rule                                                                                                                                                           |
 | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -225,9 +227,9 @@ balance pass: hunters alive at the last tick fall from about 46 to 40 of 64 seed
 | `a75`     | 0.75             |
 | `a50`     | 0.5              |
 
-| Done when                                                                                                                                                    | Stop when                                            |
-| ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------- |
-| `eval.alarm_rate` above 0 on most seeds with `eval.alarm_calls_with_threat_per_1k` rising with it, and `keepRule` on 64 matched seeds reads no guard `WORSE` | Calls with no threat rise faster than calls with one |
+| Done when                                                                                                                                                                                                   | Stop when                                            |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| `eval.alarm_rate` above 0 on most seeds with `eval.alarm_calls_with_threat_per_1k` rising with it (both judged only on the arm where calls fire), and `keepRule` on 64 matched seeds reads no guard `WORSE` | Calls with no threat rise faster than calls with one |
 
 E178 ([results](../../evals/decisions/E178/results.md)): the 16-seed screen names no finalist. `eval.alarm_rate` is above 0 on 4 of 16 seeds and `a75` and `a50` are bit-identical to `control` on every metric: no bite lands on a seen caller while its timer runs, so the bite share never acts. The liar clause is not triggered. T30 is not run and T31 is parked: `alarmBiteShare` stays 1 and the code and tests stay. Open: calls are too rare for a bite rule to matter; selection must first produce calls on sight.
 
