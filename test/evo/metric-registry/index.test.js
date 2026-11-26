@@ -104,6 +104,29 @@ describe('withPower', () => {
         expect(merged['eval.births_per_1k']).toBe(bare);
         expect(Object.isFrozen(merged)).toBe(true);
     });
+
+    it('reads a signed entry against the absolute bar near 0 and leaves minSeeds null for an entry with unverifiedWhy (metric-noise T30)', () => {
+        const power = {
+            fpr16: 0.05,
+            fpr32: 0.05,
+            fpr64: 0.05,
+            mde16: 0.5,
+            mde32: 0.5,
+            mde64: 0.5,
+            referenceMean: 0.005,
+            report: 'r.json',
+        };
+        const base = { ...METRICS['eval.food_energy_per_1k'], unit: 'ticks' };
+        const merged = withPower(
+            {
+                plain: base,
+                signed: { ...base, signed: true },
+                scaled: { ...base, signed: true, unverifiedWhy: 'scale' },
+            },
+            { plain: power, signed: power, scaled: power },
+        );
+        expect([merged.plain.minSeeds, merged.signed.minSeeds, merged.scaled.minSeeds]).toEqual([null, 16, null]);
+    });
 });
 
 /**

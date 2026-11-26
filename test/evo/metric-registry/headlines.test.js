@@ -32,7 +32,9 @@ describe('mdeAgainstBar', () => {
     it('reads a share against 0.05, a mean near 0 against 0.1 absolute, else against 20% of the mean', () => {
         expect(mdeAgainstBar('share', 0.03, 0.4)).toEqual({ change: 0.03, bar: 0.05 });
         expect(mdeAgainstBar('trend', 0.5, 0.1).bar).toBe(0.1);
-        expect(mdeAgainstBar('share difference', 0.5, 0.005).change).toBeCloseTo(0.0025);
+        expect(mdeAgainstBar('share difference', 0.5, 0.005, true).change).toBeCloseTo(0.0025);
+        expect(mdeAgainstBar('ticks', 0.5, 0.005, true)).toEqual({ change: 0.0025, bar: 0.1 });
+        expect(mdeAgainstBar('share difference', 0.5, 0.005)).toEqual({ change: 0.5, bar: 0.2 });
         expect(mdeAgainstBar('ticks', 0.5, 0.005)).toEqual({ change: 0.5, bar: 0.2 });
         expect(mdeAgainstBar('ticks', 0.1, 100)).toEqual({ change: 0.1, bar: 0.2 });
     });

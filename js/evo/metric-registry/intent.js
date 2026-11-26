@@ -105,6 +105,7 @@ export const INTENT = {
         meaning: 'Higher means threatened non-hunters have more same-lineage agents near them than unthreatened ones.',
         counts: 'Mean same-lineage non-hunters within callRadius of a threatened non-hunter minus the same mean for unthreatened ones, over per-tick grouping samples (threatened: nearest can-bite-me ray at THREAT_PROXIMITY or more).',
         unit: 'kin',
+        signed: true,
         direction: 'higher',
         nullWhen: ['no threatened agent in a grouping sample', 'no unthreatened agent in a grouping sample'],
         renamedFrom: ['eval.group_cohesion_under_threat'],

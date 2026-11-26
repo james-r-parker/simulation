@@ -33,6 +33,7 @@ export const CORE_2 = {
         meaning: 'Higher means the deliberate share of food grows over the run.',
         counts: 'Mean of the deliberate food share over the last 2 of 8 windows minus the mean over the first 2 windows.',
         unit: 'share change',
+        signed: true,
         direction: 'higher',
         nullWhen: [
             'run length unknown or within burn-in',
@@ -47,6 +48,7 @@ export const CORE_2 = {
         meaning: 'Change in the pursuit share of hunter kills.',
         counts: 'Mean of the kill share (killShare) over the last 2 of 8 windows minus the first 2.',
         unit: 'share change',
+        signed: true,
         direction: 'watch',
         intended: 'higher',
         nullWhen: [
@@ -64,6 +66,7 @@ export const CORE_2 = {
         meaning: 'Change in the share of bite episodes the prey escape.',
         counts: 'Mean of the evasion share (evasionShare) over the last 2 of 8 windows minus the first 2.',
         unit: 'share change',
+        signed: true,
         direction: 'watch',
         intended: 'higher',
         nullWhen: [
@@ -82,6 +85,7 @@ export const CORE_2 = {
         meaning: 'The mean of the three skill trends.',
         counts: 'Mean of the non-null deliberate_food_trend, pursuit_trend and evasion_trend.',
         unit: 'share change',
+        signed: true,
         direction: 'watch',
         intended: 'higher',
         nullWhen: [
@@ -152,6 +156,7 @@ export const CORE_2 = {
         meaning: 'Whether the policy fitness predicts lifetime offspring.',
         counts: 'Spearman correlation of recorded fitness against children over mature deaths that ended after burn-in with a fitness; needs 30 such deaths.',
         unit: 'correlation',
+        signed: true,
         direction: 'watch',
         intended: 'higher',
         nullWhen: ['fewer than 30 mature deaths with a fitness', 'fitness or children is constant'],

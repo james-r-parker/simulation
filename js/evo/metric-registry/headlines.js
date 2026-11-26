@@ -51,7 +51,7 @@ function candidateOf(name, entry, scene) {
     if (!isLiveDetector(entry, scene) || mde === null || mean === 0) {
         return null;
     }
-    const { change, bar } = mdeAgainstBar(entry.unit, mde, mean);
+    const { change, bar } = mdeAgainstBar(entry.unit, mde, mean, entry.signed);
     const relative = entry.unit === 'share' ? mde / Math.abs(mean) : mde;
     return relative <= HEADLINE_MAX_RELATIVE_MDE ? { name, barUse: change / bar, relative } : null;
 }

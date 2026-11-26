@@ -164,7 +164,7 @@ export function passes(row, entry, mean) {
         [`mde${row.size}`]: row.detectable,
         report: '',
     };
-    return meetsPowerBar({ unit: entry.unit, power }, row.size);
+    return meetsPowerBar({ unit: entry.unit, signed: entry.signed, power }, row.size);
 }
 
 /** @param {any} row power reading @returns {string} */

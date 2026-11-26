@@ -123,6 +123,7 @@ export const WORLD_2 = {
         meaning: "Whether one run span's catch rate predicts the next span's evasion skill (positive).",
         counts: 'Pearson correlation over the 8 run spans (WINDOW_COUNT) of the catch rate (kills per hunter-tick) in span k against the evasion skill of span k + 1; needs 5 usable pairs.',
         unit: 'correlation',
+        signed: true,
         direction: 'watch',
         intended: 'higher',
         nullWhen: [
@@ -240,6 +241,7 @@ export const WORLD_2 = {
             'Higher means each agent starves more often as the population rises, the way a food-limited world does.',
         counts: 'Per season, the least-squares slope times mean population over mean rate (an elasticity at the season means) of starvation deaths per agent in a 1000-tick span against the alive count at its start, over spans after burn-in with at least one agent at the start; the mean over seasons with at least 5 spans of varying population and a mean rate above 0 (a season with mean rate 0 is skipped).',
         unit: 'trend',
+        signed: true,
         direction: 'higher',
         nullWhen: [
             'no season with 5 spans of varying population and a mean rate above 0 after burn-in',
@@ -254,6 +256,7 @@ export const WORLD_2 = {
             'Lower means each agent takes less food as the population rises, the way a food-limited world does: the elasticity of food energy per agent with respect to population at the season means (negative: food per head falls with crowding).',
         counts: 'Per season, the least-squares slope times mean population over mean rate (an elasticity at the season means) of food energy taken per agent (foodEnergy: plant and carcass meals, not bites) in a 1000-tick span against the alive count at its start, over spans after burn-in with at least one agent at the start; the mean over seasons with at least 5 spans of varying population and a mean rate above 0 (a season with mean rate 0 is skipped).',
         unit: 'trend',
+        signed: true,
         direction: 'lower',
         nullWhen: [
             'no season with 5 spans of varying population and a mean rate above 0 after burn-in',

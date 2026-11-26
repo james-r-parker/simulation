@@ -9,6 +9,7 @@ export const HUNTERS_2 = {
             'Higher means each earlier chase raises the chance that the next one at ages 1000 to 3999 ends in a catch.',
         counts: "Mean over energy terciles of the least-squares slope of caught (0 or 1) on the hunter's count of earlier chases, over chases opened at ages 1000 to 3999; a tercile needs 5 chases and a spread of prior counts.",
         unit: 'catch per prior chase',
+        signed: true,
         direction: 'higher',
         nullWhen: [
             'no energy tercile with enough chases at ages 1000 to 3999 and a spread of prior chases',
@@ -118,6 +119,7 @@ export const HUNTERS_2 = {
             'Higher means a hunter catches a larger share of its chases late (ages 3000 to 3999) than early (1000 to 1999).',
         counts: 'Mean over hunters with at least 2 chases in both windows of late catch share minus early catch share.',
         unit: 'share difference',
+        signed: true,
         direction: 'higher',
         nullWhen: ['no hunter lived to both bands'],
         arithmetic: 'test/evo/scene-competence.test.js',
@@ -242,6 +244,7 @@ export const HUNTERS_2 = {
         meaning: 'Higher means agents that hear an alarm speed up more than matched agents that do not.',
         counts: "Mean over alarm calls with a matched control of the hearers' speed change ALARM_RESPONSE_TICKS (10) after the call, minus the control mean of the same distance band to the nearest hunter, over maxVelocity.",
         unit: 'speed change over max speed',
+        signed: true,
         direction: 'higher',
         nullWhen: ['no alarm call', 'no alarm call had a hearer with a matched control'],
         expectedFlat:
