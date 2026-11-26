@@ -1,4 +1,4 @@
-// The standard normal CDF and its inverse, shared by the BCa intervals of `compare.js` and `compare-pooled.js`. Pure.
+// The standard normal CDF and its inverse, re-exported by `compare.js` for `scripts/lib/reflex-stats.mjs`. Pure.
 
 import { detExp, detLog } from '../sim/det-math.js';
 

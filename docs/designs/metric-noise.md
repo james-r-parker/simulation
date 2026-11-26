@@ -1,8 +1,8 @@
 # Metric noise
 
-**Status:** In progress - Phases 1, 4 and 6 are built and gate 2 is met (T27, E276). Phase 2 has a terminal hunter count candidate. T28, T29 and T29a are built. Phase 5 is built, reviewed and followed up (T16 to T19, T30, T31: 12 scene and 4 world headlines). Next: Phase 2 T4 (the 600000-tick reads, running).
+**Status:** In progress - Phases 1, 4, 5 and 6 are built; gate 2 is met (E276; E278 is the shared baseline). Phase 2 T3 to T5 are built for the pooled bite and terminal hunter families (E277, E278; both unverified), and every interval is studentised (D7, D8, T32 to T34). T28 to T31 are built. Next: Phase 2 for the next family, then Phase 3.
 **Validated:** 5d678319 (2026-11-25)
-**Priority:** 2 - Measurement lead (needed to judge every balance read after it). Phases 1, 4 and 6 code are built (registries.md Phases 1 and 3 built). Gate 2 is met (T27, E276); T28 (the liveness bar), T29 (flat metrics out of Targets) and T29a (every plan clears them) are built. Phase 5 is built and reviewed (T16 to T19: headlines in the registry, `eval:compare`, the scorecard, the skills). Next: Phase 2 T4 (the 600000-tick reads)
+**Priority:** 2 - Measurement lead (needed to judge every balance read after it). Phases 1, 4 and 6 code are built (registries.md Phases 1 and 3 built). Gate 2 is met (T27, E276); T28 (the liveness bar), T29 (flat metrics out of Targets) and T29a (every plan clears them) are built. Phase 5 is built and reviewed (T16 to T19: headlines in the registry, `eval:compare`, the scorecard, the skills). Phase 2 T3 to T5 and D7, D8 are built. Next: Phase 2 for the next family, then Phase 3.
 **Depends on:** [metric-trust.md](metric-trust.md)
 
 Active plans need detectors that can judge their Targets, done criteria and predictions. This work serves every scene
@@ -12,7 +12,7 @@ in [principles.md](../principles.md) through its detector, without paying for a 
 
 This doc is a lead: it holds a rank in the Build queue, and the docs below are built as its steps, in order, after its own next work. A step doc keeps its own phases, tasks and status line.
 
-Step 1 (registries.md Phases 1 and 3) and Phase 4 (the statistics layer) are built. Phase 6 is built and gate 2 is met (E276). T28 (the liveness bar), T29 (flat metrics out of Targets) and T29a (every plan clears them) are built. Phase 5 is built and reviewed (T16 to T19). Next: Phase 2 T4 (the 600000-tick reads are running), then Phase 3.
+Step 1 (registries.md Phases 1 and 3) and Phase 4 (the statistics layer) are built. Phase 6 is built and gate 2 is met (E276). T28 (the liveness bar), T29 (flat metrics out of Targets) and T29a (every plan clears them) are built. Phase 5 is built and reviewed (T16 to T19). Phase 2 T3 to T5 are built for the pooled bite and terminal hunter families, and every interval is studentised (D7, D8). Next: Phase 2 for the next family, then Phase 3.
 
 | Step | Doc                                          | Built when                                                                                                                                 |
 | ---- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -453,7 +453,7 @@ Training selects on what the metrics report, so a role whose metric is wrong can
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------- |
 | T3  | (built) For one family, add new metric names and necessary report/reducer support beside old computations, with arithmetic, source, validation and cluster-resampling tests                                                                  | [judgement] | T2         |
 | T4  | (built) Read that family's liveness and power on 128 seeds per floor setting, at 16/32/64 arms, using sufficient statistics or the longer window as specified; record failures without promotion and verified minSeeds where all checks pass | [judgement] | T3         |
-| T5  | Fresh family conformance review alongside its gate; regenerate metrics documentation and preserve every old metric                                                                                                                           | [judgement] | T4         |
+| T5  | (built) Fresh family conformance review alongside its gate; regenerate metrics documentation and preserve every old metric                                                                                                                   | [judgement] | T4         |
 
 ### Phase 3 - Retire superseded definitions
 
