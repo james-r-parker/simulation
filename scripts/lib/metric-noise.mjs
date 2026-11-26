@@ -76,12 +76,21 @@ export function dependencyBlocks(text) {
     return blocks;
 }
 
+/** A clause (split at `;`, a table cell or a sentence end) that says `judged only when|with|on|after <feature>` names metrics that read only once that feature is on, so it is no Target at the defaults.
+ * @param {string} text dependency text @returns {string} the text without those clauses */
+export function preconditioned(text) {
+    return text
+        .split(/(?<=;)|(?<=\.\s)|(?=\|)/)
+        .filter((clause) => !/\bjudged only (?:when|with|on|after)\b/i.test(clause))
+        .join('');
+}
+
 /** @param {string} text dependency text @param {string[]} names registry keys @param {string} kind dependency context @returns {string[]} expanded metric tokens */
 function metricTokens(text, names, kind) {
     if (/No baseline prediction is claimed|makes no baseline prediction|^\*\*Targets:\*\* none\b/i.test(text)) {
         return [];
     }
-    const tokens = text.match(/\beval\.[a-zA-Z0-9_@*-]+(?:\.[a-zA-Z0-9_@*-]+)*/g) ?? [];
+    const tokens = preconditioned(text).match(/\beval\.[a-zA-Z0-9_@*-]+(?:\.[a-zA-Z0-9_@*-]+)*/g) ?? [];
     return tokens.flatMap((token) => {
         const clean = token.replace(/\.$/, '');
         if (clean === 'eval.*' && kind !== 'Targets') {
