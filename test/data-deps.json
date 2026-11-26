@@ -252,6 +252,18 @@
     "test/evo/metric-registry/scenes.test.js": [
         "js/evo/metrics.js"
     ],
+    "test/evo/metric-registry/shares-pooled.test.js": [
+        "./",
+        "js/evo/metrics.js",
+        "js/evo/scene-eat.js",
+        "js/evo/scene-herd-metrics.js",
+        "js/evo/scene-terrain.js",
+        "test/evo/metric-source-shares-pooled.test.js",
+        "test/evo/metrics.test.js",
+        "test/evo/scene-eat.test.js",
+        "test/evo/scene-herd-metrics.test.js",
+        "test/evo/scene-terrain.test.js"
+    ],
     "test/evo/metric-registry/signed.test.js": [
         "evals/power/defaults-floor-on-E276.json"
     ],

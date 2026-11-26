@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { herdMetrics } from '../../js/evo/scene-herd-metrics.js';
 
-/** @param {Record<string, any>} [over] scene fields to replace @returns {ReturnType<typeof herdMetrics>} */
-function build(over = {}) {
+/** @param {Record<string, any>} [over] scene fields to replace @param {Record<string, any>} [carcassScene] the carcass scene @returns {ReturnType<typeof herdMetrics>} */
+function build(over = {}, carcassScene = { eaten: 30, eatenByHunters: 20 }) {
     const scene = {
         trampled: 0,
         deaths: 0,
@@ -30,7 +30,6 @@ function build(over = {}) {
         foodEatenBySpec: Float64Array.of(80, 100, 0, 0, 0),
         ...over,
     };
-    const carcassScene = { eaten: 30, eatenByHunters: 20 };
     const observer = { intent: { hunterSpec: Uint8Array.of(0, 1, 0, 0, 0) } };
     return herdMetrics(scene, carcassScene, observer);
 }
@@ -79,5 +78,23 @@ describe('herd scene metrics', () => {
         const none = build({ followBareBlobs: Float64Array.of(0, 0) })['eval.herd_follow_share'];
         expect(none?.value).toBeNull();
         expect(none?.reason).toContain('no patch had 3 herded and bare checkpoints');
+    });
+});
+
+describe('eval.carcass_hunter_share_pooled', () => {
+    it('carries the hunters carcass energy and all carcass energy, and reads their ratio like carcass_hunter_share', () => {
+        const metrics = build();
+        expect(metrics['eval.carcass_hunter_share_pooled']).toEqual({ value: 60 / 70, num: 60, den: 70 });
+        expect(metrics['eval.carcass_hunter_share_pooled']?.value).toBe(metrics['eval.carcass_hunter_share']?.value);
+    });
+
+    it('is zero exposure, with the old reason, when no carcass was eaten', () => {
+        const none = build({ carcassEatenBySpec: new Float64Array(5) }, { eaten: 0, eatenByHunters: 0 });
+        expect(none['eval.carcass_hunter_share_pooled']).toEqual({
+            value: null,
+            reason: 'no carcass eaten after burn-in',
+            num: 0,
+            den: 0,
+        });
     });
 });

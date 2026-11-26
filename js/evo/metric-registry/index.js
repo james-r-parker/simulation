@@ -25,6 +25,7 @@ import { WORLD_3 } from './world-3.js';
 import { WORLD_4 } from './world-4.js';
 import { WORLD_5 } from './world-5.js';
 import { WORLD_6 } from './world-6.js';
+import { SHARES_POOLED } from './shares-pooled.js';
 import { LIVENESS } from './liveness.js';
 import { POWER } from './power.js';
 import { minSeedsFromPower } from './status.js';
@@ -103,6 +104,7 @@ export const METRICS = withHeadlines(
         ...withPower(withLiveness(WORLD_4)),
         ...withPower(withLiveness(WORLD_5)),
         ...withPower(withLiveness(WORLD_6)),
+        ...withPower(withLiveness(SHARES_POOLED)),
     }),
     PRINCIPLE_SCENES,
 );

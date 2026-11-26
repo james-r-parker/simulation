@@ -41,7 +41,7 @@ describe('computeMetrics on hand-built state', () => {
     it('has a fixed sorted key order', () => {
         const keys = Object.keys(computeMetrics(bareObserver(), EMPTY_WORLD));
         expect(keys).toEqual([...keys].sort());
-        expect(keys).toHaveLength(431);
+        expect(keys).toHaveLength(435);
     });
 
     it('reads the per-1k metrics from totals, the dead and the living', () => {
@@ -96,6 +96,21 @@ describe('computeMetrics on hand-built state', () => {
         expect(computeMetrics(o, EMPTY_WORLD)['eval.mating_share']).toEqual({
             value: null,
             reason: 'no mating or split birth',
+        });
+    });
+
+    it('reads eval.mating_share_pooled as the same share with its two sums, null at zero exposure', () => {
+        const o = bareObserver();
+        o.births[BORN_CAUSE.MATE] = 3;
+        o.births[BORN_CAUSE.SPLIT] = 9;
+        const m = computeMetrics(o, EMPTY_WORLD);
+        expect(m['eval.mating_share_pooled']).toEqual({ value: 0.25, num: 3, den: 12 });
+        expect(m['eval.mating_share_pooled']?.value).toBe(m['eval.mating_share']?.value);
+        expect(computeMetrics(bareObserver(), EMPTY_WORLD)['eval.mating_share_pooled']).toEqual({
+            value: null,
+            reason: 'no mating or split birth',
+            num: 0,
+            den: 0,
         });
     });
 

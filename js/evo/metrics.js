@@ -22,6 +22,7 @@ import { watchabilityMetrics } from './metrics-watchability.js';
 import { trendMetrics } from './metrics-trend.js';
 import * as series from './metrics-series.js';
 import { none, ok, per1k, quantile } from './metrics-stats.js';
+import { pooledResult } from './report-pooled.js';
 import { foodEnergyEarly, foodEnergyTotal } from './metrics-food-early.js';
 
 /** @typedef {import('./metric-registry/index.js').MetricName} MetricName */
@@ -100,6 +101,23 @@ function matingShare(observer) {
 
 /**
  * @param {Record<string, any>} observer the observer
+ * @returns {Record<string, any>} `eval.mating_share` and `eval.mating_share_pooled`: the same share, the second with its
+ *   two sums, which the report pools over seeds (`report-pooled.js`)
+ */
+function matingShares(observer) {
+    const mate = observer.births[BORN_CAUSE.MATE];
+    return {
+        'eval.mating_share': matingShare(observer),
+        'eval.mating_share_pooled': pooledResult(
+            mate,
+            mate + observer.births[BORN_CAUSE.SPLIT],
+            'no mating or split birth',
+        ),
+    };
+}
+
+/**
+ * @param {Record<string, any>} observer the observer
  * @returns {void}
  */
 function assertFull(observer) {
@@ -132,7 +150,7 @@ export function computeMetrics(observer, world, options = {}) {
         'eval.population_mean': series.populationMean(observer),
         'eval.floor_episodes': ok(observer.floorEpisodes),
         'eval.born_share': bornShare(observer),
-        'eval.mating_share': matingShare(observer),
+        ...matingShares(observer),
         'eval.predation_per_1k': per1k(deathsByCause[DEATH_CAUSE.EATEN], agentTicks),
         'eval.diversity': series.diversity(observer),
         'eval.lineages_alive': series.lineagesAlive(observer),
