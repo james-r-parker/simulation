@@ -271,8 +271,29 @@ denominator are the detector's own counters, so the metric is the old one exactl
 change; the old name and computation are untouched. E278 read it on 128 seeds per floor setting with the studentised
 interval (D7): live on both, it needs a 0.15 absolute change at 64 seeds against `eval.bite_idle`'s 0.10, on floor on and
 floor off. Idle hunter-ticks are spread evenly across worlds, so pooling does not shrink the between-world spread of the
-share, and the candidate stays unverified (the Contract says how it is read). The other pooled shares of the
-table (carcass, food-contact, herd-carcass, gap and call shares) wait for their own chunks.
+share, and the candidate stays unverified (the Contract says how it is read). The carcass-hunter, food-contact, mating
+and gap shares follow in the next subsection; the herd-carcass and call shares wait for their own chunks.
+
+#### Pooled share family
+
+Four more pooled shares sit beside their old metrics, each the old share's own numerator over its own opportunity
+denominator, summed over seeds by the report (`report-pooled.js`); the old names, computations and values are untouched,
+and one seed reads exactly the old share (each scene test pins that). Their registry entries are in
+`metric-registry/shares-pooled.js`, with the old entry's unit, direction, module and scenes, and the source test
+`test/evo/metric-source-shares-pooled.test.js`:
+
+| Pooled metric                         | Numerator                                           | Denominator                            | Emitted by                                                         |
+| ------------------------------------- | --------------------------------------------------- | -------------------------------------- | ------------------------------------------------------------------ |
+| `eval.food_contact_bite_share_pooled` | contacts of non-hunters with edible food, BITE held | all such contacts after burn-in        | [scene-eat.js](../../js/evo/scene-eat.js) `eatMetrics`             |
+| `eval.carcass_hunter_share_pooled`    | carcass energy eaten by hunting specialisations     | all carcass energy eaten after burn-in | [scene-herd-metrics.js](../../js/evo/scene-herd-metrics.js)        |
+| `eval.mating_share_pooled`            | MATE births                                         | MATE plus SPLIT births, whole run      | [metrics.js](../../js/evo/metrics.js) `matingSharePooled`          |
+| `eval.gap_never_share_pooled`         | lineages with enough wall samples and no crossings  | all lineages with enough wall samples  | [scene-terrain.js](../../js/evo/scene-terrain.js) `terrainMetrics` |
+
+The gap share counts lineages, not ticks, so a pooled seed adds its lineages: a seed with many lineages weighs more,
+which is the ratio of sums the Contract asks for. No old share of this chunk was skipped: each is a plain ratio of two counters the detector already keeps. The
+herd-carcass and call shares are other chunks. Every entry is unmeasured (`liveness`, `power` and
+`minSeeds` are `null`): the coordinator reads them on 128 seeds per floor setting with the studentised interval, as for
+`eval.bite_idle_pooled`, and the entries stay unverified until that read.
 
 #### Terminal hunter count
 
