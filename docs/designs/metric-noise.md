@@ -441,7 +441,7 @@ Training selects on what the metrics report, so a role whose metric is wrong can
 
 | #   | Task                                                                                                                                                                                                                                 | Nature      | Depends on |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------- | ---------- |
-| T3  | For one family, add new metric names and necessary report/reducer support beside old computations, with arithmetic, source, validation and cluster-resampling tests                                                                  | [judgement] | T2         |
+| T3  | (built) For one family, add new metric names and necessary report/reducer support beside old computations, with arithmetic, source, validation and cluster-resampling tests                                                          | [judgement] | T2         |
 | T4  | Read that family's liveness and power on 128 seeds per floor setting, at 16/32/64 arms, using sufficient statistics or the longer window as specified; record failures without promotion and verified minSeeds where all checks pass | [judgement] | T3         |
 | T5  | Fresh family conformance review alongside its gate; regenerate metrics documentation and preserve every old metric                                                                                                                   | [judgement] | T4         |
 
