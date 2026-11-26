@@ -73,6 +73,8 @@ Baseline (`evals/power/defaults-floor-on-E210.json`, 128 seeds, 200000 ticks, `r
 
 Verdict (E-PG-1, E210): Partially falsified on selectivity. `eval.defender_repel_per_1k` is 0, `eval.scout_alarm_lead_share` is 0 (null on 99.22% of seeds, so judged only when a scout calls), and `eval.guild_survival.*` spans 0.06756 to 0.06988 (spread 0.00232, under 0.05). All four `eval.prey_selectivity.*` means (1.289 to 1.601) sit above 1.2 (outside the predicted 0.8 to 1.2 band, driven by high seed-level ratio variance), and all four remain `unverified` (more than 64 seeds needed).
 
+Re-read on the season 12 baseline (`evals/power/defaults-floor-on-E276.json`, 128 seeds, 200000 ticks; detector-baseline.md T9, 2026-11-26): `eval.defender_repel_per_1k` is now 0.08067 (range 0 to 0.5594), no longer 0, since the repel levers of T4 are built and in the defaults. `eval.scout_alarm_lead_share` is null on all 128 seeds (`eval.alarm_rate` is 4.757e-7, so scouts almost never call), which satisfies 'null or under 0.1' and says no scout alarm is seen to lead. The four `eval.guild_survival.*` means span 0.06397 to 0.06517 (spread 0.0012, under 0.05), so the clause holds. The `eval.prey_selectivity.*` clause holds for the defender only (1.054); forager (1.518), reproducer (1.427) and scout (1.413) are outside 0.8 to 1.2, as on E210.
+
 #### Chunks
 
 | Chunk | Tasks              | Contents                                                                                     |

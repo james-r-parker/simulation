@@ -259,6 +259,36 @@ The detectors of the table above, the Wilson bounds in the drill and reflex repo
 
 T5 and T6 are not run yet (2026-11-16): they measure the defaults, and the hunter-vision default switch of [senses-and-motor.md](senses-and-motor.md) is about to change them. The baseline run waits for that switch; Phases 2 onward do not need it, since their tests read drills and hand-built fixtures.
 
+Baseline (`evals/power/defaults-floor-on-E276.json`, 128 seeds, 200000 ticks), the plan's metrics through `npm run baseline:table -- --plan training-stages`:
+
+| Metric                             | Mean     | Range                | Null    | MDE 16 | MDE 32 | MDE 64 | Seeds a verdict needs |
+| ---------------------------------- | -------- | -------------------- | ------- | ------ | ------ | ------ | --------------------- |
+| `eval.bite_on_prey_view`           | 0.9881   | 0.9507 to 0.9998     | 0       | 0.03   | 0.03   | 0.03   | 16                    |
+| `eval.patch_leave_depleted`        | 0.3955   | 0.2381 to 0.6569     | 0       | 0.075  | 0.05   | 0.03   | 32                    |
+| `eval.pack_kills_per_eaten_death`  | 0.1012   | 0 to 0.162           | 0       | 0.05   | 0.03   | 0.03   | 16                    |
+| `eval.pack_lift`                   | 1.635    | 1 to 3.961           | 0.1641  | -      | -      | -      | more than 64          |
+| `eval.chase_catch_share`           | 0.2511   | 0.1305 to 0.4375     | 0       | 0.075  | 0.05   | 0.03   | 32                    |
+| `eval.chase_shaken_share`          | 0.6365   | 0.4688 to 0.8571     | 0       | 0.075  | 0.05   | 0.03   | 32                    |
+| `eval.chase_ticks_p50`             | 46.95    | 38 to 60             | 0       | 0.1    | 0.1    | 0.1    | 16                    |
+| `eval.hunter_juvenile_death_share` | 0.8488   | 0.6424 to 0.9667     | 0       | 0.1    | 0.05   | 0.05   | 32                    |
+| `eval.predator_presence`           | 0.5117   | 0.02618 to 0.9372    | 0       | -      | 0.2    | 0.15   | more than 64          |
+| `eval.predators_at_end`            | 10.55    | 0 to 82              | 0       | -      | -      | 1      | more than 64          |
+| `eval.chase_quit_share`            | 0.1124   | 0 to 0.2349          | 0       | 0.05   | 0.03   | 0.03   | 16                    |
+| `eval.chase_lost_share`            | 0.137    | 0.0625 to 0.5714     | 0       | 0.05   | 0.075  | 0.05   | 16                    |
+| `eval.chase_outrun_share`          | 0.1644   | 0.08235 to 0.3072    | 0       | 0.05   | 0.03   | 0.03   | 16                    |
+| `eval.chase_escape_share`          | 0.335    | 0 to 0.4879          | 0       | 0.1    | 0.05   | 0.05   | 32                    |
+| `eval.pack_prey_size_ratio`        | 0.9999   | 0.9889 to 1.008      | 0.07813 | -      | -      | -      | more than 64          |
+| `eval.style_lineage_share`         | 0.007971 | 0.00001456 to 0.2138 | 0.1016  | -      | -      | -      | more than 64          |
+| `eval.hunter_zero_kill_share`      | 0.4837   | 0.3556 to 0.9091     | 0       | 0.075  | 0.075  | 0.05   | 64                    |
+| `eval.escape_share`                | 0.3397   | 0.1283 to 0.6545     | 0       | 0.15   | 0.075  | 0.05   | 64                    |
+| `eval.herd_dodge_share`            | 0.8993   | 0.5226 to 0.9957     | 0       | 0.1    | 0.075  | 0.05   | 64                    |
+| `eval.chase_giveup_share`          | 0.4138   | 0.3314 to 0.8571     | 0       | 0.075  | 0.075  | 0.05   | 64                    |
+| `eval.hunt_abort_rate`             | 0.4078   | 0.3254 to 0.75       | 0       | 0.075  | 0.05   | 0.03   | 32                    |
+| `eval.champion_elo`                | -        | -                    | 1       | -      | -      | -      | more than 64          |
+| `eval.pursuit_kill_share`          | 0.6544   | 0.3704 to 1          | 0       | 0.075  | 0.05   | 0.05   | 32                    |
+
+Verdict (`E-TS-0`, read on E276, no run of its own): partly falsified. `eval.chase_quit_share` (0.1124) is under 0.15, as predicted. `eval.chase_lost_share` (0.137) is not the largest part of the give-up share: `eval.chase_outrun_share` (0.1644) is larger, and the give-up share is 0.4138 (`eval.chase_giveup_share`), not the 0.60 the prediction named. `eval.pack_lift` is 1.635, not within 0.2 of 1 (it is null on 21 of 128 seeds, and at or above 1.2 on 75 of the 107 that read), so hunters do lift each other's kills. T5's measurement is this read; the 16-seed run of its row is not made.
+
 #### Chunks
 
 | Chunk | Tasks    | Holds                                                                     |

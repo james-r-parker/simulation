@@ -56,6 +56,8 @@ Baseline (`evals/power/defaults-floor-on-E210.json`, 128 seeds, 200000 ticks, `r
 
 Verdict (E-ST2-1, E210): Partially falsified. `eval.scavenge_approach_share` (0.0234) is under 0.05 as predicted, while `eval.chase_reacquire_share` (0.394) is above the predicted 0.1 ceiling (hunters already re-acquire lost prey in 39.4% of chases without track scent). Both metrics are `verified` (32 and 16 seeds). The trail probe (T5) remains before Phase 2.
 
+Re-read on the season 12 baseline (`evals/power/defaults-floor-on-E276.json`, 128 seeds, 200000 ticks; detector-baseline.md T9, 2026-11-26): the verdict stands. `eval.scavenge_approach_share` is 0.02128 (maximum 0.08696), under 0.05 as predicted; `eval.chase_reacquire_share` is 0.3634 (range 0.2209 to 0.7143, lowest seed above 0.2), still far above the predicted 0.1 ceiling, so hunters re-acquire lost prey without track scent in over a third of chases. `eval.hunter_income_share.carcass` is 0.1527. The probe clause of the prediction is not read by the shared run (T5).
+
 #### Chunks
 
 | Chunk     | Tasks    | Contents                                                         |

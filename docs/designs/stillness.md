@@ -52,6 +52,8 @@ Baseline (`evals/power/defaults-floor-on-E210.json`, 128 seeds, 200000 ticks, `r
 
 Verdict (E210): Prediction holds (`eval.freeze_under_threat` -0.1121 is at or under 0, `eval.freeze_survival_gain` 0.0008938 with a per-seed range of -0.008615 to 0.01076 (not a confidence interval) straddles 0, `eval.ambush_kill_share` 0.0005704 is under 0.1). Phase 2 is opened.
 
+Re-read on the season 12 baseline (`evals/power/defaults-floor-on-E276.json`, 128 seeds, 200000 ticks; detector-baseline.md T9, 2026-11-26): the prediction still holds. `eval.freeze_under_threat` is -0.1132 (range -0.1904 to -0.03655, negative on every seed), `eval.freeze_survival_gain` is 0.0003716 with a per-seed range of -0.02373 to 0.009693 (straddles 0) and `eval.ambush_kill_share` is 0.001192 (maximum 0.01961), well under 0.1. Threatened prey move more, not less; the Phase 2 gate stays met.
+
 ### Phase 2 - A still body is fainter
 
 **Targets:** eval.chase_catch_share, eval.refuge_prey_use_under_threat, eval.style_separation
