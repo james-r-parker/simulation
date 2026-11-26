@@ -32,7 +32,11 @@ describe('trackCarcasses skipping empty slots', () => {
             expect(result.metrics['eval.carcass_meal_share'].value).toBeGreaterThan(0);
             expect(result.metrics['eval.reward_events_per_1k.scavenge'].value).toBeGreaterThan(0);
             expect(result.worldHash).toBe(RECORDED_WORLD_HASH);
-            const carcass = Object.entries(result.metrics).filter(([key]) => CARCASS_KEY.test(key));
+            // The digest pins the metrics recorded before the pooled twins (metric-noise T3); a `_pooled` twin is pinned
+            // by its own source test.
+            const carcass = Object.entries(result.metrics).filter(
+                ([key]) => CARCASS_KEY.test(key) && !key.endsWith('_pooled'),
+            );
             expect(carcass.length).toBeGreaterThanOrEqual(10);
             const digest = createHash('sha256')
                 .update(JSON.stringify(Object.fromEntries(carcass)))
