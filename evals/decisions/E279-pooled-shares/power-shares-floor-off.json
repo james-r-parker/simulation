@@ -1,0 +1,238 @@
+{
+  "splits": 1000,
+  "powerSplits": 200,
+  "sizes": [
+    16,
+    32,
+    64
+  ],
+  "metrics": [
+    "eval.food_contact_bite_share_pooled",
+    "eval.food_contact_bite_share",
+    "eval.carcass_hunter_share_pooled",
+    "eval.carcass_hunter_share",
+    "eval.mating_share_pooled",
+    "eval.mating_share",
+    "eval.gap_never_share_pooled",
+    "eval.gap_never_share"
+  ],
+  "includeWatch": true,
+  "rows": [
+    {
+      "metric": "eval.food_contact_bite_share_pooled",
+      "size": 16,
+      "falsePositive": 0.079,
+      "detectable": 0.075,
+      "detectableKind": "absolute",
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.food_contact_bite_share_pooled",
+      "size": 32,
+      "falsePositive": 0.05,
+      "detectable": 0.05,
+      "detectableKind": "absolute",
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.food_contact_bite_share_pooled",
+      "size": 64,
+      "falsePositive": 0.013,
+      "detectable": 0.03,
+      "detectableKind": "absolute",
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.food_contact_bite_share",
+      "size": 16,
+      "falsePositive": 0.107,
+      "detectable": 0.15,
+      "detectableKind": "absolute",
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.food_contact_bite_share",
+      "size": 32,
+      "falsePositive": 0.089,
+      "detectable": 0.1,
+      "detectableKind": "absolute",
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.food_contact_bite_share",
+      "size": 64,
+      "falsePositive": 0.084,
+      "detectable": 0.075,
+      "detectableKind": "absolute",
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.carcass_hunter_share_pooled",
+      "size": 16,
+      "falsePositive": 0.062,
+      "detectable": 0.075,
+      "detectableKind": "absolute",
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.carcass_hunter_share_pooled",
+      "size": 32,
+      "falsePositive": 0.058,
+      "detectable": 0.05,
+      "detectableKind": "absolute",
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.carcass_hunter_share_pooled",
+      "size": 64,
+      "falsePositive": 0.062,
+      "detectable": 0.05,
+      "detectableKind": "absolute",
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.carcass_hunter_share",
+      "size": 16,
+      "falsePositive": 0.088,
+      "detectable": null,
+      "detectableKind": "absolute",
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.carcass_hunter_share",
+      "size": 32,
+      "falsePositive": 0.09,
+      "detectable": 0.15,
+      "detectableKind": "absolute",
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.carcass_hunter_share",
+      "size": 64,
+      "falsePositive": 0.087,
+      "detectable": 0.1,
+      "detectableKind": "absolute",
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.mating_share_pooled",
+      "size": 16,
+      "falsePositive": 0.05,
+      "detectable": 0.15,
+      "detectableKind": "absolute",
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.mating_share_pooled",
+      "size": 32,
+      "falsePositive": 0.056,
+      "detectable": 0.1,
+      "detectableKind": "absolute",
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.mating_share_pooled",
+      "size": 64,
+      "falsePositive": 0.051,
+      "detectable": 0.075,
+      "detectableKind": "absolute",
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.mating_share",
+      "size": 16,
+      "falsePositive": 0.058,
+      "detectable": 0.15,
+      "detectableKind": "absolute",
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.mating_share",
+      "size": 32,
+      "falsePositive": 0.05,
+      "detectable": 0.1,
+      "detectableKind": "absolute",
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.mating_share",
+      "size": 64,
+      "falsePositive": 0.051,
+      "detectable": 0.075,
+      "detectableKind": "absolute",
+      "validShare": 1,
+      "direction": "higher"
+    },
+    {
+      "metric": "eval.gap_never_share_pooled",
+      "size": 16,
+      "falsePositive": 0.072,
+      "detectable": 0.2,
+      "detectableKind": "absolute",
+      "validShare": 1,
+      "direction": "lower"
+    },
+    {
+      "metric": "eval.gap_never_share_pooled",
+      "size": 32,
+      "falsePositive": 0.066,
+      "detectable": 0.15,
+      "detectableKind": "absolute",
+      "validShare": 1,
+      "direction": "lower"
+    },
+    {
+      "metric": "eval.gap_never_share_pooled",
+      "size": 64,
+      "falsePositive": 0.046,
+      "detectable": 0.1,
+      "detectableKind": "absolute",
+      "validShare": 1,
+      "direction": "lower"
+    },
+    {
+      "metric": "eval.gap_never_share",
+      "size": 16,
+      "falsePositive": 0.053,
+      "detectable": null,
+      "detectableKind": "absolute",
+      "validShare": 1,
+      "direction": "lower"
+    },
+    {
+      "metric": "eval.gap_never_share",
+      "size": 32,
+      "falsePositive": 0.057,
+      "detectable": 0.15,
+      "detectableKind": "absolute",
+      "validShare": 1,
+      "direction": "lower"
+    },
+    {
+      "metric": "eval.gap_never_share",
+      "size": 64,
+      "falsePositive": 0.044,
+      "detectable": 0.15,
+      "detectableKind": "absolute",
+      "validShare": 1,
+      "direction": "lower"
+    }
+  ]
+}

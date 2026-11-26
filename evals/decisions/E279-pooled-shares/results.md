@@ -6,7 +6,7 @@ the four pooled share cells: `evals/power/defaults-floor-on-E279.json` and, with
 and every one of E278's 431 metrics is byte-identical in it, so the four pooled shares are the only new readings.
 
 Power at 16, 32 and 64 seeds with `--include-watch` (studentised, D7 and D8). The eight share metrics were re-read on
-E279. Re-reading four of E278's metrics gave their 12 rows byte for byte, because power is seeded and the values are the
+E279, floor on and floor off: `power-shares-floor-on.json` and `power-shares-floor-off.json` beside this file. Re-reading four of E278's metrics gave their 12 rows byte for byte, because power is seeded and the values are the
 same. So `evals/power/power-E279.json` and `evals/power/metric-noise-E279.json` are E278's 1293 rows plus the 12 new
 pooled rows, and the source hash points at the E279 report.
 

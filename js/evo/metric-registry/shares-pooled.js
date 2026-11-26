@@ -1,7 +1,7 @@
 // The pooled share metrics (metric-noise.md Phase 2, "Pooled share family"): each old share beside a twin that carries its
 // own numerator and denominator per seed in the report (`report-pooled.js`), read as the ratio of sums with whole seeds
-// resampled. The old metrics keep their names, computations and values. Liveness and power are unread: the entries stay
-// unverified until a 128-seed run carries the cells.
+// resampled. The old metrics keep their names, computations and values. Liveness and power are read on E279
+// (`liveness.js`, `power.js`).
 
 import { entry } from './entry.js';
 
