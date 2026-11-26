@@ -106,8 +106,9 @@ describe('the eat-choice detectors in a scripted world', () => {
     });
 
     it('are registered with a source test that names them', () => {
+        // The pooled twin of a share has its own source test (metric-source-shares-pooled.test.js).
         for (const name of [
-            ...namesOf('js/evo/scene-eat.js'),
+            ...namesOf('js/evo/scene-eat.js').filter((n) => !n.endsWith('_pooled')),
             ...namesOf('js/evo/scene-graze.js'),
             ...namesOf('js/evo/scene-linger.js'),
         ]) {

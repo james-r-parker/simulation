@@ -133,3 +133,32 @@ describe('eval.gap_crossers and eval.gap_never_share', () => {
         expect(read(r, 'gap_never_share').value).toBe(1);
     });
 });
+
+describe('eval.gap_never_share_pooled', () => {
+    it('carries the lineages that never crossed and the lineages sampled, and reads their ratio like gap_never_share', () => {
+        const r = observed(BASINS);
+        const scene = r.observer.scenes.terrain;
+        const crosser = addBlob(r.world, { lineageId: 7 });
+        const stayer = addBlob(r.world, { lineageId: 8 });
+        const other = addBlob(r.world, { lineageId: 9 });
+        for (let i = 0; i < MIN_LINEAGE_SAMPLES; i++) {
+            r.world.tick = T0 + 10 * i;
+            r.world.x[crosser] = i % 2 === 0 ? 100 : 3900;
+            r.world.x[stayer] = 100;
+            r.world.x[other] = 100;
+            sampleTerrain(scene, r.observer, r.world);
+        }
+        expect(read(r, 'gap_never_share_pooled')).toEqual({ value: 2 / 3, num: 2, den: 3 });
+        expect(read(r, 'gap_never_share_pooled').value).toBe(read(r, 'gap_never_share').value);
+    });
+
+    it('is zero exposure, with the old reason, when no lineage has enough samples', () => {
+        const r = observed(BASINS);
+        expect(read(r, 'gap_never_share_pooled')).toEqual({
+            value: null,
+            reason: `no lineage with ${MIN_LINEAGE_SAMPLES} wall samples after burn-in`,
+            num: 0,
+            den: 0,
+        });
+    });
+});

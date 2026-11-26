@@ -256,6 +256,18 @@ export default {
         value: null,
         reason: 'no lineage with 20 wall samples after burn-in',
     },
+    'eval.gap_never_share_pooled': {
+        value: null,
+        reason: 'no lineage with 20 wall samples after burn-in',
+        num: 0,
+        den: 0,
+    },
+    'eval.carcass_hunter_share_pooled': {
+        value: null,
+        reason: 'no carcass eaten after burn-in',
+        num: 0,
+        den: 0,
+    },
     'eval.patch_leave_depleted': {
         value: null,
         reason: 'no depleted-patch sample resolved after burn-in',

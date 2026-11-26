@@ -1,0 +1,21 @@
+{
+  "id": "E279",
+  "plan": "metric-noise.md",
+  "task": "T4",
+  "date": "2026-11-26",
+  "branch": "batch/2026-11-26-metric-noise-4",
+  "hypothesis": "metric-noise Phase 2 T4, pooled share family: eval.food_contact_bite_share_pooled, eval.carcass_hunter_share_pooled, eval.mating_share_pooled and eval.gap_never_share_pooled (ratio of summed counters, whole-seed studentised interval, D7) detect a smaller 64-seed change than their per-seed shares where the opportunity counts are concentrated in a few worlds.",
+  "prediction": "Written before the runs: as with eval.bite_idle_pooled (E278), pooling does not shrink the between-world spread of these shares, so no pooled twin reaches a smaller 64-seed detectable change than its old metric on floor on or floor off, and none passes the 0.05 absolute share bar at 64 seeds; all four are live on both. The likeliest exception is eval.carcass_hunter_share_pooled, whose carcass energy is lumpy per world. Falsified for a metric if its pooled 64-seed change is smaller than the old one on both floor settings.",
+  "targets": [],
+  "before": "evals/power/defaults-floor-on-E278.json",
+  "after": "npm run eval -- --seeds 128 --ticks 200000 --policy map-elites-v6 --workers 24 --out evals/power/defaults-floor-on-E279.json; then the same with --config evals/floor-off-config.json --out evals/power/defaults-floor-off-E279.json",
+  "verdicts": {},
+  "effect": "no-difference",
+  "note": "Prediction falsified for two of four: eval.food_contact_bite_share_pooled (0.03 against 0.075 at 64 seeds) and eval.carcass_hunter_share_pooled (0.05 against 0.10) detect smaller changes than their per-seed shares on floor on and floor off and pass the 0.05 share bar; their per-world share tracks exposure (correlation -0.79 and 0.78). eval.mating_share_pooled reads as the old share (no correlation); eval.gap_never_share_pooled is smaller only on floor off. All four live. E279 replaces E278 as the shared baseline (E278 metrics byte-identical): 209 of 435 verified; the carcass share is the first Scavenge headline. The scorecard and baseline:table printed a pooled mean as the mean of per-seed ratios; fixed.",
+  "stream": "coordinator",
+  "kind": "characterisation",
+  "beforePolicy": "map-elites-v6",
+  "afterPolicy": "map-elites-v6",
+  "outcome": "finding",
+  "reports": ["evals/decisions/E279-pooled-shares/results.md"]
+}

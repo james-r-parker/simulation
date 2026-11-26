@@ -33,6 +33,23 @@ describe('baselineTable', () => {
         expect(lines[2]).toBe('| `eval.a` | 2 | 1 to 3 | 0.25 | - | 0.2 | 0.1 | 32 |');
         expect(lines[3]).toBe('| `eval.b` | - | - | 1 | - | - | - | more than 64 |');
     });
+
+    it('prints a pooled metric mean as its ratio of sums, the estimate its verdicts read', () => {
+        // Per-seed ratios 1 and 1/9 average 0.556; pooled 2 of 10 is 0.2. The range stays per seed.
+        const report = {
+            metrics: {
+                'eval.a': {
+                    values: [1, 1 / 9],
+                    pooled: [
+                        { num: 1, den: 1 },
+                        { num: 1, den: 9 },
+                    ],
+                },
+            },
+        };
+        const lines = baselineTable(report, ['eval.a'], { 'eval.a': { minSeeds: null, power: null } });
+        expect(lines[2]).toBe('| `eval.a` | 0.2 | 0.1111 to 1 | 0 | - | - | - | more than 64 |');
+    });
 });
 
 describe('runBaselineTable', () => {

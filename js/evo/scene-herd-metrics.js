@@ -2,6 +2,7 @@
 
 import { SPEC_NAMES } from '../sim/specs.js';
 import { bySuffix, none, ok, share } from './metrics-stats.js';
+import { pooledResult } from './report-pooled.js';
 
 /** @param {Record<string, any>} scene @param {Record<string, any>} carcassScene @param {Record<string, any>} observer */
 function carcassTotals(scene, carcassScene, observer) {
@@ -72,6 +73,11 @@ function carcassMetrics(scene, carcassScene, observer) {
         'eval.herd_carcass_meal_share': share(totals.eaten, totalMeat, 'no meat eaten after burn-in'),
         'eval.carcass_meal_share': share(totals.totalCarcass, totalMeat, 'no meat eaten after burn-in'),
         'eval.carcass_hunter_share': share(totals.hunters, totals.totalCarcass, 'no carcass eaten after burn-in'),
+        'eval.carcass_hunter_share_pooled': pooledResult(
+            totals.hunters,
+            totals.totalCarcass,
+            'no carcass eaten after burn-in',
+        ),
     };
 }
 

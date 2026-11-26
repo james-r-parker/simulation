@@ -1,6 +1,6 @@
 # Metric noise
 
-**Status:** In progress - Phases 1, 4, 5 and 6 are built; gate 2 is met (E276; E278 is the shared baseline). Phase 2 T3 to T5 are built for the pooled bite and terminal hunter families (E277, E278; both unverified), and every interval is studentised (D7, D8, T32 to T34). T28 to T31 are built. Next: Phase 2 for the next family, then Phase 3.
+**Status:** In progress - Phases 1, 4, 5 and 6 are built; gate 2 is met (E276; E279 is the shared baseline). Phase 2 T3 to T5 are built for the pooled bite, terminal hunter and pooled share families (E277 to E279; two pooled shares verified), and every interval is studentised (D7, D8, T32 to T34). T28 to T31 are built. Next: Phase 2 for the next family, then Phase 3.
 **Validated:** 5d678319 (2026-11-25)
 **Priority:** 2 - Measurement lead (needed to judge every balance read after it). Phases 1, 4 and 6 code are built (registries.md Phases 1 and 3 built). Gate 2 is met (T27, E276); T28 (the liveness bar), T29 (flat metrics out of Targets) and T29a (every plan clears them) are built. Phase 5 is built and reviewed (T16 to T19: headlines in the registry, `eval:compare`, the scorecard, the skills). Phase 2 T3 to T5 and D7, D8 are built. Next: Phase 2 for the next family, then Phase 3.
 **Depends on:** [metric-trust.md](metric-trust.md)
@@ -12,7 +12,7 @@ in [principles.md](../principles.md) through its detector, without paying for a 
 
 This doc is a lead: it holds a rank in the Build queue, and the docs below are built as its steps, in order, after its own next work. A step doc keeps its own phases, tasks and status line.
 
-Step 1 (registries.md Phases 1 and 3) and Phase 4 (the statistics layer) are built. Phase 6 is built and gate 2 is met (E276). T28 (the liveness bar), T29 (flat metrics out of Targets) and T29a (every plan clears them) are built. Phase 5 is built and reviewed (T16 to T19). Phase 2 T3 to T5 are built for the pooled bite and terminal hunter families, and every interval is studentised (D7, D8). Next: Phase 2 for the next family, then Phase 3.
+Step 1 (registries.md Phases 1 and 3) and Phase 4 (the statistics layer) are built. Phase 6 is built and gate 2 is met (E276). T28 (the liveness bar), T29 (flat metrics out of Targets) and T29a (every plan clears them) are built. Phase 5 is built and reviewed (T16 to T19). Phase 2 T3 to T5 are built for the pooled bite, terminal hunter and pooled share families, and every interval is studentised (D7, D8). Next: Phase 2 for the next family, then Phase 3.
 
 | Step | Doc                                          | Built when                                                                                                                                 |
 | ---- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -271,8 +271,42 @@ denominator are the detector's own counters, so the metric is the old one exactl
 change; the old name and computation are untouched. E278 read it on 128 seeds per floor setting with the studentised
 interval (D7): live on both, it needs a 0.15 absolute change at 64 seeds against `eval.bite_idle`'s 0.10, on floor on and
 floor off. Idle hunter-ticks are spread evenly across worlds, so pooling does not shrink the between-world spread of the
-share, and the candidate stays unverified (the Contract says how it is read). The other pooled shares of the
-table (carcass, food-contact, herd-carcass, gap and call shares) wait for their own chunks.
+share, and the candidate stays unverified (the Contract says how it is read). The carcass-hunter, food-contact, mating
+and gap shares follow in the next subsection; the herd-carcass and call shares wait for their own chunks.
+
+#### Pooled share family
+
+Four more pooled shares sit beside their old metrics, each the old share's own numerator over its own opportunity
+denominator, summed over seeds by the report (`report-pooled.js`); the old names, computations and values are untouched,
+and one seed reads exactly the old share (each scene test pins that). Their registry entries are in
+`metric-registry/shares-pooled.js`, with the old entry's unit, direction, module and scenes, and the source test
+`test/evo/metric-source-shares-pooled.test.js`:
+
+| Pooled metric                         | Numerator                                           | Denominator                            | Emitted by                                                         |
+| ------------------------------------- | --------------------------------------------------- | -------------------------------------- | ------------------------------------------------------------------ |
+| `eval.food_contact_bite_share_pooled` | contacts of non-hunters with edible food, BITE held | all such contacts after burn-in        | [scene-eat.js](../../js/evo/scene-eat.js) `eatMetrics`             |
+| `eval.carcass_hunter_share_pooled`    | carcass energy eaten by hunting specialisations     | all carcass energy eaten after burn-in | [scene-herd-metrics.js](../../js/evo/scene-herd-metrics.js)        |
+| `eval.mating_share_pooled`            | MATE births                                         | MATE plus SPLIT births, whole run      | [metrics.js](../../js/evo/metrics.js) `matingSharePooled`          |
+| `eval.gap_never_share_pooled`         | lineages with enough wall samples and no crossings  | all lineages with enough wall samples  | [scene-terrain.js](../../js/evo/scene-terrain.js) `terrainMetrics` |
+
+The gap share counts lineages, not ticks, so a pooled seed adds its lineages: a seed with many lineages weighs more,
+which is the ratio of sums the Contract asks for. No old share of this chunk was skipped: each is a plain ratio of two counters the detector already keeps. The
+herd-carcass and call shares are other chunks. E279 read all four on 128 seeds per floor setting with the studentised
+interval, all live on both:
+
+| Pooled metric                         | 64-seed change, pooled | Old share | Status                 |
+| ------------------------------------- | ---------------------- | --------- | ---------------------- |
+| `eval.food_contact_bite_share_pooled` | 0.03                   | 0.075     | verified from 16 seeds |
+| `eval.carcass_hunter_share_pooled`    | 0.05                   | 0.10      | verified from 32 seeds |
+| `eval.mating_share_pooled`            | 0.075                  | 0.075     | unverified             |
+| `eval.gap_never_share_pooled`         | 0.15 (0.10 floor off)  | 0.15      | unverified             |
+
+The change is the same on both floor settings unless the table says otherwise. Pooling pays where a world's share
+tracks its exposure, so the low-exposure worlds hold the outlying shares. Their correlation with log exposure is -0.79
+for food contact and 0.78 for carcass energy. For mating it is 0, and pooling buys nothing there, as for idle bites. The
+pooled estimate weighs the busiest worlds most (0.046 against a per-world mean of 0.096 for food contact), a different
+question from the old share; Phase 3 decides per scene which question a retirement keeps. The carcass share is the first
+Scavenge headline. E279 is the shared baseline (`evals/decisions/E279-pooled-shares/results.md`).
 
 #### Terminal hunter count
 

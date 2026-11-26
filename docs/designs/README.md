@@ -93,7 +93,7 @@ Partly built - the note says which phases are real.
 - [Hunter learning](hunter-learning.md) - Phases 1 and 2 are built: the flip reflex, hunter territory and reward-gated learning are always on; [realistic-keepers.md](realistic-keepers.md) re-judged the... _(validated edd4cd4, 2026-11-07)_ _(depends on [natural-selection.md](natural-selection.md), [training.md](training.md))_
 - [Lean observer](lean-observer.md) - Phase 1 is built and reviewed (T6, 2026-11-26); the one open item is the `npm run perf:browser` comparison (T7), which needs a GPU Chrome the build machine lack... _(validated 3f8bf12, 2026-11-12)_
 - [Low-density edge](low-density-edge.md) - Phases 1 to 4 are built; Phase 5 (a receptive-mate scent) is falsified (E168: no scent arm holds more seeds, mating does not move), so the scent stays on the un... _(validated 38339cb, 2026-11-11)_ _(depends on [metric-trust.md](metric-trust.md), [carrying-capacity.md](carrying-capacity.md))_
-- [Metric noise](metric-noise.md) - Phases 1, 4, 5 and 6 are built; gate 2 is met (E276; E278 is the shared baseline). Phase 2 T3 to T5 are built for the pooled bite and terminal hunter families (... _(validated 5d67831, 2026-11-25)_ _(depends on [metric-trust.md](metric-trust.md))_
+- [Metric noise](metric-noise.md) - Phases 1, 4, 5 and 6 are built; gate 2 is met (E276; E279 is the shared baseline). Phase 2 T3 to T5 are built for the pooled bite, terminal hunter and pooled sh... _(validated 5d67831, 2026-11-25)_ _(depends on [metric-trust.md](metric-trust.md))_
 - [Mobile view](mobile-view.md) - Phase 1 is built (pinch and pan, fingertip tap, portrait home zoom, pixel-ratio cap, phone HUD layout) and Phase 2 chunk C2 is built (double-tap zoom, two-finge... _(validated d6ca3e6, 2026-11-07)_ _(depends on [worker-and-renderer.md](worker-and-renderer.md))_
 - [Prey guilds](prey-guilds.md) - differentiates the four non-hunter specialisations into complementary anti-predator and life-history guilds. Built out of plan order: T1/T1b (guild detectors),... _(validated 04e3b34, 2026-11-17)_ _(depends on [honest-budgets.md](honest-budgets.md), [senses-and-motor.md](senses-and-motor.md))_
 - [Quality gates and test tiers](quality-gates-and-test-tiers.md) - Phases 1, 2, 4 and 5 are built (tiered `check.sh` and the hook, the coverage ratchet, mutation testing, browser smoke, bench compare, the nightly workflow, the... _(validated c11202b, 2026-11-17)_ _(depends on [dev-workflow-and-gate.md](dev-workflow-and-gate.md))_
@@ -133,7 +133,7 @@ Not designs of the simulation - audits, research, learnings and guides.
 
 - [Headless sim core - implementation contracts](headless-sim-core-contracts.md) - exact rules for building [headless-sim-core.md](headless-sim-core.md); that doc carries the status, phases and tasks
 - [Legacy audit](legacy-audit.md) - defects and inefficiencies in the legacy app (`js/*.js`), by file and symbol, each with the doc that removes it
-- [Metrics](metrics.md) - the 431 eval metrics of a live report, generated from `js/evo/metric-registry/`: 207 verified, 221 unverified, 3 deprecated
+- [Metrics](metrics.md) - the 435 eval metrics of a live report, generated from `js/evo/metric-registry/`: 209 verified, 223 unverified, 3 deprecated
 - [Simulation notes](sim-notes.md) - verified platform and library facts, and learnings from each phase
 - [Training research](training-research.md) - a survey for [training-stages.md](training-stages.md): what the training tools are today, what their runs showed, how staged multi-agent training is done and ju...
 
