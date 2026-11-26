@@ -26,6 +26,7 @@ import { buildFoodCellIndex, createFoodCellIndex } from './food-cell-index.js';
 import { createGrazeScene, grazeMetrics, tallyGraze } from './scene-graze.js';
 import { createLingerScene, lingerMetrics, tallyLinger } from './scene-linger.js';
 import { none, ok } from './metrics-stats.js';
+import { pooledResult } from './report-pooled.js';
 
 /** Ticks between the samples. */
 export const EAT_SAMPLE_TICKS = 100;
@@ -176,6 +177,11 @@ export function eatMetrics(scene) {
     return {
         'eval.food_contact_bite_share':
             contact === 0 ? none(NO_CONTACT) : ok(tallied(scene, EAT_CONTACT.CONTACT_BITE) / contact),
+        'eval.food_contact_bite_share_pooled': pooledResult(
+            tallied(scene, EAT_CONTACT.CONTACT_BITE),
+            contact,
+            NO_CONTACT,
+        ),
         'eval.full_contact_bite_share': full === 0 ? none(NO_FULL) : ok(tallied(scene, EAT_CONTACT.FULL_BITE) / full),
         'eval.fat_speed_ratio': fatSpeedRatio(scene),
         ...grazeMetrics(scene.graze),

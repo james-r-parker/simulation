@@ -11,6 +11,7 @@
 
 import { refugeCentresOf, ringRadius } from '../sim/terrain.js';
 import { none, ok } from './metrics-stats.js';
+import { pooledResult } from './report-pooled.js';
 import { BURN_IN_TICKS } from './burn-in.js';
 import { THREAT_PROXIMITY, GROUP_SAMPLE_TICKS } from './observer-intent-state.js';
 import { createKeyed, rowOf } from './scene-keyed.js';
@@ -150,6 +151,7 @@ export function terrainMetrics(scene) {
         'eval.refuge_use_under_threat': refuge,
         'eval.gap_crossers': lineages > 0 ? ok(crossings / lineages) : noLineage,
         'eval.gap_never_share': lineages > 0 ? ok(never / lineages) : noLineage,
+        'eval.gap_never_share_pooled': pooledResult(never, lineages, noLineage.reason),
     };
 }
 

@@ -261,3 +261,29 @@ describe('the registry', () => {
         expect(intendedOf('eval.fat_speed_ratio')).toBe('lower');
     });
 });
+
+describe('eval.food_contact_bite_share_pooled', () => {
+    it('carries the biting contacts and the contacts after burn-in, and reads their ratio like food_contact_bite_share', () => {
+        const w = world([{ gap: 50 }]);
+        const scene = createEatScene(w.config);
+        sampleEat(scene, w);
+        w.eatContacts.set([6, 4, 3, 2]);
+        w.tick = T + 100;
+        sampleEat(scene, w);
+        const m = eatMetrics(scene);
+        expect(m['eval.food_contact_bite_share_pooled']).toEqual({ value: 4 / 6, num: 4, den: 6 });
+        expect(m['eval.food_contact_bite_share_pooled']?.value).toBe(m['eval.food_contact_bite_share']?.value);
+    });
+
+    it('is zero exposure, with the old reason, when no contact was tallied', () => {
+        const w = world([{ gap: 50 }]);
+        const scene = createEatScene(w.config);
+        sampleEat(scene, w);
+        expect(eatMetrics(scene)['eval.food_contact_bite_share_pooled']).toEqual({
+            value: null,
+            reason: 'no non-hunter contact with edible food after burn-in',
+            num: 0,
+            den: 0,
+        });
+    });
+});
