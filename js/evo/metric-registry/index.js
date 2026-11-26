@@ -28,6 +28,8 @@ import { LIVENESS } from './liveness.js';
 import { POWER } from './power.js';
 import { minSeedsFromPower } from './status.js';
 import { withRoles } from './roles.js';
+import { withHeadlines } from './headlines.js';
+import { PRINCIPLE_SCENES } from './scenes.js';
 
 /**
  * @template {Record<string, import('./entry.js').MetricEntry>} T
@@ -69,32 +71,35 @@ export function withPower(entries, readings = POWER) {
 }
 
 /** Every eval metric by full name; each key is a literal in a family file, so `MetricName` is a union. */
-export const METRICS = withRoles({
-    ...withPower(withLiveness(CORE)),
-    ...withPower(withLiveness(CORE_2)),
-    ...withPower(withLiveness(HUNTERS)),
-    ...withPower(withLiveness(HUNTERS_2)),
-    ...withPower(withLiveness(HUNTERS_3)),
-    ...withPower(withLiveness(HUNTERS_4)),
-    ...withPower(withLiveness(HUNTERS_SETTLED)),
-    ...withPower(withLiveness(INTENT)),
-    ...withPower(withLiveness(SCENES_ECOLOGY)),
-    ...withPower(withLiveness(SCENES_ECOLOGY_4)),
-    ...withPower(withLiveness(SCENES_ECOLOGY_2)),
-    ...withPower(withLiveness(SCENES_ECOLOGY_3)),
-    ...withPower(withLiveness(SCENES_EFFECTS)),
-    ...withPower(withLiveness(SCENES_SPRINT)),
-    ...withPower(withLiveness(SCENES_STILLNESS)),
-    ...withPower(withLiveness(SCENES_SCENT)),
-    ...withPower(withLiveness(SCENES_SOCIAL)),
-    ...withPower(withLiveness(BRAIN)),
-    ...withPower(withLiveness(WORLD)),
-    ...withPower(withLiveness(WORLD_2)),
-    ...withPower(withLiveness(WORLD_3)),
-    ...withPower(withLiveness(WORLD_4)),
-    ...withPower(withLiveness(WORLD_5)),
-    ...withPower(withLiveness(WORLD_6)),
-});
+export const METRICS = withHeadlines(
+    withRoles({
+        ...withPower(withLiveness(CORE)),
+        ...withPower(withLiveness(CORE_2)),
+        ...withPower(withLiveness(HUNTERS)),
+        ...withPower(withLiveness(HUNTERS_2)),
+        ...withPower(withLiveness(HUNTERS_3)),
+        ...withPower(withLiveness(HUNTERS_4)),
+        ...withPower(withLiveness(HUNTERS_SETTLED)),
+        ...withPower(withLiveness(INTENT)),
+        ...withPower(withLiveness(SCENES_ECOLOGY)),
+        ...withPower(withLiveness(SCENES_ECOLOGY_4)),
+        ...withPower(withLiveness(SCENES_ECOLOGY_2)),
+        ...withPower(withLiveness(SCENES_ECOLOGY_3)),
+        ...withPower(withLiveness(SCENES_EFFECTS)),
+        ...withPower(withLiveness(SCENES_SPRINT)),
+        ...withPower(withLiveness(SCENES_STILLNESS)),
+        ...withPower(withLiveness(SCENES_SCENT)),
+        ...withPower(withLiveness(SCENES_SOCIAL)),
+        ...withPower(withLiveness(BRAIN)),
+        ...withPower(withLiveness(WORLD)),
+        ...withPower(withLiveness(WORLD_2)),
+        ...withPower(withLiveness(WORLD_3)),
+        ...withPower(withLiveness(WORLD_4)),
+        ...withPower(withLiveness(WORLD_5)),
+        ...withPower(withLiveness(WORLD_6)),
+    }),
+    PRINCIPLE_SCENES,
+);
 
 /** @typedef {keyof typeof METRICS} MetricName a registered metric name */
 

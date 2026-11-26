@@ -34,18 +34,29 @@ export function meetsLivenessBar(liveness) {
  * @param {string} unit the entry's unit
  * @param {number} mde the detectable change: absolute for a `share` (T29a), else a fraction of `referenceMean`
  * @param {number} referenceMean the reference mean
- * @returns {boolean} whether the detectable change is within the bar for the unit: absolute 0.05 for `share`, absolute
- *   0.10 for `correlation`, `trend` or a mean within 0.01 of 0, else 0.20 of the mean
+ * @returns {{change: number, bar: number}} the detectable change in the bar's own terms and the bar for the unit:
+ *   absolute 0.05 for `share`, absolute 0.10 (the change is `mde` times the mean) for `correlation`, `trend` or a mean
+ *   within 0.01 of 0, else 0.20 (a fraction of the mean)
+ */
+export function mdeAgainstBar(unit, mde, referenceMean) {
+    if (unit === 'share') {
+        return { change: mde, bar: MAX_SHARE_MDE };
+    }
+    if (unit === 'correlation' || unit === 'trend' || Math.abs(referenceMean) <= NEAR_ZERO_MEAN) {
+        return { change: mde * Math.abs(referenceMean), bar: MAX_ABSOLUTE_MDE };
+    }
+    return { change: mde, bar: MAX_RELATIVE_MDE };
+}
+
+/**
+ * @param {string} unit the entry's unit
+ * @param {number} mde the detectable change (see `mdeAgainstBar`)
+ * @param {number} referenceMean the reference mean
+ * @returns {boolean} whether the detectable change is within the bar for the unit
  */
 function mdeWithinBar(unit, mde, referenceMean) {
-    if (unit === 'share') {
-        return mde <= MAX_SHARE_MDE;
-    }
-    const absolute = mde * Math.abs(referenceMean);
-    if (unit === 'correlation' || unit === 'trend' || Math.abs(referenceMean) <= NEAR_ZERO_MEAN) {
-        return absolute <= MAX_ABSOLUTE_MDE;
-    }
-    return mde <= MAX_RELATIVE_MDE;
+    const { change, bar } = mdeAgainstBar(unit, mde, referenceMean);
+    return change <= bar;
 }
 
 /**
