@@ -54,3 +54,11 @@ describe('playPack at the neutral numbers', () => {
         expect(scene.outcome.answered).toBe(0);
     });
 });
+
+describe('playPack with a weak rally', () => {
+    it('lets the caller make the kill, so the hearer shares nothing and the caller is paid no answered stack', () => {
+        const scene = playPack(arenaConfig({ rallyThrust: 0.05, rallyBurn: 4 }), { call: true });
+        expect(scene.rallied.hearer).toBe(1);
+        expect(scene.outcome).toEqual({ answered: 0, killer: 0, shared: false });
+    });
+});

@@ -99,9 +99,9 @@ function note(out, w, { n, before }) {
         out.ticks.kill = n;
         out.outcome.answered = w.effectStacks[SYSTEM.rowOf[EFFECT.ANSWERED]][CALLER];
         out.outcome.killer = w.energy[HEARER] - before.hearer > w.energy[CALLER] - before.caller ? HEARER : CALLER;
-        // the biter before the killer: the forager's `lastBiter`, or its `prevBiter` when the killer was already the last one
-        const earlier = before.lastBiter === w.genomeId[HEARER] ? before.prevBiter : before.lastBiter;
-        out.outcome.shared = out.outcome.killer === HEARER && earlier === w.genomeId[CALLER];
+        // with two hunters, the caller bit before the killer if it is either of the forager's last two biters
+        const bit = before.lastBiter === w.genomeId[CALLER] || before.prevBiter === w.genomeId[CALLER];
+        out.outcome.shared = out.outcome.killer === HEARER && bit;
     }
 }
 
