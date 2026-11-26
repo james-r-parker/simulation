@@ -2,9 +2,11 @@
 
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { METRICS } from '../../../js/evo/metric-registry/index.js';
+import { METRICS as REGISTRY } from '../../../js/evo/metric-registry/index.js';
 import { withCurrentNames } from '../../../js/evo/metric-registry/renames.js';
 
+/** @type {Readonly<Record<string, import('../../../js/evo/metric-registry/entry.js').MetricEntry>>} */
+const METRICS = REGISTRY;
 const BASELINE = 'evals/power/defaults-floor-on-E276.json';
 const report = withCurrentNames(
     JSON.parse(readFileSync(new URL(`../../../${BASELINE}`, import.meta.url), 'utf8')),
