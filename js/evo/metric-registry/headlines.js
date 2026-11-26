@@ -101,14 +101,20 @@ export function scenesWithoutHeadline(entries, scenes) {
  * @template {Record<string, import('./entry.js').MetricEntry>} T
  * @param {T} entries the registry before the flags
  * @param {readonly string[]} scenes the scenes to pick for
- * @returns {T} the registry with `headline` set to `scene` on each scene's pick and `world` on each world headline
+ * @returns {T} the registry with `headline` set to `scene` (and `headlineScenes`, the scenes it is picked for) on each
+ *   scene's pick and `world` on each world headline
  * @throws {Error} `world headline names an unknown metric <name>` for a name that has no entry
  */
 export function withHeadlines(entries, scenes) {
     /** @type {Record<string, import('./entry.js').MetricEntry>} */
     const merged = { ...entries };
-    for (const name of Object.values(pickHeadlines(entries, scenes))) {
-        merged[name] = Object.freeze({ ...merged[name], headline: 'scene' });
+    /** @type {Map<string, string[]>} */
+    const served = new Map();
+    for (const [scene, name] of Object.entries(pickHeadlines(entries, scenes))) {
+        served.set(name, [...(served.get(name) ?? []), scene]);
+    }
+    for (const [name, mine] of served) {
+        merged[name] = Object.freeze({ ...merged[name], headline: 'scene', headlineScenes: Object.freeze(mine) });
     }
     for (const name of WORLD_HEADLINES) {
         if (!Object.hasOwn(merged, name)) {

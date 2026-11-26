@@ -130,11 +130,11 @@ export function sceneState(detectors) {
 /**
  * @param {Readonly<Record<string, import('../js/evo/metric-registry/entry.js').MetricEntry>>} metrics the registry
  * @param {string} scene a scene name
- * @returns {string} the scene's headline metric (`headline: 'scene'` on an entry tagged with it), else `no headline`
+ * @returns {string} the scene's headline metric (the entry whose `headlineScenes` holds it), else `no headline`
  */
 function headlineOf(metrics, scene) {
     const names = Object.keys(metrics)
-        .filter((name) => metrics[name].headline === 'scene' && metrics[name].scenes?.includes(scene))
+        .filter((name) => metrics[name].headlineScenes?.includes(scene))
         .sort();
     return names.length === 0 ? 'no headline' : names.map((name) => `\`${name}\``).join(', ');
 }

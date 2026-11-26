@@ -32,7 +32,8 @@ describe('mdeAgainstBar', () => {
     it('reads a share against 0.05, a mean near 0 against 0.1 absolute, else against 20% of the mean', () => {
         expect(mdeAgainstBar('share', 0.03, 0.4)).toEqual({ change: 0.03, bar: 0.05 });
         expect(mdeAgainstBar('trend', 0.5, 0.1).bar).toBe(0.1);
-        expect(mdeAgainstBar('ticks', 0.5, 0.005).change).toBeCloseTo(0.0025);
+        expect(mdeAgainstBar('share difference', 0.5, 0.005).change).toBeCloseTo(0.0025);
+        expect(mdeAgainstBar('ticks', 0.5, 0.005)).toEqual({ change: 0.5, bar: 0.2 });
         expect(mdeAgainstBar('ticks', 0.1, 100)).toEqual({ change: 0.1, bar: 0.2 });
     });
 });
@@ -118,7 +119,7 @@ describe('the committed headlines', () => {
     it('hold at most one per scene', () => {
         for (const scene of PRINCIPLE_SCENES) {
             const mine = flagged('scene').filter((name) =>
-                METRICS[/** @type {keyof typeof METRICS} */ (name)].scenes?.includes(scene),
+                METRICS[/** @type {keyof typeof METRICS} */ (name)].headlineScenes?.includes(scene),
             );
             expect(mine.length, scene).toBeLessThanOrEqual(1);
         }
@@ -145,6 +146,7 @@ describe('the committed headlines', () => {
 
     it('leave the scenes with no qualifying detector without a headline', () => {
         const none = scenesWithoutHeadline(METRICS, PRINCIPLE_SCENES);
-        expect(none).toEqual(["Call, or don't", 'Scavenge', 'Something unnamed']);
+        // Cross or stay lost eval.herd_seeded_patches when the absolute bar was kept to signed units (T16).
+        expect(none).toEqual(["Call, or don't", 'Scavenge', 'Cross or stay', 'Something unnamed']);
     });
 });

@@ -125,7 +125,14 @@ describe('renderScorecard', () => {
     });
 
     it('names the scene headline in a Headline column, or `no headline`', () => {
-        const flagged = { ...FAKE, 'fake.live': { ...FAKE['fake.live'], headline: /** @type {const} */ ('scene') } };
+        const flagged = {
+            ...FAKE,
+            'fake.live': {
+                ...FAKE['fake.live'],
+                headline: /** @type {const} */ ('scene'),
+                headlineScenes: ['A real chase'],
+            },
+        };
         const lines = renderScorecard(flagged, REPORT, REPORT_PATH).split('\n');
         expect(lines.find((l) => l.startsWith('| Scene ') && l.includes('Headline'))).toBeDefined();
         expect(lines.find((l) => l.startsWith('| A real chase ') && l.includes('present'))).toContain('`fake.live`');

@@ -199,7 +199,8 @@ describe('power bars and table', () => {
         expect(passes(row(16, 0.075), { unit: 'share' }, 0.9)).toBe(false);
         expect(passes(row(16, 0.3), { unit: 'correlation' }, -0.2)).toBe(true);
         expect(passes(row(16, 0.3), { unit: 'trend' }, 0.5)).toBe(false);
-        expect(passes(row(16, 1), unverified, 0.01)).toBe(true);
+        expect(passes(row(16, 1), { unit: 'share difference' }, 0.01)).toBe(true);
+        expect(passes(row(16, 1), { unit: 'ratio' }, 0.01)).toBe(false);
         expect(passes(row(16, 0.3), { unit: 'share difference' }, 0.5)).toBe(false);
     });
 
