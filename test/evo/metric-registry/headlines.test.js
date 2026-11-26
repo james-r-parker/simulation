@@ -64,6 +64,43 @@ describe('headlineCandidates', () => {
     });
 });
 
+describe('headlineCandidates and the seed spread (metric-noise T31)', () => {
+    const live = (/** @type {number | undefined} */ spread) => ({
+        nullShare: 0,
+        distinct: 50,
+        offModeShare: 1,
+        spread,
+    });
+    // A signed difference around 0 whose whole spread over the seeds is 5e-4: a change of 1e-3 uses 1% of the 0.10 bar
+    // and two spreads of the metric.
+    const tiny = (/** @type {number | undefined} */ spread) =>
+        fake({
+            unit: 'share difference',
+            signed: true,
+            scenes: ['Refuge'],
+            power: { mde64: 1, referenceMean: -0.001 },
+            liveness: live(spread),
+        });
+    const steady = fake({ scenes: ['Refuge'], power: { mde64: 0.03, referenceMean: 0.3 } });
+
+    it('ranks a signed metric by its change over its seed spread when the spread is below the bar', () => {
+        const [first, second] = headlineCandidates({ tiny: tiny(0.0005), steady }, 'Refuge');
+        expect([first.name, second.name]).toEqual(['steady', 'tiny']);
+        expect(second.barUse).toBeCloseTo(2);
+    });
+
+    it('keeps the share of the absolute bar when the spread is wider than the bar, or was not read', () => {
+        expect(headlineCandidates({ tiny: tiny(0.5), steady }, 'Refuge')[0].name).toBe('tiny');
+        expect(headlineCandidates({ tiny: tiny(undefined), steady }, 'Refuge')[0].name).toBe('tiny');
+        expect(headlineCandidates({ tiny: tiny(0.5) }, 'Refuge')[0].barUse).toBeCloseTo(0.01);
+    });
+
+    it('does not read the spread of an unsigned metric', () => {
+        const plain = fake({ scenes: ['Refuge'], liveness: live(0.001), power: { mde64: 0.03, referenceMean: 0.3 } });
+        expect(headlineCandidates({ plain }, 'Refuge')[0].barUse).toBeCloseTo(0.6);
+    });
+});
+
 describe('pickHeadlines', () => {
     it('gives each scene its best candidate and no scene without one', () => {
         const picked = pickHeadlines({ one: fake(), two: fake({ scenes: ['Refuge'] }) }, [
