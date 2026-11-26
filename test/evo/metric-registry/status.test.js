@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { entry } from '../../../js/evo/metric-registry/entry.js';
 import {
     meetsLivenessBar,
+    isFlat,
     meetsPowerBar,
     metricStatus,
     minSeedsFromPower,
@@ -70,6 +71,25 @@ describe('metricStatus', () => {
         const flat = { ...full(), liveness: { nullShare: 1, distinct: 0, offModeShare: 0, report: 'r.json' } };
         expect(metricStatus(flat)).toBe('unverified');
         expect(metricStatus({ ...flat, expectedFlat: 'needs the herd feature' })).toBe('verified');
+    });
+});
+
+describe('isFlat (metric-noise T29)', () => {
+    const MISSES = { nullShare: 0, distinct: 2, offModeShare: 1 / 128, report: 'r.json' };
+
+    it('is true for a liveness read that misses the bar with an expectedFlat reason, and the status stays verified', () => {
+        const flat = { ...full(), liveness: MISSES, expectedFlat: 'no calls at the defaults' };
+        expect(isFlat(flat)).toBe(true);
+        expect(metricStatus(flat)).toBe('verified');
+    });
+
+    it('is false when the liveness read meets the bar, even with an expectedFlat reason', () => {
+        expect(isFlat({ ...full(), expectedFlat: 'stale reason' })).toBe(false);
+    });
+
+    it('is false without an expectedFlat reason or without a liveness read', () => {
+        expect(isFlat({ ...full(), liveness: MISSES })).toBe(false);
+        expect(isFlat({ ...full(), liveness: null, expectedFlat: 'not read yet' })).toBe(false);
     });
 });
 

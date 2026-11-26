@@ -86,3 +86,15 @@ export function metricStatus(entry) {
     const tested = tests.arithmetic !== '' && tests.source !== '';
     return tested && live && power !== null && minSeeds !== null ? 'verified' : 'unverified';
 }
+
+/**
+ * A flat metric reads the same on almost every seed at the defaults and says why (`expectedFlat`). It stays `verified`
+ * (metric-trust.md), but a plan must not name it as a Target, the keep rule must not guard on it and Phase 5 must not
+ * pick it as a headline (metric-noise.md T29).
+ *
+ * @param {import('./entry.js').MetricEntry} entry a registry entry
+ * @returns {boolean} whether the entry has a liveness read that misses `meetsLivenessBar` and carries `expectedFlat`
+ */
+export function isFlat(entry) {
+    return entry.liveness !== null && entry.expectedFlat !== null && !meetsLivenessBar(entry.liveness);
+}
