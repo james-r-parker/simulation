@@ -54,6 +54,17 @@ A power pass alone does not update registry status, fill missing arithmetic/sour
 watch metric a directional verdict. Phase 2 closes the remaining trust checks before a plan uses a replacement.
 E276 measures the defaults at its recorded rules, not every future treatment or longer window.
 
+**Reading a pooled metric.** A metric with `pooled` in its report entry (`pooled: [{num, den}]`, one cell per seed,
+[report-pooled.js](../../js/evo/report-pooled.js)) is read as a ratio of sums. Its `values` stay `num / den` per seed
+(null exactly when `den` is 0), so every older reader works, and its `mean` is the arm estimate `sum(num) / sum(den)`,
+not the mean of the seed values. A seed with no opportunities adds no exposure and does not block a comparison; an
+arm with none in any seed has a null estimate and a `no opportunities in an arm` row, never a passing zero. `eval:compare`
+and `eval:power` resample whole seeds (the same seed in both arms, as the paired path does) and recompute both ratios
+([compare-pooled.js](../../js/evo/compare-pooled.js)), BCa on the pooled difference; they never average seed ratios or
+resample events. The sparse sign test is for seed differences and does not apply. A report that has `pooled` in one arm
+only gives no verdict. `eval:power` plants its shift on the rate (each seed's numerator moves by the shift times its own
+denominator). The power read of a pooled metric therefore needs a report that carries the cells; an older report has none.
+
 ## Phases
 
 ### Phase 1 - Target inventory (built)
@@ -248,6 +259,16 @@ from old seed means. Metrics that pass power here still need their missing trust
 Done: every replacement actually adopted has all metric-trust checks, a non-null `minSeeds`, its saved power report and
 its directional or watch interpretation recorded. A failed candidate remains unverified, with the next diagnosis
 recorded. The registry keeps a candidate unverified until its trust checks pass.
+
+#### Pooled bite family
+
+The first pooled family is `eval.bite_idle_pooled` ([scene-bite.js](../../js/evo/scene-bite.js), registry entry in
+`hunters-pooled.js`): the idle-bite share of `eval.bite_idle` with its two sums kept per seed (hunter-ticks with a wish
+and no body in the jaws, over hunter-ticks with no body in the jaws). It was chosen because the numerator and
+denominator are the detector's own counters, so the metric is the old one exactly and only the report and the verdict
+change; the old name and computation are untouched. Its liveness and power are not read yet: the registry keeps it
+unverified until a 128-seed run carries the cells (the Contract says how it is read). The other pooled shares of the
+table (carcass, food-contact, herd-carcass, gap and call shares) wait for their own chunks.
 
 #### Terminal hunter count
 
