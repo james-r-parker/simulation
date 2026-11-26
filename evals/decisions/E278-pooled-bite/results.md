@@ -40,3 +40,13 @@ seeds. D7 and D8 (T32, T33) make every interval studentised at every size.
 - Became unverified: `eval.hunter_kill_rate_by_source.spec-flip`, `eval.recruit_first_kill_share`,
   `eval.birth_source_share.split`, `eval.winter_pop_ratio`.
 - Became verified: `eval.hunter_birth_source_share.spec-flip`.
+
+## Floor off
+
+The same 128 seeds x 200000 ticks with `--config evals/floor-off-config.json`: `evals/power/defaults-floor-off-E278.json`.
+Both metrics are live (no null seed, 128 distinct values), and the falsification holds.
+
+| Metric                  | A/A false positives 16 / 32 / 64 | Detectable change 16 / 32 / 64 |
+| ----------------------- | -------------------------------- | ------------------------------ |
+| `eval.bite_idle_pooled` | 0.062 / 0.046 / 0.064            | none / 0.20 / 0.15             |
+| `eval.bite_idle`        | 0.043 / 0.044 / 0.037            | 0.20 / 0.15 / 0.10             |

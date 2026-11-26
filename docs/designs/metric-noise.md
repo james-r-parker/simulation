@@ -268,8 +268,10 @@ The first pooled family is `eval.bite_idle_pooled` ([scene-bite.js](../../js/evo
 `hunters-pooled.js`): the idle-bite share of `eval.bite_idle` with its two sums kept per seed (hunter-ticks with a wish
 and no body in the jaws, over hunter-ticks with no body in the jaws). It was chosen because the numerator and
 denominator are the detector's own counters, so the metric is the old one exactly and only the report and the verdict
-change; the old name and computation are untouched. Its liveness and power are not read yet: the registry keeps it
-unverified until a 128-seed run carries the cells (the Contract says how it is read). The other pooled shares of the
+change; the old name and computation are untouched. E278 read it on 128 seeds per floor setting with the studentised
+interval (D7): live on both, it needs a 0.15 absolute change at 64 seeds against `eval.bite_idle`'s 0.10, on floor on and
+floor off. Idle hunter-ticks are spread evenly across worlds, so pooling does not shrink the between-world spread of the
+share, and the candidate stays unverified (the Contract says how it is read). The other pooled shares of the
 table (carcass, food-contact, herd-carcass, gap and call shares) wait for their own chunks.
 
 #### Terminal hunter count
@@ -447,11 +449,11 @@ Training selects on what the metrics report, so a role whose metric is wrong can
 
 ### Phase 2 - New definitions beside old metrics
 
-| #   | Task                                                                                                                                                                                                                                 | Nature      | Depends on |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------- | ---------- |
-| T3  | (built) For one family, add new metric names and necessary report/reducer support beside old computations, with arithmetic, source, validation and cluster-resampling tests                                                          | [judgement] | T2         |
-| T4  | Read that family's liveness and power on 128 seeds per floor setting, at 16/32/64 arms, using sufficient statistics or the longer window as specified; record failures without promotion and verified minSeeds where all checks pass | [judgement] | T3         |
-| T5  | Fresh family conformance review alongside its gate; regenerate metrics documentation and preserve every old metric                                                                                                                   | [judgement] | T4         |
+| #   | Task                                                                                                                                                                                                                                         | Nature      | Depends on |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------- |
+| T3  | (built) For one family, add new metric names and necessary report/reducer support beside old computations, with arithmetic, source, validation and cluster-resampling tests                                                                  | [judgement] | T2         |
+| T4  | (built) Read that family's liveness and power on 128 seeds per floor setting, at 16/32/64 arms, using sufficient statistics or the longer window as specified; record failures without promotion and verified minSeeds where all checks pass | [judgement] | T3         |
+| T5  | Fresh family conformance review alongside its gate; regenerate metrics documentation and preserve every old metric                                                                                                                           | [judgement] | T4         |
 
 ### Phase 3 - Retire superseded definitions
 
