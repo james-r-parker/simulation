@@ -4,7 +4,8 @@
 //
 // - `eval.bite_wish_with_prey_in_jaws`, `eval.bite_wish_with_kin_in_jaws` and
 //   `eval.bite_wish_with_other_in_jaws`: the share of each body opportunity with a wish above 0.
-// - `eval.bite_idle`: the share with a wish when nothing is in the jaws (biting air).
+// - `eval.bite_idle`: the share with a wish when nothing is in the jaws (biting air); `eval.bite_idle_pooled` is the same
+//   count with its two sums kept (the report pools them over seeds, `report-pooled.js`).
 // - `eval.bite_on_prey_view`, `eval.bite_off_kin_view` and `eval.bite_off_other_view`: the share with a wish while the
 //   corresponding pooled view channel is active, whether or not a body is in the jaws.
 //
@@ -18,6 +19,7 @@ import { OUTPUT_COUNT, OUTPUT_INDEX } from '../sim/brain-layout.js';
 import { inputOffsets } from '../sim/brain-layout.js';
 import { isKin } from '../sim/kin.js';
 import { none, ok } from './metrics-stats.js';
+import { pooledResult } from './report-pooled.js';
 
 /** The fewest opportunities a bite share is reported over. */
 export const BITE_MIN_OPPORTUNITIES = 30;
@@ -169,6 +171,11 @@ export function biteMetrics(scene) {
         'eval.bite_wish_with_kin_in_jaws': wishShare(scene, JAWS.KIN, BITE_MIN_OPPORTUNITIES),
         'eval.bite_wish_with_other_in_jaws': wishShare(scene, JAWS.OTHER, BITE_MIN_OPPORTUNITIES),
         'eval.bite_idle': wishShare(scene, JAWS.IDLE, 1),
+        'eval.bite_idle_pooled': pooledResult(
+            scene.wishes[JAWS.IDLE],
+            scene.opportunities[JAWS.IDLE],
+            `${scene.opportunities[JAWS.IDLE]} hunter-ticks with that body in the jaws (a share needs 1)`,
+        ),
         'eval.bite_on_prey_view': viewShare(VIEW.PREY),
         'eval.bite_off_kin_view': viewShare(VIEW.KIN),
         'eval.bite_off_other_view': viewShare(VIEW.OTHER),

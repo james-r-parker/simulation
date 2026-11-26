@@ -31,6 +31,7 @@
   "eval.birth_source_share.split",
   "eval.births_per_1k",
   "eval.bite_idle",
+  "eval.bite_idle_pooled",
   "eval.bite_off_kin_view",
   "eval.bite_off_other_view",
   "eval.bite_on_prey_view",

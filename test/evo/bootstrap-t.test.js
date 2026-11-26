@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { STUDENTISED_BELOW, studentisedInterval } from '../../js/evo/bootstrap-t.js';
+import { studentisedInterval } from '../../js/evo/bootstrap-t.js';
 import { bootstrapInterval } from '../../js/evo/compare.js';
 import { createRng, fork } from '../../js/sim/rng.js';
 
@@ -28,16 +28,14 @@ describe('studentisedInterval', () => {
     });
 });
 
-describe('bootstrapInterval dispatch', () => {
-    it('uses the studentised interval under 32 values and BCa from 32', () => {
-        expect(STUDENTISED_BELOW).toBe(32);
-        const small = Array.from({ length: 16 }, (_, i) => Math.sin(i * 1.7));
-        const rng = fork(createRng(1), 'bootstrap');
-        expect(bootstrapInterval(small)).toEqual(studentisedInterval(small, { rng, resamples: 10000, level: 0.95 }));
-        const large = Array.from({ length: 32 }, (_, i) => Math.sin(i * 1.7));
-        const rngLarge = fork(createRng(1), 'bootstrap');
-        expect(bootstrapInterval(large)).not.toEqual(
-            studentisedInterval(large, { rng: rngLarge, resamples: 10000, level: 0.95 }),
-        );
+describe('bootstrapInterval', () => {
+    it('is the studentised interval at every size, from the bootstrap stream', () => {
+        for (const size of [16, 32, 64]) {
+            const values = Array.from({ length: size }, (_, i) => Math.sin(i * 1.7));
+            const rng = fork(createRng(1), 'bootstrap');
+            expect(bootstrapInterval(values)).toEqual(
+                studentisedInterval(values, { rng, resamples: 10000, level: 0.95 }),
+            );
+        }
     });
 });

@@ -188,6 +188,9 @@
     "test/eval-compare.test.js": [
         "test"
     ],
+    "test/eval-power-pooled.test.js": [
+        "evals/power/defaults-floor-on-E276.json"
+    ],
     "test/eval-power.slow.test.js": [
         "evals/power/defaults-floor-on-E150.json"
     ],
