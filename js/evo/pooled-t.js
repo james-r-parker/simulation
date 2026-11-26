@@ -4,7 +4,7 @@
 // standard error is sd(z) / sqrt(n). Each resample of whole seeds (the same seed in both arms) gets its own standard
 // error from its own influence values. Pure, seeded.
 
-import { nextInt } from '../sim/rng.js';
+import { fillIndices, tInterval } from './bootstrap-t.js';
 
 /** @typedef {import('./report-pooled.js').PooledCell} PooledCell */
 
@@ -56,9 +56,7 @@ function resampledStatistics(before, after, { rng, resamples, observed }) {
     const stats = new Float64Array(resamples);
     let count = 0;
     for (let b = 0; b < resamples; b++) {
-        for (let i = 0; i < n; i++) {
-            pick[i] = nextInt(rng, n);
-        }
+        fillIndices(rng, pick);
         const s = pooledStat(before, after, pick);
         if (s !== null && s.se > 0) {
             stats[count++] = (s.diff - observed) / s.se;
@@ -83,8 +81,5 @@ export function pooledStudentisedInterval(before, after, { rng, resamples, level
     if (stats.length === 0 || se === 0) {
         return { low: diff, high: diff };
     }
-    const tail = (1 - level) / 2;
-    const at = (/** @type {number} */ p) =>
-        stats[Math.min(stats.length - 1, Math.max(0, Math.floor(p * stats.length)))];
-    return { low: diff - at(1 - tail) * se, high: diff - at(tail) * se };
+    return tInterval(stats, { observed: diff, se, level });
 }
