@@ -140,7 +140,9 @@ Chunks:
 
 ### Phase 2 - Habitat on the patch rims
 
-**Targets:** eval.prey_cover_distance, eval.prey_within_dash_share, eval.refuge_use_under_threat, eval.refuge_prey_use_under_threat, eval.refuge_episode_entry, eval.refuge_bite_deficit, eval.refuge_exit_fed, eval.refuge_crowding, eval.population_mean, eval.predators_at_end, eval.hunter_kill_conversion_by_age.1k-2k
+**Targets:** eval.prey_cover_distance, eval.prey_within_dash_share, eval.refuge_use_under_threat, eval.refuge_prey_use_under_threat, eval.refuge_episode_entry, eval.refuge_bite_deficit, eval.refuge_exit_fed, eval.population_mean, eval.predators_at_end, eval.hunter_kill_conversion_by_age.1k-2k
+
+Also read, judged only on seeds where a refuge ring holds a threatened prey (null on 21 of 128 at the defaults, E276): eval.refuge_crowding.
 
 `refugeAnchor` `patch` puts one or two rings on the rim of every food patch, so a prey that feeds in a patch is within a few
 hundred pixels of cover.
