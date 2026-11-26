@@ -6,7 +6,7 @@ import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { METRICS } from '../js/evo/metric-registry/index.js';
 import { withCurrentNames } from '../js/evo/metric-registry/renames.js';
-import { findTargets, renderTable, replaceTable } from './lib/metric-noise.mjs';
+import { findTargets, flatTargets, renderTable, replaceTable } from './lib/metric-noise.mjs';
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const DOC = `${ROOT}docs/designs/metric-noise.md`;
@@ -23,6 +23,22 @@ export function inventory() {
     return findTargets(docs, METRICS);
 }
 
+/**
+ * Warns, not fails: 25 flat metrics are named by active plans today (T29), and a plan's own status line is its author's to
+ * move, so a failing check would block every unrelated change. Pick a metric that moves when a plan is next touched.
+ *
+ * @param {import('./lib/metric-noise.mjs').Target[]} flat plan Targets that read flat
+ * @param {(text: string) => void} print output
+ * @returns {number} how many flat metrics were named
+ */
+export function reportFlat(flat, print) {
+    for (const target of flat) {
+        const plans = [...new Set(target.references.map((ref) => `${ref.plan}:${ref.line}`))].join(', ');
+        print(`warning: flat metric named as a Target: ${target.metric} in ${plans} (misses the liveness bar)`);
+    }
+    return flat.length;
+}
+
 /** @param {string[]} args flags @param {(text: string) => void} [print] output @returns {number} exit code */
 export function main(args, print = console.log) {
     if (args.length !== 1 || !['--metrics', '--references', '--write', '--check'].includes(args[0])) {
@@ -37,6 +53,9 @@ export function main(args, print = console.log) {
                 : JSON.stringify(targets, null, 2),
         );
         return 0;
+    }
+    if (args[0] === '--check') {
+        reportFlat(flatTargets(targets, METRICS), print);
     }
     return updateTable(args[0], targets, print);
 }

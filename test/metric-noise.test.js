@@ -1,8 +1,15 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { entry } from '../js/evo/metric-registry/entry.js';
-import { dependencyBlocks, findTargets, passes, renderTable, replaceTable } from '../scripts/lib/metric-noise.mjs';
-import { inventory, main, validateEvidence } from '../scripts/metric-noise.mjs';
+import {
+    dependencyBlocks,
+    findTargets,
+    flatTargets,
+    passes,
+    renderTable,
+    replaceTable,
+} from '../scripts/lib/metric-noise.mjs';
+import { inventory, main, reportFlat, validateEvidence } from '../scripts/metric-noise.mjs';
 
 const unverified = entry('test', {
     module: 'fixture',
@@ -112,6 +119,36 @@ describe('active plan metric dependencies', () => {
     });
 });
 
+describe('flat metrics as Targets (metric-noise T29)', () => {
+    const flat = {
+        ...registry['eval.food_energy_per_1k'],
+        liveness: { nullShare: 0, distinct: 2, offModeShare: 1 / 128, report: 'r' },
+        expectedFlat: 'no calls at the defaults',
+    };
+    const withFlat = { ...registry, 'eval.alarm_rate': flat };
+
+    it('lists a verified flat metric a plan names, which a verified live one is not', () => {
+        const docs = { 'p.md': doc('**Targets:** eval.alarm_rate, eval.food_energy_per_1k') };
+        expect(findTargets(docs, withFlat).map((t) => t.metric)).toEqual(['eval.alarm_rate']);
+        expect(findTargets(docs, registry)).toEqual([]);
+    });
+
+    it('names the plan and the metric of each flat Target, and nothing for a live one', () => {
+        const docs = { 'p.md': doc('**Targets:** eval.alarm_rate, eval.a') };
+        const targets = findTargets(docs, withFlat);
+        expect(flatTargets(targets, withFlat)).toEqual([
+            { metric: 'eval.alarm_rate', references: [{ plan: 'p.md', line: 5, kind: 'Targets' }] },
+        ]);
+    });
+
+    it('marks the flat metric in the table row', () => {
+        const targets = findTargets({ 'p.md': doc('**Targets:** eval.alarm_rate') }, withFlat);
+        const report = { metrics: { 'eval.alarm_rate': { mean: 10 } } };
+        const rows = [16, 32, 64].map((size) => ({ ...row(size, 0.1), metric: 'eval.alarm_rate' }));
+        expect(renderTable(targets, rows, report, withFlat)).toContain('`eval.alarm_rate` (flat)');
+    });
+});
+
 describe('power bars and table', () => {
     it('requires both FPR and MDE, accepts boundary values and treats null as failure', () => {
         expect(passes(row(16, 0.2, 0.1), unverified, 10)).toBe(true);
@@ -180,6 +217,18 @@ describe('metric-noise CLI', () => {
         expect(() => validateEvidence(power, source + ' ')).toThrow('source hash');
         expect(() => validateEvidence({ ...power, sizes: [16, 32] }, source)).toThrow('arm sizes');
         expect(() => validateEvidence({ ...power, includeWatch: false }, source)).toThrow('include-watch');
+    });
+
+    it('warns on --check, naming the plan and the metric of each flat Target, without failing it', () => {
+        /** @type {string[]} */
+        const output = [];
+        const flat = [{ metric: 'eval.alarm_rate', references: [{ plan: 'p.md', line: 5, kind: 'Targets' }] }];
+        expect(reportFlat(flat, (s) => output.push(s))).toBe(1);
+        expect(output).toEqual([
+            'warning: flat metric named as a Target: eval.alarm_rate in p.md:5 (misses the liveness bar)',
+        ]);
+        expect(reportFlat([], (s) => output.push(s))).toBe(0);
+        expect(output).toHaveLength(1);
     });
 
     it('checks the committed baseline table without mutating shared files', () => {

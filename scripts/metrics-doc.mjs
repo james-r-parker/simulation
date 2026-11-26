@@ -9,7 +9,7 @@
 //   node scripts/metrics-doc.mjs --check    # exit 1 if the committed doc differs from the registry
 import { fileURLToPath } from 'node:url';
 import { METRICS, minSeedsFor } from '../js/evo/metric-registry/index.js';
-import { metricStatus } from '../js/evo/metric-registry/status.js';
+import { isFlat, metricStatus } from '../js/evo/metric-registry/status.js';
 import { runGeneratedDoc } from './lib/generated-doc.mjs';
 
 const DOC_PATH = fileURLToPath(new URL('../docs/designs/metrics.md', import.meta.url));
@@ -74,7 +74,7 @@ function row(name, entry) {
         entry.meaning,
         entry.unit,
         better,
-        metricStatus(entry),
+        isFlat(entry) ? `${metricStatus(entry)} (flat)` : metricStatus(entry),
         String(entry.minSeeds ?? minSeedsFor(name)),
         mdeCell(entry),
     ].map(cell);
@@ -104,6 +104,9 @@ export function renderMetricsDoc(metrics = METRICS) {
         '- **Status** is `verified` when the metric has an arithmetic test, a source test, a liveness read and a measured',
         '  power; `unverified` otherwise; `deprecated` when it is kept only until its deletion task. A verdict, a keep',
         '  rule or a screen gate rests only on `verified` metrics.',
+        '- **(flat)** after a status marks a metric that misses the liveness bar and carries an `expectedFlat` reason: it',
+        '  reads the same on nearly every seed at the defaults. It keeps its status, but a plan Target, a keep-rule guard',
+        '  or a headline must not name it (metric-noise.md T29).',
         '- **Seeds** is the fewest seeds per arm a verdict needs: the measured `minSeeds`, else the legacy 32 of the four',
         '  noisy metrics, else 16.',
         "- **MDE at 32** is the smallest change the verdict detects at 32 seeds per arm: a percentage of the metric's mean in the",
