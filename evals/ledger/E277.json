@@ -1,0 +1,21 @@
+{
+  "id": "E277",
+  "plan": "metric-noise.md",
+  "task": "T4",
+  "stream": "coordinator",
+  "date": "2026-11-26",
+  "branch": "batch/2026-11-26-metric-noise",
+  "hypothesis": "metric-noise T4 (terminal hunter count family, Phase 2): a 600000-tick window lowers between-seed noise enough that eval.predators_at_end_terminal_window (mean of guard checkpoints over the last complete season after burn-in) reaches the 0.20 detectable-change bar at 64 seeds, floor on and floor off; the same reports read the other longer-window candidates.",
+  "prediction": "Written before the runs: the terminal-window count still fails the 0.20 bar at 64 seeds on both floor settings (E276 at 200000 ticks read 0.75 at 64; one season of checkpoints is a small sample whatever the run length, and between-seed hunter counts differ by world, not by window), so the candidate stays unverified and the next diagnosis is a multi-season mean; liveness passes on both.",
+  "targets": [],
+  "before": "evals/power/defaults-floor-on-E276.json",
+  "after": "scripts/run-detached.sh long-floor-on-E277 -- npm run eval -- --seeds 128 --ticks 600000 --policy map-elites-v6 --workers 22 --out evals/power/long-floor-on-E277.json; then the same with --config evals/floor-off-config.json --out evals/power/long-floor-off-E277.json",
+  "verdicts": {},
+  "effect": "no-difference",
+  "note": "Prediction held: eval.predators_at_end_terminal_window needs a 0.75 relative change at 64 seeds on floor on and floor off (bar 0.20), the same as at 200000 ticks; live on both (4 and 18 of 128 seeds at 0). The spread is between worlds (0 to 48 hunters), so the longer window does not help; the candidate stays unverified and no multi-season mean is run.",
+  "kind": "characterisation",
+  "beforePolicy": "map-elites-v6",
+  "afterPolicy": "map-elites-v6",
+  "outcome": "finding",
+  "reports": ["evals/decisions/E277-terminal-hunters/results.md"]
+}

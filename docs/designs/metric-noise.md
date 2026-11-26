@@ -291,8 +291,16 @@ The E210 diagnostic applies the same reducer to the saved `traces[].hunters` ser
 | 64            | 0.054               | 0.75                       |
 
 The candidate fails the 0.20 change bar through 64. At 64 it matches the original final-tick metric's E210 detectable
-change. T4 still needs the planned 600000-tick floor-on and floor-off reports, each with 128 seeds. The candidate keeps
-an empty registry power reading and seed minimum. T6 waits for a verified replacement before changing plan references.
+change. E277 read it on the planned 600000-tick reports, 128 seeds each, with the studentised interval (D8):
+
+| Floor | Seeds at 0 | Median | False positives 16 / 32 / 64 | Detectable change 16 / 32 / 64 |
+| ----- | ---------- | ------ | ---------------------------- | ------------------------------ |
+| On    | 4          | 2.8    | 0.093 / 0.058 / 0.062        | above the grid / 1.0 / 0.75    |
+| Off   | 18         | 1.75   | 0.067 / 0.048 / 0.059        | above the grid / 1.0 / 0.75    |
+
+It is live on both floor settings and still fails the 0.20 bar at 64: three times the window leaves the detectable
+change where it was, because the spread is between worlds (0 to 48 hunters), not within a run. The candidate keeps an
+empty registry power reading and seed minimum. T6 waits for a verified replacement before changing plan references.
 
 | Chunk | Tasks      | Ships                                                                             |
 | ----- | ---------- | --------------------------------------------------------------------------------- |
