@@ -287,7 +287,7 @@ Baseline (`evals/power/defaults-floor-on-E276.json`, 128 seeds, 200000 ticks), t
 | `eval.champion_elo`                | -        | -                    | 1       | -      | -      | -      | more than 64          |
 | `eval.pursuit_kill_share`          | 0.6544   | 0.3704 to 1          | 0       | 0.075  | 0.05   | 0.05   | 32                    |
 
-Verdict (`E-TS-0`, read on E276, no run of its own): partly falsified. `eval.chase_quit_share` (0.1124) is under 0.15, as predicted. `eval.chase_lost_share` (0.137) is not the largest part of the give-up share: `eval.chase_outrun_share` (0.1644) is larger, and the give-up share is 0.4138 (`eval.chase_giveup_share`), not the 0.60 the prediction named. `eval.pack_lift` is 1.635, not within 0.2 of 1 (it is null on 21 of 128 seeds, and at or above 1.2 on 75 of the 107 that read), so hunters do lift each other's kills. T5's measurement is this read; the 16-seed run of its row is not made.
+Verdict (`E-TS-0`, read on E276, no run of its own): partly falsified. `eval.chase_quit_share` (0.1124) is under 0.15, as predicted. `eval.chase_lost_share` (0.137) is not the largest part of the give-up share: `eval.chase_outrun_share` (0.1644) is larger, and the give-up share is 0.4138 (`eval.chase_giveup_share`), not the 0.60 the prediction named. `eval.pack_lift` (judged only on E276, the one read) is 1.635, not within 0.2 of 1 (it is null on 21 of 128 seeds, and at or above 1.2 on 75 of the 107 that read), so hunters do lift each other's kills. T5's measurement is this read; the 16-seed run of its row is not made.
 
 #### Chunks
 
