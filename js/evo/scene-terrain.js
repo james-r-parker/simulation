@@ -146,12 +146,13 @@ export function terrainMetrics(scene) {
             never += log.crossings[row] === 0 ? 1 : 0;
         }
     }
-    const noLineage = none(`no lineage with ${MIN_LINEAGE_SAMPLES} wall samples after burn-in`);
+    const noReason = `no lineage with ${MIN_LINEAGE_SAMPLES} wall samples after burn-in`;
+    const noLineage = none(noReason);
     return {
         'eval.refuge_use_under_threat': refuge,
         'eval.gap_crossers': lineages > 0 ? ok(crossings / lineages) : noLineage,
         'eval.gap_never_share': lineages > 0 ? ok(never / lineages) : noLineage,
-        'eval.gap_never_share_pooled': pooledResult(never, lineages, noLineage.reason),
+        'eval.gap_never_share_pooled': pooledResult(never, lineages, noReason),
     };
 }
 
