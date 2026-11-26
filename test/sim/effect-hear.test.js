@@ -24,6 +24,14 @@ describe('rallied', () => {
         expect([...w.heardFrom.subarray(row, row + 3)]).toEqual([0, w.genomeId[0], 0]);
     });
 
+    it('gives a hearer whose body straddles a grid cell edge one stack, not one for each cell it is in', () => {
+        const w = pack();
+        w.x[1] = 695; // the hash cells are 140 wide, so a body of size 20 at 695 is in the cells either side of 700
+        hold(w, 0, OUTPUT_INDEX.HUNT);
+        tick(w);
+        expect(stacks(w, 1, 'rallied')).toBe(1);
+    });
+
     it('gives a second stack for a second call, and stops at 3', () => {
         const w = pack({ huntCallCost: 0 });
         hold(w, 0, OUTPUT_INDEX.HUNT);
@@ -132,6 +140,14 @@ describe('alert', () => {
         expect(stacks(w, 0, 'alert')).toBe(0);
         const row = HEARD_FROM_STRIDE;
         expect([...w.heardFrom.subarray(row, row + 3)]).toEqual([0, w.genomeId[0], 0]);
+    });
+
+    it('gives a non-hunter whose body straddles a grid cell edge one stack for an alarm, not one for each cell', () => {
+        const w = herd();
+        w.x[1] = 695;
+        alarmWith(w, true);
+        tick(w);
+        expect(stacks(w, 1, 'alert')).toBe(1);
     });
 
     it('gives nothing for an alarm with nothing in view, to a hunter, or below hearThreshold', () => {
