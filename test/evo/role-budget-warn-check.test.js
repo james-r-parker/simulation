@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { preStep5Arena } from '../helpers/pre-step5.js';
 import { MODEL_DEFAULTS } from '../../js/evo/role-budget-model.js';
+import { arenaConfig } from '../../js/evo/chase-arena.js';
 import { warnCheck } from '../../js/evo/role-budget-warn-check.js';
 
 describe('warnCheck at the defaults', () => {
@@ -15,6 +16,7 @@ describe('warnCheck at the defaults', () => {
             'gap when the forager moves',
             'gap when the forager has turned and runs',
             'a forager the formula calls safe is safe in the sim: the formula never flatters it',
+            'a forager whose run reads ok or tight is not caught by the reactive oracle hunter',
             "at effort 1, the oracle hunter's, the formula and the sim agree on whether the forager is caught",
         ]);
         expect(readings.every((r) => r.row === 'scout:predator')).toBe(true);
@@ -37,6 +39,14 @@ describe('warnCheck at the defaults', () => {
     it('reads the sign at effort 1 both ways: the formula and the sim both say the forager escapes at the defaults', () => {
         const read = readings.find((r) => r.what.startsWith('at effort 1'));
         expect([read?.formula, read?.scene, read?.tolerance, read?.drift]).toEqual([true, true, 'agree', false]);
+    });
+
+    it('reads that a forager whose run is ok or tight is not caught by the reactive oracle, at the step 5 defaults too', () => {
+        const what = 'a forager whose run reads ok or tight is not caught by the reactive oracle hunter';
+        for (const config of [preStep5Arena(), arenaConfig({})]) {
+            const read = warnCheck(config, MODEL_DEFAULTS).readings.find((r) => r.what === what);
+            expect([read?.formula, read?.scene, read?.tolerance, read?.drift]).toEqual([true, true, 'agree', false]);
+        }
     });
 
     it('flags a reading outside its tolerance: a scout that sees a tick late no longer matches the scene', () => {
