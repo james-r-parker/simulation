@@ -5,6 +5,7 @@
  * @property {number} nullShare the share of seeds on which the metric is `null`
  * @property {number} distinct the number of distinct values it takes over the seeds
  * @property {number} offModeShare the share of non-null seeds whose value is not the most common one (0 when all agree)
+ * @property {number} [spread] the sample standard deviation of the non-null seed values (absent in a read made before metric-noise T31); the headline pick compares a signed metric's detectable change with it
  * @property {string} report the repo path of the report the read came from
  */
 
