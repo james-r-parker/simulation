@@ -1,6 +1,6 @@
 # Registries
 
-**Status:** In progress - Phases 1 and 3 are built: the events, the spec names, the per-slot state and the 42 scene detectors are each one declared list, with contract tests, and every golden `worldHash` and a 2-seed eval report are unchanged. Phase 2 is built inside body-genes.md T6a. The bench reading and T12 are the coordinator's.
+**Status:** In progress - All three phases are built and reviewed (T12, 2026-11-26): the events, spec names, per-slot state and the 46 scene detectors are each one declared list with contract tests; Phase 2 is body-genes.md T6a. Open: the `bench.observe_ms@500` reading (T13), taken with detector-baseline.md T4 on a quiet machine.
 **Validated:** 23e8cc66 (2026-11-21)
 **Scheduled by:** [metric-noise.md](metric-noise.md) step 1 - the detector interface is built before metric-noise.md Phase 6 adds the role metrics, since each detector added today touches 12 to 22 files
 
@@ -19,7 +19,7 @@ A registry is one declarative list that everything else loops over: the list say
 | Metric registry          | what each of 377 metrics means, its direction, tests, liveness and power (`js/evo/metric-registry/`)               | a registry of descriptions; the computation is tied to it by name strings (Phase 3)                                                                                         |
 | Events                   | 34 event codes with 13 positional fields (`EVENT_TYPE` in `js/sim/events.js`)                                      | a registry: `EVENTS` names every field, one emitter in `js/sim/log.js`, consumers read by named offset, a generated table (Phase 1, built)                                  |
 | Brain inputs and outputs | ray channels, body inputs, outputs and their thresholds                                                            | spread: `BODY_INPUT` names 11 of 36 offsets, the labels are a second list, channel numbers are re-declared in 6 files (Phase 2)                                             |
-| Detectors                | 48 scene modules behind the observer                                                                               | spread: each wired by hand in `js/evo/observer-scenes.js`; adding one touched 12, 19 and 22 files in the last three cases (Phase 3)                                         |
+| Detectors                | 46 scene detectors behind the observer                                                                             | a registry: `DETECTORS` in `js/evo/detectors.js`, one shape, one dispatch loop, a contract test (Phase 3, built)                                                            |
 | Specialisations          | the five specs                                                                                                     | a registry: `js/sim/specs.js`; a `conventions` rule refuses a local count, index or name list (Phase 1, built)                                                              |
 | Per-slot state           | every per-agent array                                                                                              | `agentSpecs` (`js/sim/agent-arrays.js`) says for each array how it is hashed and which kernels take it; the hash order and the arena's field lists read it (Phase 1, built) |
 | Training stages          | `evals/stages/*.json`, the ladder files                                                                            | declarative; left as they are                                                                                                                                               |
@@ -118,6 +118,16 @@ Inside the `bench-check` margin; an eval report is byte-identical before and aft
 | ----- | --------- | ------- |
 | C     | T8 to T12 | Sonnet  |
 
+### Reviewed (T12, 2026-11-26)
+
+A fresh review of Phases 1 to 3 against the code on `docs/metric-noise-step-reviews`. The six contract and offset tests pass (102 tests: `test/evo/detectors.contract.test.js`, `test/sim/events.test.js`, `specs.test.js`, `world-state.contract.test.js`, `brain-io.test.js`, `event-offsets.test.js`).
+
+- **Built as claimed.** `DETECTORS` in `js/evo/detectors.js` holds 46 detectors (the Status said 42; `LEAN_DETECTORS` is `style` and `terrain`); `js/evo/observer-scenes.js` is gone; `observer-detectors.js` dispatches by event name and a throwing handler is reported as `detector <name> reading <event>`; the contract test holds each detector's `metrics()` keys to the registry entries of its `modules`, `onSlotFree`, the event names, `SOURCE_BY_MODULE` and `metric-names.json`. Phase 1: `EVENTS`, `drainEvents` as the one emitter, `js/sim/specs.js`, `hashed` and `kernels` on `agentSpecs` (`js/sim/agent-arrays.js`) and the generated `docs/log-events.md` and `docs/config-keys.md` all exist; no bare event offset or local spec constant is left under `js/`.
+- **Doc drift fixed.** The Status count, the systems map's Detectors row (still "spread") and T1 to T5 (built, unmarked) were stale. The "As built" text names `js/evo/observer-scenes-events.js`, which no longer exists: its event pass became the detectors' `on` maps.
+- **Not re-verified here.** The byte-identical 2-seed eval report and the unchanged goldens are the build PRs' evidence (no run was repeated). The `bench.observe_ms@500` reading was never taken: no baseline reading is committed, and it needs a quiet machine, so it is T13 and the one open item.
+- **Detector readings.** No detector read wrong in this review; the contract test covers key sets, not values (values are the metric-registry source tests).
+- **Stale comment, not fixed.** `js/evo/scene-disease.js` still says "fed by `observer-scenes.js`".
+
 ## Decisions
 
 | Decision                                 | Holds because                                                                                                                                                                                                       |
@@ -147,20 +157,20 @@ Inside the `bench-check` margin; an eval report is byte-identical before and aft
 
 ### Phase 1 - Events, spec names and the per-slot list (built)
 
-| #   | Task                                                                                                                                                                                                           | Nature       | Depends on |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
-| T1  | Add `EVENTS` with every event's named fields, build `EVENT_TYPE` and the offsets from it, replace the 34 emitters with one, and generate the log's event table; tests on a recorded log                        | [judgement]  | -          |
-| T2  | Move every consumer to named offsets (the nine reader files), and the cause lists to `{code, name, colour}` read by the app; no bare event offset left (`rg` check in the test)                                | [mechanical] | T1         |
-| T3  | Add `js/sim/specs.js`, replace the five name arrays and the 21 local constants, and add the `conventions` rule                                                                                                 | [mechanical] | -          |
-| T4  | Add `hashed` and the kernel list to `agentSpecs`, derive the hash list and the WASM pointer tables from it in today's order, with the contract test; generate the config key table from the defaults and rules | [judgement]  | -          |
-| T5  | Conformance review of Phase 1 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                                            | [judgement]  | T2, T3, T4 |
+| #   | Task                                                                                                                                                                                                                   | Nature       | Depends on |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ---------- |
+| T1  | (built) Add `EVENTS` with every event's named fields, build `EVENT_TYPE` and the offsets from it, replace the 34 emitters with one, and generate the log's event table; tests on a recorded log                        | [judgement]  | -          |
+| T2  | (built) Move every consumer to named offsets (the nine reader files), and the cause lists to `{code, name, colour}` read by the app; no bare event offset left (`rg` check in the test)                                | [mechanical] | T1         |
+| T3  | (built) Add `js/sim/specs.js`, replace the five name arrays and the 21 local constants, and add the `conventions` rule                                                                                                 | [mechanical] | -          |
+| T4  | (built) Add `hashed` and the kernel list to `agentSpecs`, derive the hash list and the WASM pointer tables from it in today's order, with the contract test; generate the config key table from the defaults and rules | [judgement]  | -          |
+| T5  | (built) Conformance review of Phase 1 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                                            | [judgement]  | T2, T3, T4 |
 
 ### Phase 2 - The brain's inputs and outputs
 
-| #   | Task                                                                                                                                                      | Nature      | Depends on |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------- |
-| T6  | Write `BRAIN_IO` and build every offset, count and label from it, as [body-genes.md](body-genes.md) T6a (the task is that doc's; this row tracks it here) | [judgement] | T5         |
-| T7  | Conformance review of Phase 2 with the body-genes Phase 1 review                                                                                          | [judgement] | T6         |
+| #   | Task                                                                                                                                                                                          | Nature      | Depends on |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------- |
+| T6  | (built) Write `BRAIN_IO` and build every offset, count and label from it, as [body-genes.md](body-genes.md) T6a (the task is that doc's; this row tracks it here; body-genes.md T6a is built) | [judgement] | T5         |
+| T7  | (built) Conformance review of Phase 2 with the body-genes Phase 1 review (body-genes.md T5 is built, so it covered T6a)                                                                       | [judgement] | T6         |
 
 ### Phase 3 - Detectors
 
@@ -170,7 +180,8 @@ Inside the `bench-check` margin; an eval report is byte-identical before and aft
 | T9  | (built) Move the hunter and chase scene modules to the shape, a family to a commit, each with a byte-identical report                                                                                                                                                               | [mechanical] | T8         |
 | T10 | (built) Move the ecology, social, brain and world scene modules the same way; delete `js/evo/observer-scenes.js` and the hand wiring                                                                                                                                                | [mechanical] | T9         |
 | T11 | (built) Hold `SOURCE_BY_MODULE` and `test/fixtures/metric-names.json` to the detectors (a generated table is an import cycle); give the role scenes of [role-budget.md](role-budget.md) and the drills one `stageArena`. The one scenario entry shape is deferred to role-budget.md | [judgement]  | T10        |
-| T12 | Conformance review of Phase 3 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                                                                                                                 | [judgement]  | T11        |
+| T12 | (built: reviewed 2026-11-26, see "Reviewed (T12)") Conformance review of Phase 3 by a fresh agent, in parallel with `scripts/check.sh`                                                                                                                                              | [judgement]  | T11        |
+| T13 | Read `bench.observe_ms@500` (and `bench.step_ms@500`) on a base-ref and a head run under the CPU lock, once with detector-baseline.md T4 (the same measurement, over both waves); inside the `bench-check` margin closes Phase 3's Target                                           | [mechanical] | T12        |
 
 ## Verification
 
