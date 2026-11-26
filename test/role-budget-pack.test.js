@@ -50,7 +50,7 @@ describe('readAmplifiers', () => {
         const read = /** @type {any} */ (readAmplifiers(config, MODEL_DEFAULTS, ['pack:forager']));
         expect(read.data['pack:forager'].packGain).toBeGreaterThan(0);
         expect(read.text).not.toMatch(/by construction/);
-        expect(read.text).toMatch(/lone -102\.3 {2}rallied \+/);
+        expect(read.text).toMatch(/lone -57\.8 {2}rallied \+/);
     });
 });
 

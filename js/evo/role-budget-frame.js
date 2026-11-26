@@ -286,13 +286,18 @@ function sweep(hunter, prey, frame, { aware, hint }) {
 /**
  * @param {import('./role-budget-params.js').RoleParams} hunter the hunter
  * @param {import('./role-budget-params.js').RoleParams} prey the prey
- * @param {Frame} frame the frame; a `perfect` frame without an `effort` reads the best of `EFFORTS` (`bestEffort`)
+ * @param {Frame} frame the frame; a `perfect` frame without an `effort` reads the best of `EFFORTS` (`bestEffort`) and of the
+ *   `reactive` tier from the same start, so it is never below it
  * @param {number} [aware] the awareness gap to start from (default `gapAtAwareness`)
  * @returns {number} the reach of a kill (`reachAt`) of the frame's performer
  */
 export function maxCatchableGap(hunter, prey, frame, aware = gapAtAwareness(hunter, prey)) {
     if ((frame.tier ?? 'perfect') === 'perfect' && frame.effort === undefined) {
-        return bestEffort(hunter, prey, frame, aware).gap;
+        // the best play of any tier (T31): the sweep covers the effort of a hunter already creeping, and a hunter that starts
+        // at rest and arrives slower can turn inside a break that a flat-out sprint overshoots, so the reactive reach is read
+        // too and a perfect hunter never reaches less than a reactive one
+        const swept = bestEffort(hunter, prey, frame, aware).gap;
+        return Math.max(swept, reachAt(hunter, prey, { ...frame, tier: 'reactive' }, { aware, beat: swept }));
     }
     return reachAt(hunter, prey, frame, { aware });
 }

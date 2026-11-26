@@ -61,7 +61,7 @@ describe('warnTimeline at the defaults', () => {
 
 describe('budgetWarn', () => {
     it('at the defaults the warning beats the forager own sight by 7 ticks, and the turned, flying forager leaves 3 more against the reactive hunter', () => {
-        // Phase 6: `run` reads the reactive hunter on the broken bound (270 px), not the perfect one (86 px on this world), so the
+        // Phase 6: `run` reads the reactive hunter on the broken bound (270 px), not the perfect sweep alone (86 px on this world; `perfect` now reads at least the reactive reach), so the
         // turn and run slack fell from 16 to 3 and `hear` from 28 to 5
         const b = budget();
         expect(margins(b)).toEqual([12, 5, 7, 3, 3]);

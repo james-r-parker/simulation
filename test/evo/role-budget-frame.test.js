@@ -119,7 +119,9 @@ describe('maxCatchableGap', () => {
         const base = { model, bound: /** @type {'straight' | 'broken'} */ (bound) };
         const best = bestEffort(hunter, prey, base);
         const at = (/** @type {number} */ effort) => maxCatchableGap(hunter, prey, { ...base, effort });
-        expect(maxCatchableGap(hunter, prey, base)).toBe(best.gap);
+        // T31: a perfect hunter reads the best of the sweep and of the reactive tier, never less than either
+        const reactive = maxCatchableGap(hunter, prey, { ...base, tier: 'reactive' });
+        expect(maxCatchableGap(hunter, prey, base)).toBe(Math.max(best.gap, reactive));
         expect(at(best.effort)).toBe(best.gap);
         // the first pass: no effort of the 0.05 grid reaches further
         expect(best.gap).toBe(Math.max(best.gap, ...EFFORTS.map(at)));
@@ -139,7 +141,12 @@ describe('maxCatchableGap', () => {
         const gap = maxCatchableGap(defaults.hunter, defaults.prey, frame);
         expect(gap).toBeLessThan(aware);
         if (gap > 0) {
-            expect(playFrame(defaults.hunter, defaults.prey, gap, frame).killTick).not.toBeNull();
+            // the reach is the best of the sweep and the reactive tier (T31): one of them kills there
+            const kills = (/** @type {any} */ f) => playFrame(defaults.hunter, defaults.prey, gap, f).killTick !== null;
+            expect(
+                kills({ model, effort: bestEffort(defaults.hunter, defaults.prey, frame).effort }) ||
+                    kills({ model, tier: 'reactive' }),
+            ).toBe(true);
         }
     });
 

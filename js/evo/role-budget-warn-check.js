@@ -5,8 +5,8 @@
 import { PX, inTicks, signReading, ticksReading } from './role-budget-defence-check.js';
 import { roleParams } from './role-budget-params.js';
 import { maxCatchableGap } from './role-budget-frame.js';
-import { flying, warnTimeline } from './role-budget-warn.js';
-import { playWarning } from './role-scenes-warn.js';
+import { budgetWarn, flying, warnTimeline } from './role-budget-warn.js';
+import { playReactiveFlight, playWarning } from './role-scenes-warn.js';
 
 /**
  * The warning: the scout's alarm, the forager's hearing and first move and its gap then exactly, the gap when it has turned
@@ -35,6 +35,12 @@ export function warnCheck(config, model) {
     // reading holds the formula to the perfect hunter's reach: a forager that outruns it is not killed in the sim
     const safeFromPerfect =
         chain.runTick >= 0 && chain.gapAtRun >= maxCatchableGap(hunter, forager, { model, ...flying(chain) });
+    // the reactive tier of the budget's `run` (Phase 6) against the sim's reactive hunter: one-sided, as the perfect reading is
+    const runCell = chain.runTick >= 0 ? budgetWarn(scout, forager, hunter, model).cells.run.status : 'n/a';
+    const reactive =
+        runCell === 'ok' || runCell === 'tight'
+            ? playReactiveFlight(config, { reaction: model.reactionTicks, aware: chain.gapAtRun, ...flying(chain) })
+            : null;
     const readings = [
         ticksReading(row, 'alarm tick', [chain.alarmTick, scene.ticks.alarmTick], inTicks(0)),
         ticksReading(row, 'forager hears', [chain.heardTick, scene.ticks.heardTick], inTicks(0)),
@@ -44,6 +50,10 @@ export function warnCheck(config, model) {
         signReading(row, 'a forager the formula calls safe is safe in the sim: the formula never flatters it', [
             true,
             !safeFromPerfect || !scene.outcome.caught,
+        ]),
+        signReading(row, 'a forager whose run reads ok or tight is not caught by the reactive oracle hunter', [
+            true,
+            reactive === null || !reactive.outcome.caught,
         ]),
         signReading(
             row,
