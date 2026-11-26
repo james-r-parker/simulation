@@ -76,13 +76,31 @@ export function dependencyBlocks(text) {
     return blocks;
 }
 
-/** A clause (split at `;`, a table cell or a sentence end) that says `judged only when|with|on|after <feature>` names metrics that read only once that feature is on, so it is no Target at the defaults.
- * @param {string} text dependency text @returns {string} the text without those clauses */
-export function preconditioned(text) {
-    return text
-        .split(/(?<=;)|(?<=\.\s)|(?=\|)/)
-        .filter((clause) => !/\bjudged only (?:when|with|on|after)\b/i.test(clause))
-        .join('');
+/** The note that a metric reads only once a feature is on (metric-noise T29a). */
+const JUDGED_ONLY = /\bjudged only (?:when|with|on|after)\b/i;
+/** A clause boundary: `;`, a table cell or a sentence end. */
+const BOUNDARY = /;|\||\.(?:\s|$)/;
+/** A metric token. */
+const TOKEN = /\beval\.[a-zA-Z0-9_@*-]+(?:\.[a-zA-Z0-9_@*-]+)*/g;
+
+/**
+ * The metric tokens of a text that are not preconditioned. A token is preconditioned when the text after it, up to
+ * the next token or clause boundary, says `judged only when|with|on|after <feature>` (`eval.x (judged only when ...)`),
+ * or when it follows a `judged only ...:` lead-in in its clause (`Also read, judged only on ...: eval.x, eval.y`).
+ * Such a metric reads only once that feature is on, so it is no Target at the defaults; its neighbours keep theirs.
+ * @param {string} text dependency text
+ * @returns {string[]} the tokens that remain Targets
+ */
+export function unconditionedTokens(text) {
+    const matches = [...text.matchAll(TOKEN)];
+    return matches
+        .filter((match, i) => {
+            const end = (match.index ?? 0) + match[0].length;
+            const after = text.slice(end, matches[i + 1]?.index ?? text.length).split(BOUNDARY)[0];
+            const before = text.slice(0, match.index).split(BOUNDARY).pop() ?? '';
+            return !JUDGED_ONLY.test(after) && !(JUDGED_ONLY.test(before) && before.includes(':'));
+        })
+        .map((match) => match[0]);
 }
 
 /** @param {string} text dependency text @param {string[]} names registry keys @param {string} kind dependency context @returns {string[]} expanded metric tokens */
@@ -90,7 +108,7 @@ function metricTokens(text, names, kind) {
     if (/No baseline prediction is claimed|makes no baseline prediction|^\*\*Targets:\*\* none\b/i.test(text)) {
         return [];
     }
-    const tokens = preconditioned(text).match(/\beval\.[a-zA-Z0-9_@*-]+(?:\.[a-zA-Z0-9_@*-]+)*/g) ?? [];
+    const tokens = unconditionedTokens(text);
     return tokens.flatMap((token) => {
         const clean = token.replace(/\.$/, '');
         if (clean === 'eval.*' && kind !== 'Targets') {

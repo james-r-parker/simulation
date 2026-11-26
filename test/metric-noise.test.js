@@ -167,6 +167,17 @@ describe('a precondition clause (metric-noise T29a)', () => {
         expect(names('| Done: `eval.alarm_rate` | judged only when calls fire |')).toEqual(['eval.alarm_rate']);
     });
 
+    it('exempts only the metric the note follows, or the list a judged-only lead-in introduces', () => {
+        expect(names('Done: eval.a and eval.alarm_rate (judged only when calls fire) both move.')).toEqual(['eval.a']);
+        expect(names('| Done: feature `eval.a`, `eval.alarm_rate` (judged only when a herd returns) |')).toEqual([
+            'eval.a',
+        ]);
+        expect(names('Also read, judged only on arms where calls fire: eval.alarm_rate.')).toEqual([]);
+        expect(names('Done: eval.a moves, and eval.alarm_rate stays put (judged only with calls on).')).toEqual([
+            'eval.a',
+        ]);
+    });
+
     it('fails the check while a plan names a flat metric as a Target', () => {
         const output = [];
         const flatTarget = [{ metric: 'eval.alarm_rate', references: [{ plan: 'p.md', line: 5, kind: 'Targets' }] }];

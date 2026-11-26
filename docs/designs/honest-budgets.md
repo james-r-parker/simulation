@@ -227,9 +227,9 @@ Also read, judged only on the arm where a call changes the bite, so calls fire (
 | `a75`     | 0.75             |
 | `a50`     | 0.5              |
 
-| Done when                                                                                                                                                                                                   | Stop when                                            |
-| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| `eval.alarm_rate` above 0 on most seeds with `eval.alarm_calls_with_threat_per_1k` rising with it (both judged only on the arm where calls fire), and `keepRule` on 64 matched seeds reads no guard `WORSE` | Calls with no threat rise faster than calls with one |
+| Done when                                                                                                                                                                                             | Stop when                                            |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| Judged only on the arm where calls fire: `eval.alarm_rate` above 0 on most seeds with `eval.alarm_calls_with_threat_per_1k` rising with it, and `keepRule` on 64 matched seeds reads no guard `WORSE` | Calls with no threat rise faster than calls with one |
 
 E178 ([results](../../evals/decisions/E178/results.md)): the 16-seed screen names no finalist. `eval.alarm_rate` is above 0 on 4 of 16 seeds and `a75` and `a50` are bit-identical to `control` on every metric: no bite lands on a seen caller while its timer runs, so the bite share never acts. The liar clause is not triggered. T30 is not run and T31 is parked: `alarmBiteShare` stays 1 and the code and tests stay. Open: calls are too rare for a bite rule to matter; selection must first produce calls on sight.
 

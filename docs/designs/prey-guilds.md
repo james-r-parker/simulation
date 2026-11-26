@@ -110,9 +110,9 @@ Also read, judged only on the arms where scouts' calls fire (they read flat at t
 
 Pair with `honest-budgets.md` Phase 5 (`alarmBiteShare`) so alarms actually protect neighbours. Give `scout` a wider alarm reach (`scoutCallRadiusMultiplier`, e.g. `1.5`), lower call cost (`scoutAlarmCostMultiplier`, e.g. `0.5`), and a burst escape speed (`scout.sprintBoost` `1.2` to `1.35`) so scouts spot stalking hunters at `400` px, warn nearby kin/foragers before contact, and escape the initial lunge.
 
-| Done when                                                                                                                                                                                     | Stop when                                                           |
-| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| `eval.scout_alarm_lead_share` rises over control, `eval.alarm_lift` holds positive (both judged only on the arms where scouts' calls fire), and `keepRule` on 64 seeds reads no guard `WORSE` | Calls spam without threats or `eval.guild_survival.scout` collapses |
+| Done when                                                                                                                                                                               | Stop when                                                           |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Judged only on the arms where scouts' calls fire: `eval.scout_alarm_lead_share` rises over control, `eval.alarm_lift` holds positive, and `keepRule` on 64 seeds reads no guard `WORSE` | Calls spam without threats or `eval.guild_survival.scout` collapses |
 
 #### Chunks
 
@@ -195,7 +195,7 @@ A defender has no reason today to raise `BITE`, and a scout none to call. Before
 
 ### What counts as a result
 
-- `eval.hunt_abort_rate` and `eval.alarm_lift` are `watch` metrics and give no verdict, and `eval.alarm_lift` is judged only on arms where calls fire. `eval.spec_dominance` and `eval.boom_bust_count` are unverified, and `eval.alarm_rate` is judged only on arms where calls fire. A Done row rests on a verified metric with a direction (`eval.spec_effective`, `eval.pack_kills_per_eaten_death`, `eval.hunter_catches_per_1k`) and reports the others.
+- `eval.hunt_abort_rate` and `eval.alarm_lift` (judged only on arms where calls fire) are `watch` metrics and give no verdict. `eval.spec_dominance` and `eval.boom_bust_count` are unverified, and `eval.alarm_rate` is judged only on arms where calls fire. A Done row rests on a verified metric with a direction (`eval.spec_effective`, `eval.pack_kills_per_eaten_death`, `eval.hunter_catches_per_1k`) and reports the others.
 - `eval.pack_lift` is built by [training-stages.md](training-stages.md) T2 and is judged only on seeds where hunters make 30 pack kills; Phase 2 does not start before it is registered and has a power reading.
 - "`eval.spec_dominance` falls below 0.45" is a raw line. The test is `eval:compare` against the control on matched seeds ([principles.md](../principles.md): "Raw counts against a fixed line are not a test").
 - Which guild a hunter eats is read directly: `eval.prey_selectivity.<spec>` (T1) is each guild's share of eaten deaths over its share of the prey alive, so 1 is no preference. A defence that works lowers its guild's value and raises another's.
