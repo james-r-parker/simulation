@@ -38,6 +38,7 @@ import { diseaseDetector } from './scene-disease.js';
 import { guardsDetector } from './scene-guards.js';
 import { guildsDetector } from './scene-guilds.js';
 import { defenderDetector } from './scene-defender.js';
+import { escortDetector } from './scene-escort.js';
 import { kinDetector } from './scene-kin-proximity.js';
 import { familiesDetector } from './scene-families.js';
 import { divergenceDetector } from './scene-divergence.js';
@@ -75,6 +76,7 @@ export const DETECTORS = Object.freeze([
     styleDetector,
     guildsDetector,
     defenderDetector,
+    escortDetector,
     refugeOutcomeDetector,
     heritageDetector,
     nicheDetector,
