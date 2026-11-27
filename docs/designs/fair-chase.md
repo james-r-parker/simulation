@@ -26,7 +26,6 @@ Own work first: Phase 1 (the store and the envelope, built). The order is: step 
 | 7    | [hunter-practice.md](hunter-practice.md)   | The bite detectors and the within-lifetime gain, read once a hunter can reach its prey                                                                                                                                                               |
 | 8    | [hunter-learning.md](hunter-learning.md)   | The refusal wires and the too-big body, after hunter-practice.md names what a hunter still gets wrong                                                                                                                                                |
 | 9    | [scent-trails.md](scent-trails.md)         | Trail and carrion scent; it builds on stillness.md and on body-priced carcasses                                                                                                                                                                      |
-| 10   | [smoke-decoy.md](smoke-decoy.md)           | Gate 1's last red row (`defender:predator`, the caller's smoke escape): a fresh cloud reads as a body on the hunter's rays; built beside step 3, since step 3's review waits on it                                                                   |
 
 ## Before any training
 
