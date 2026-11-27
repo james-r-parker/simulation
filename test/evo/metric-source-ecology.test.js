@@ -35,6 +35,8 @@ const SOURCE_METRICS = [
     'eval.herd_carcass_meal_share',
     'eval.carcass_meal_share',
     'eval.defender_bite_break_share',
+    'eval.defender_escort_distance',
+    'eval.defender_escort_ratio',
     // metric-noise T26: these three entries moved to scenes-ecology-4.js (file size limit), which the registry spreads here;
     // only the order of the pin changed, no reading did.
     'eval.refuge_crowding',
@@ -187,7 +189,7 @@ describe('ecology metrics from a scripted source run', () => {
         const registryNames = Object.entries(METRICS)
             .filter(([, entry]) => entry.family === 'scenes-ecology')
             .map(([name]) => name);
-        expect(names).toHaveLength(105);
+        expect(names).toHaveLength(107);
         expect(names).toEqual(registryNames);
         expect(Object.fromEntries(names.map((name) => [name, actual[name]]))).toEqual(expected);
         expect(run.observer.deathCount).toBe(2);
