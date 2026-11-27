@@ -4,10 +4,10 @@ import { BITTEN_THIS_TICK } from '../../js/evo/observer-intent-episode.js';
 import { BURN_IN_TICKS } from '../../js/evo/burn-in.js';
 import { ESCORT_CLEARANCE } from '../../js/evo/role-budget-escort.js';
 import {
-    DISTANCE_CAP,
     createEscortScene,
     escortDetector,
     escortMetrics,
+    RATIO_BIN,
     histogramMedian,
     tickEscort,
 } from '../../js/evo/scene-escort.js';
@@ -15,6 +15,7 @@ import { directionOf, namesOf } from './helpers/metric-registry.js';
 
 const DISTANCE = 'eval.defender_escort_distance';
 const RATIO = 'eval.defender_escort_ratio';
+const CONFIG = { maxAgents: 5, worldWidth: 1000, worldHeight: 1000 };
 
 /** Slots: 0 a forager victim, 1 a defender, 2 a farther defender, 3 a hunter, 4 a dead defender. */
 /** @returns {Record<string, any>} the fixture world */
@@ -41,7 +42,7 @@ function bite(/** @type {Record<string, any>} */ scene, /** @type {Record<string
 describe('scene-escort: the opening', () => {
     it('reads the nearest alive defender by centre distance, and the ratio against the calculator gap', () => {
         const world = makeWorld();
-        const scene = createEscortScene({ maxAgents: 5 });
+        const scene = createEscortScene(CONFIG);
         bite(scene, world);
         // Defender 2 stands 30 px away; 4 is nearer but dead; 1 is 100 px away.
         const m = /** @type {Record<string, any>} */ (escortMetrics(scene));
@@ -53,14 +54,14 @@ describe('scene-escort: the opening', () => {
     it('keeps the nearer defender when a farther one has the later slot', () => {
         const world = makeWorld();
         world.x[2] = 400;
-        const scene = createEscortScene({ maxAgents: 5 });
+        const scene = createEscortScene(CONFIG);
         bite(scene, world);
         expect(/** @type {Record<string, any>} */ (escortMetrics(scene))[DISTANCE].value).toBeCloseTo(100.5, 5);
     });
 
     it('reads one opening per episode, and a new one after ESCAPE_TICKS from the last bite', () => {
         const world = makeWorld();
-        const scene = createEscortScene({ maxAgents: 5 });
+        const scene = createEscortScene(CONFIG);
         bite(scene, world);
         world.tick += 5;
         bite(scene, world);
@@ -77,7 +78,7 @@ describe('scene-escort: the opening', () => {
 
     it('opens a fresh episode after the victim died or its slot was freed', () => {
         const world = makeWorld();
-        const scene = createEscortScene({ maxAgents: 5 });
+        const scene = createEscortScene(CONFIG);
         bite(scene, world);
         escortDetector.onSlotFree?.(scene, 0);
         bite(scene, world);
@@ -86,7 +87,7 @@ describe('scene-escort: the opening', () => {
 
     it('reads nothing before burn-in, for a hunter or a defender victim, or a dead one', () => {
         const world = makeWorld();
-        const scene = createEscortScene({ maxAgents: 5 });
+        const scene = createEscortScene(CONFIG);
         world.tick = BURN_IN_TICKS - 1;
         bite(scene, world);
         world.tick = BURN_IN_TICKS;
@@ -100,21 +101,24 @@ describe('scene-escort: the opening', () => {
     it('counts an opening with no defender alive apart, and reads none', () => {
         const world = makeWorld();
         world.alive.fill(0, 1, 3);
-        const scene = createEscortScene({ maxAgents: 5 });
+        const scene = createEscortScene(CONFIG);
         bite(scene, world);
         expect(scene.undefended).toBe(1);
         expect(/** @type {Record<string, any>} */ (escortMetrics(scene))[DISTANCE]).toMatchObject({ value: null });
         expect(/** @type {Record<string, any>} */ (escortMetrics(scene))[RATIO]).toMatchObject({ value: null });
     });
 
-    it('puts a distance past the cap in the overflow bin', () => {
+    it('reads a distance past 1000 px exactly, up to the world diagonal (10 of 32 seeds saturated a 1000 px cap)', () => {
         const world = makeWorld();
         world.alive.fill(0, 2, 3);
-        world.x[1] = DISTANCE_CAP * 2;
+        world.x[1] = 1500;
         world.y[1] = 0;
-        const scene = createEscortScene({ maxAgents: 5 });
+        const scene = createEscortScene({ maxAgents: 5, worldWidth: 1600, worldHeight: 1200 });
+        expect(scene.distance.length).toBe(2001);
         bite(scene, world);
-        expect(scene.distance[scene.distance.length - 1]).toBe(1);
+        expect(/** @type {Record<string, any>} */ (escortMetrics(scene))[DISTANCE]).toMatchObject({ value: 1500.5 });
+        const ratio = /** @type {Record<string, any>} */ (escortMetrics(scene))[RATIO].value;
+        expect(Math.abs(ratio - 1500 / 26)).toBeLessThanOrEqual(RATIO_BIN / 2);
     });
 });
 

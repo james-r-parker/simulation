@@ -12,8 +12,8 @@
 // - `eval.defender_escort_distance` (watch): the median distance in px.
 // - `eval.defender_escort_ratio` (watch): the median ratio.
 //
-// The medians come from fixed-bin histograms made once in `create`: distance in 1 px bins up to `DISTANCE_CAP` with an overflow
-// bin, ratio in 0.01 bins up to `RATIO_CAP` with an overflow bin; the median is the centre of the bin the middle reading falls in
+// The medians come from fixed-bin histograms made once in `create`: distance in 1 px bins up to the world's diagonal, ratio in
+// 0.02 bins up to `RATIO_CAP`, each with an overflow bin; the median is the centre of the bin the middle reading falls in
 // (within half a bin of the exact one, and the cap for an overflow). Detectors only, never fitness. Nothing is allocated per tick.
 
 import { EVENT } from '../sim/events.js';
@@ -24,12 +24,12 @@ import { none, ok } from './metrics-stats.js';
 import { BITTEN_THIS_TICK } from './observer-intent-episode.js';
 import { ESCORT_CLEARANCE } from './role-budget-escort.js';
 
-/** The distance histogram's bin width (px) and cap; a reading at or above the cap lands in the overflow bin. */
+/** The distance histogram's bin width (px); its cap is the world's diagonal, so no reading overflows (a 1000 px cap held 10 of
+ * 32 seed medians at the defaults). */
 export const DISTANCE_BIN = 1;
-export const DISTANCE_CAP = 1000;
 /** The ratio histogram's bin width and cap; a reading at or above the cap lands in the overflow bin. */
-export const RATIO_BIN = 0.01;
-export const RATIO_CAP = 20;
+export const RATIO_BIN = 0.02;
+export const RATIO_CAP = 500;
 
 const NO_DEFENDER = 'no bite episode opened on a caller with a defender alive after burn-in';
 
@@ -75,7 +75,18 @@ export function histogramMedian(counts, bin) {
 }
 
 /**
- * @param {Readonly<Record<string, any>>} config the world's config (`maxAgents`)
+ * @param {Readonly<Record<string, any>>} config the world's config
+ * @returns {number} the world's diagonal in px, rounded up: the farthest two bodies can stand apart
+ */
+function diagonal(config) {
+    if (!(config.worldWidth > 0 && config.worldHeight > 0)) {
+        throw new Error('scene-escort: the config needs worldWidth and worldHeight');
+    }
+    return Math.ceil(Math.sqrt(config.worldWidth * config.worldWidth + config.worldHeight * config.worldHeight));
+}
+
+/**
+ * @param {Readonly<Record<string, any>>} config the world's config (`maxAgents`, `worldWidth`, `worldHeight`)
  * @returns {Record<string, any>} an empty escort scene: per slot the open episode and its last bite tick, the two histograms,
  *   and the openings with and without a defender alive
  */
@@ -84,7 +95,7 @@ export function createEscortScene(config) {
     return {
         open: new Uint8Array(n),
         lastBite: new Float64Array(n),
-        distance: histogram(DISTANCE_BIN, DISTANCE_CAP),
+        distance: histogram(DISTANCE_BIN, diagonal(config)),
         ratio: histogram(RATIO_BIN, RATIO_CAP),
         read: 0,
         undefended: 0,
