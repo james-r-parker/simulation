@@ -17,6 +17,7 @@ const DISTANCE = 'eval.defender_escort_distance';
 const RATIO = 'eval.defender_escort_ratio';
 
 /** Slots: 0 a forager victim, 1 a defender, 2 a farther defender, 3 a hunter, 4 a dead defender. */
+/** @returns {Record<string, any>} the fixture world */
 function makeWorld() {
     return {
         tick: BURN_IN_TICKS,
@@ -31,7 +32,7 @@ function makeWorld() {
 }
 
 /** Runs one tick with `victim` bitten this tick (`BITTEN_THIS_TICK`). */
-function bite(scene, world, victim = 0) {
+function bite(/** @type {Record<string, any>} */ scene, /** @type {Record<string, any>} */ world, victim = 0) {
     world.bittenTimer[victim] = BITTEN_THIS_TICK;
     tickEscort(scene, world);
     world.bittenTimer[victim] = 255;
@@ -43,10 +44,18 @@ describe('scene-escort: the opening', () => {
         const scene = createEscortScene({ maxAgents: 5 });
         bite(scene, world);
         // Defender 2 stands 30 px away; 4 is nearer but dead; 1 is 100 px away.
-        const m = escortMetrics(scene);
+        const m = /** @type {Record<string, any>} */ (escortMetrics(scene));
         expect(m[DISTANCE].value).toBeCloseTo(30.5, 5);
         expect(Math.abs(m[RATIO].value - 30 / (10 + 8 * (1 + ESCORT_CLEARANCE)))).toBeLessThanOrEqual(0.005 + 1e-9);
         expect(scene.read).toBe(1);
+    });
+
+    it('keeps the nearer defender when a farther one has the later slot', () => {
+        const world = makeWorld();
+        world.x[2] = 400;
+        const scene = createEscortScene({ maxAgents: 5 });
+        bite(scene, world);
+        expect(/** @type {Record<string, any>} */ (escortMetrics(scene))[DISTANCE].value).toBeCloseTo(100.5, 5);
     });
 
     it('reads one opening per episode, and a new one after ESCAPE_TICKS from the last bite', () => {
@@ -70,7 +79,7 @@ describe('scene-escort: the opening', () => {
         const world = makeWorld();
         const scene = createEscortScene({ maxAgents: 5 });
         bite(scene, world);
-        escortDetector.onSlotFree(scene, 0);
+        escortDetector.onSlotFree?.(scene, 0);
         bite(scene, world);
         expect(scene.read).toBe(2);
     });
@@ -94,8 +103,8 @@ describe('scene-escort: the opening', () => {
         const scene = createEscortScene({ maxAgents: 5 });
         bite(scene, world);
         expect(scene.undefended).toBe(1);
-        expect(escortMetrics(scene)[DISTANCE]).toMatchObject({ value: null });
-        expect(escortMetrics(scene)[RATIO]).toMatchObject({ value: null });
+        expect(/** @type {Record<string, any>} */ (escortMetrics(scene))[DISTANCE]).toMatchObject({ value: null });
+        expect(/** @type {Record<string, any>} */ (escortMetrics(scene))[RATIO]).toMatchObject({ value: null });
     });
 
     it('puts a distance past the cap in the overflow bin', () => {
@@ -124,7 +133,9 @@ describe('scene-escort: the histogram median', () => {
             }
             values.sort((a, b) => a - b);
             const naive = values[Math.ceil(n / 2) - 1];
-            expect(Math.abs(histogramMedian(counts, bin) - naive)).toBeLessThanOrEqual(bin / 2 + 1e-9);
+            expect(Math.abs(/** @type {number} */ (histogramMedian(counts, bin)) - naive)).toBeLessThanOrEqual(
+                bin / 2 + 1e-9,
+            );
         }
     });
 

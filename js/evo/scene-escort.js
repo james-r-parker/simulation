@@ -65,14 +65,13 @@ export function histogramMedian(counts, bin) {
         return null;
     }
     const target = Math.ceil(total / 2);
-    let seen = 0;
-    for (let i = 0; i < counts.length; i++) {
-        seen += counts[i];
-        if (seen >= target) {
-            return (i + 0.5) * bin;
-        }
+    let at = 0;
+    let seen = counts[0];
+    while (seen < target) {
+        at += 1;
+        seen += counts[at];
     }
-    return null;
+    return (at + 0.5) * bin;
 }
 
 /**
