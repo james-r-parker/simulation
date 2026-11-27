@@ -1,3 +1,4 @@
+const NO_ESCORT = 'no bite episode opened on a caller with a defender alive after burn-in';
 // Expected outputs from a sourceRun with two after-burn-in starvation deaths and no scene activity.
 export default {
     'eval.predators_at_end_terminal_window': { value: null, reason: 'no complete season after burn-in' },
@@ -353,6 +354,8 @@ export default {
         value: null,
         reason: 'no defender tick after burn-in',
     },
+    'eval.defender_escort_distance': { value: null, reason: NO_ESCORT },
+    'eval.defender_escort_ratio': { value: null, reason: NO_ESCORT },
     'eval.defender_bite_break_share': {
         value: null,
         reason: 'no bite episode resolved after burn-in',

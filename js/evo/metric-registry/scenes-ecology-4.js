@@ -37,6 +37,30 @@ export const SCENES_ECOLOGY_4 = {
         arithmetic: 'test/evo/scene-defender.test.js',
         source: 'test/evo/role-metrics-defender.slow.test.js',
     }),
+    'eval.defender_escort_distance': entry('scenes-ecology', {
+        module: 'js/evo/scene-escort.js',
+        meaning:
+            'How far, in px, the nearest defender stands from a caller (a forager, reproducer or scout) when a hunter closes on it. Neither higher nor lower is better: it is read against the calculator escortGap (role-budget.md, T25).',
+        counts: 'Median, over bite episodes that opened on a caller after burn-in with a defender alive, of the centre-to-centre distance to the nearest alive defender at the opening, from a 1 px histogram capped at 1000 px.',
+        unit: 'px',
+        direction: 'watch',
+        intended: 'higher',
+        nullWhen: ['no bite episode opened on a caller with a defender alive after burn-in'],
+        expectedFlat: 'not yet measured: the live reading is recorded after the T25 eval',
+        arithmetic: 'test/evo/scene-escort.test.js',
+    }),
+    'eval.defender_escort_ratio': entry('scenes-ecology', {
+        module: 'js/evo/scene-escort.js',
+        meaning:
+            'The escort distance over the calculator gap (caller size + defender size * (1 + ESCORT_CLEARANCE)): 1 means the defender stands where the role budget assumes. Neither higher nor lower is better.',
+        counts: 'Median, over bite episodes that opened on a caller after burn-in with a defender alive, of the nearest alive defender distance over caller size + defender size * (1 + ESCORT_CLEARANCE), from a 0.01 histogram capped at 20.',
+        unit: 'ratio',
+        direction: 'watch',
+        intended: 'higher',
+        nullWhen: ['no bite episode opened on a caller with a defender alive after burn-in'],
+        expectedFlat: 'not yet measured: the live reading is recorded after the T25 eval',
+        arithmetic: 'test/evo/scene-escort.test.js',
+    }),
     'eval.refuge_crowding': entry('scenes-ecology', {
         module: 'js/evo/scene-refuge-outcome.js',
         scenes: ['Refuge'],
