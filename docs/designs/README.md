@@ -18,7 +18,6 @@ Lead docs in priority order - 1 is built next. Set in each doc's `**Priority:**`
 3. [Fair chase](fair-chase.md) - Hunting lead (the world changes first: body-genes and status-effects adoption, the role budget, the chase). The `hunt` rung passes on 0 of 16 offsets after twelve falsified trainer levers (E191 to E232), and the live world's hunters fail the same way; no trainer, recruitment or champion work can pass a chase the bodies do not allow
     1. [Body genes](body-genes.md) - Phase 3 chooses and screens the trait spans and paired cost exponents with the calculator before adoption and training
     2. [Status effects](status-effects.md) - Phase 3 verifies and adopts the chosen effect numbers (`step5-d.json`) alongside body-genes.md Phase 3, and Phase 5 closes the remaining speed regression
-    3. [Role budget](role-budget.md) - gate 1 of fair-chase.md "Before any training": Phases 1 to 5 are built; open formula/defender gaps (T24a) and reviews remain before Step 5 adoption
     4. [Senses and motor](senses-and-motor.md) - the chase envelope runs (T10 to T12) and Phase 4 are read on the bodies the sprint store leaves
     5. [Chase physics and terrain](chase-physics.md) - heading inertia and terrain, screened on those bodies; `speedTurnDrag` widens the predator's sprint circle
     6. [Stillness](stillness.md) - the ambusher and the freezing prey; it changes the ray march every scene reads, so it follows the store and the turn
@@ -49,7 +48,7 @@ Lead docs in priority order - 1 is built next. Set in each doc's `**Priority:**`
     2. [Mobile view](mobile-view.md) - a phone is a second screen; after the TV and desktop experience is right
     3. [Deployment and community](deployment-and-community.md) - the last stage: the release flow is built, the community phases open once the app is worth sharing
 
-## Implemented (21)
+## Implemented (22)
 
 Describe shipped code. Trust these, and fix them when the code moves.
 
@@ -71,11 +70,12 @@ Describe shipped code. Trust these, and fix them when the code moves.
 - [Predator and prey](predator-prey.md) - Phases 1 and 2 are built: scent, calls, smoke, jaws and the tuned economy (E19, E20) and the five combat metrics with the hunter, fleer and spammer controllers....
 - [Reachable births](reachable-births.md) - willing agents mate within `mateRange`, a child's energy is a share of its mother's, the split threshold is lower and the default economy sustains foragers; jud...
 - [Refuge](refuge.md) - all three phases are built: the eight detectors, the refuge-access fixture and the diagnosis (E130: threatened prey do not reach cover); the inert cover mechani...
+- [Role budget](role-budget.md) - Phases 1 to 6, T24, the guard posture, T24b, the smoke decoy ([smoke-decoy.md](smoke-decoy.md)) and T25 are built and reviewed; with the shove on and `between`,...
 - [Smoke decoy](smoke-decoy.md) - the sensing rule, `smokeDecoyTicks`, the calculator model, the scripted scene and the two evals are built (T2 to T8) and reviewed (T9, 2026-11-27); `defender:pr...
 - [Sprint burst](sprint-burst.md) - Phase 1 detectors kept; Phase 2 gate not met on E210 (T3)
 - [Web presence](web-presence.md) - a designed icon in every size, Open Graph and Twitter cards, a full `<head>`, an installable web app manifest with a splash, `robots.txt` and `sitemap.xml`
 
-## In progress (34)
+## In progress (33)
 
 Partly built - the note says which phases are real.
 
@@ -99,7 +99,6 @@ Partly built - the note says which phases are real.
 - [Quality gates and test tiers](quality-gates-and-test-tiers.md) - Phases 1, 2, 4 and 5 are built (tiered `check.sh` and the hook, the coverage ratchet, mutation testing, browser smoke, bench compare, the nightly workflow, the... _(validated c11202b, 2026-11-17)_ _(depends on [dev-workflow-and-gate.md](dev-workflow-and-gate.md))_
 - [Realistic keepers](realistic-keepers.md) - Phases 1 and 2 are built: E137 and E138 kept every mechanism but provisioning (deleted); the six kept switches are always on, goldens re-pinned, and `bench/base... _(validated edd4cd4, 2026-11-07)_ _(depends on [natural-selection.md](natural-selection.md), [refuge.md](refuge.md))_
 - [Registries](registries.md) - All three phases are built and reviewed (T12, 2026-11-26): the events, spec names, per-slot state and the 46 scene detectors are each one declared list with con... _(validated 23e8cc6, 2026-11-21)_
-- [Role budget](role-budget.md) - Phases 1 to 6, T24, the guard posture, T24b and the smoke decoy ([smoke-decoy.md](smoke-decoy.md)) are built; with the shove on and `between`, `defender:predato... _(validated 549bf6e, 2026-11-27)_ _(depends on [body-genes.md](body-genes.md))_
 - [Scent trails and carrion scent](scent-trails.md) - Phase 1 detectors and E-ST2-1 baseline complete (E210); the trail probe remains before Phase 2 _(validated 3a150d7, 2026-11-17)_ _(depends on [honest-budgets.md](honest-budgets.md), [senses-and-motor.md](senses-and-motor.md))_
 - [Senses and motor](senses-and-motor.md) - Phases 1, 2 and 5 are built (interface checks; `audit:chase` with E-SM-1 falsified, E185; hunter eyes adopted on a 64-seed keep rule, E186). Phase 3 code is bui... _(validated f5ebac7, 2026-11-15)_ _(depends on [training.md](training.md))_
 - [Status effects](status-effects.md) - Phases 1 and 2 built and reviewed (T8, T14; E270 predates T30, after which neutral `eval.effect_share.*` reads 0). Phase 3 built and reviewed (T19, 2026-11-27;... _(validated 549bf6e, 2026-11-27)_ _(depends on [body-genes.md](body-genes.md))_
