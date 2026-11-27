@@ -122,6 +122,13 @@ describe('scene-escort: the opening', () => {
     });
 });
 
+describe('scene-escort: the config', () => {
+    it('refuses a config without a world size, which sizes the distance histogram', () => {
+        expect(() => createEscortScene({ maxAgents: 5 })).toThrow(/worldWidth and worldHeight/);
+        expect(() => createEscortScene({ maxAgents: 5, worldWidth: 100, worldHeight: 0 })).toThrow(/worldWidth/);
+    });
+});
+
 describe('scene-escort: the histogram median', () => {
     it('is within half a bin of the sorted median on a deterministic sequence', () => {
         const bin = 0.5;
