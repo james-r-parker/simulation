@@ -1,5 +1,103 @@
 # Changelog
 
+## [12.0.0](https://github.com/james-r-parker/simulation/compare/v11.0.0...v12.0.0) (2026-11-28)
+
+
+### ⚠ BREAKING CHANGES
+
+* **sim:** rulesHash changes from 93d5ee3e014475ae to 4110c4d043dd1658 (season 12 is unreleased and moves in place, library/seasons.json); champions and archives bred before this commit do not load.
+* **sim:** rulesHash changes from c64124f01c20ac17 to 93d5ee3e014475ae (the new key smokeDecoyTicks); champions and archives bred before this commit do not load.
+* **sim:** aim the smoke cloud along the nearest sensed threat ray ([#634](https://github.com/james-r-parker/simulation/issues/634))
+* **sim:** smokeAimArc joins rulesHash, which moves from 5ea8af3e744bdb8f to c64124f01c20ac17; season 12 (unreleased: v11.0.0 is the newest release, which holds season 11) moves in place in library/seasons.json. Goldens (busy and disease, short and full), the WASM reference digests (busy and disease worlds) and the trainer archives pin are re-pinned here: they move because a releaser with a hunter ahead now drops its cloud elsewhere, and the archives carry rulesHash.
+
+### Features
+
+* **eval:** print the headline table first in eval:compare and a Headline column in the scorecard (metric-noise T17) ([29bd7f0](https://github.com/james-r-parker/simulation/commit/29bd7f0d134cc73562bcdd1fa3ecc727171aa387))
+* **evals:** a current-defaults reference for the step 5 adoption read (body-genes T15) ([3fb0ce6](https://github.com/james-r-parker/simulation/commit/3fb0ce6aa2f8444e8b8a3f1ce99630a3a47c3a8f))
+* **evals:** body-genes T14a - cold stack 0.5 and the 64-seed keep-rule screen for E-BG-3 ([70221a8](https://github.com/james-r-parker/simulation/commit/70221a82b50d521dd0543ce5b2d7fe446137cfed))
+* **evals:** step5-e, the step 5 candidate without the fat-only block, and the E-BG-3 screen results (body-genes T15) ([57ddeac](https://github.com/james-r-parker/simulation/commit/57ddeac14de9d41e574804b388bec7cf6f442cc4))
+* **evo:** add eval.gene_sd.&lt;trait&gt;, the gene spread in gene units (body-genes T15 prep) ([e96c5db](https://github.com/james-r-parker/simulation/commit/e96c5db87bc21c4c7a2b7c658c3c5d97ba351522))
+* **evo:** add the two-hunter pack scene and its readings against pack:forager (status-effects T13a) ([d0af370](https://github.com/james-r-parker/simulation/commit/d0af370cb978a501610e42d73a425c3fad2dccee))
+* **evo:** compare and power read a pooled metric as a ratio of sums (metric-noise T3) ([d9c0ae1](https://github.com/james-r-parker/simulation/commit/d9c0ae1e26af6450261e6bc700696e0b621050b7))
+* **evo:** eval.bite_idle_pooled beside eval.bite_idle (metric-noise T3) ([b47f3ac](https://github.com/james-r-parker/simulation/commit/b47f3acdee3109e7f6d1dcc0b69ea8bd570cf0c4))
+* **evo:** per-seed num/den sufficient statistics in the report (metric-noise T3) ([4ba7daf](https://github.com/james-r-parker/simulation/commit/4ba7daf71b32b6746799027175bc8738b8225cd6))
+* **evo:** pooled cells for the food-contact, carcass-hunter, mating and gap-never shares (metric-noise T3) ([828ab47](https://github.com/james-r-parker/simulation/commit/828ab47ce0c38c7239d18bd659dd9fdcb1b1e65f))
+* **evo:** read the defender's escort distance in the live world (role-budget T25) ([35d2bf7](https://github.com/james-r-parker/simulation/commit/35d2bf7b019d42f1be76afcfbe773e2450af8f62))
+* **evo:** register the pooled share family beside the old shares (metric-noise T3) ([5f99953](https://github.com/james-r-parker/simulation/commit/5f99953efd2d6444a4c62f5591773398934d60f5))
+* **evo:** the defence formula plays the hunter killing the defender and resting (role-budget T12a) ([ed0667c](https://github.com/james-r-parker/simulation/commit/ed0667cd815429fe888aa681d5e7007d1ca0fd3e))
+* **evo:** the role-budget defender smoke read follows the aimed drop ([f8e30df](https://github.com/james-r-parker/simulation/commit/f8e30dfbab1ce30aa2836c219d90eef558a9dafe))
+* **evo:** the warned forager is played through its turn, and the frame takes its flying start (role-budget T15a) ([252a0a7](https://github.com/james-r-parker/simulation/commit/252a0a7a40448a6e6ff693fc4ecca68f26922fde))
+* **metrics:** a registry entry carries `signed` instead of a unit list (metric-noise T30) ([9128a62](https://github.com/james-r-parker/simulation/commit/9128a62dc20f0d670646e8a6bb30764e6b8fb490))
+* **metrics:** a signed flag per metric and the headline spread (metric-noise T30, T31) ([1047e55](https://github.com/james-r-parker/simulation/commit/1047e55e8e32bd4dc13cc6b87d65bb8e75bbfa6d))
+* **metrics:** a signed headline candidate is scored against its seed spread (metric-noise T31) ([c337101](https://github.com/james-r-parker/simulation/commit/c337101daa33a0ba5a3c66bfb80187c9336aa96a))
+* **metrics:** fail --check when a plan names a flat metric as a Target (metric-noise T29a) ([299f76f](https://github.com/james-r-parker/simulation/commit/299f76f3c5a3bcf3a5c753b7e4fc320d21fd5e3f))
+* **metrics:** flag a flat metric that an active plan names as a Target ([4857ae7](https://github.com/james-r-parker/simulation/commit/4857ae76218acdceb0760fb70c27e86c99c864bd))
+* **metrics:** headline metrics, and the near-zero power bar kept to signed units (metric-noise Phase 5) ([f0b53cb](https://github.com/james-r-parker/simulation/commit/f0b53cb6db16ad2e617dec89274370451bad8473))
+* **metrics:** isFlat marks a metric that misses the liveness bar with an expectedFlat reason ([1946746](https://github.com/james-r-parker/simulation/commit/19467460223c73512ec1660e108959cb4830c2a2))
+* **metrics:** keep a flat metric out of Targets and guards (metric-noise T29) ([29c61a5](https://github.com/james-r-parker/simulation/commit/29c61a507aff7a623188e5280e8c94c1ef76d215))
+* **metrics:** liveness needs 5% of non-null seeds off the most common value (metric-noise T28) ([b9f0b74](https://github.com/james-r-parker/simulation/commit/b9f0b748e48ccca6afc6dfc0f719115601df0872))
+* **metrics:** liveness needs 5% of seeds off the most common value (metric-noise T28) ([edd2474](https://github.com/james-r-parker/simulation/commit/edd2474789c16ce4d4918cab8e1894197e30dbd3))
+* **metrics:** pick one headline metric per scene and four world headlines (metric-noise T16) ([d54723a](https://github.com/james-r-parker/simulation/commit/d54723a01d2a1474a9e62e0ca4d3cbeaad5173a9))
+* **metrics:** pooled share family on E279, the new shared baseline (metric-noise T3 to T5) ([40cd0b4](https://github.com/james-r-parker/simulation/commit/40cd0b452034185b82dd863b60ac01edd2078b59))
+* **metrics:** read the pooled share family on E279 and make it the shared baseline (metric-noise T4, T5) ([10d47f3](https://github.com/james-r-parker/simulation/commit/10d47f3af724f3571ef1824f85c823065448a5d5))
+* **metrics:** studentised intervals at every size, pooled metrics and the E278 baseline ([9eb7077](https://github.com/james-r-parker/simulation/commit/9eb70776d8e31d125ed415e03d937f0adcc1fd30))
+* **metrics:** the liveness reading stores each metric's seed spread (metric-noise T31) ([a3e20e0](https://github.com/james-r-parker/simulation/commit/a3e20e0b7b7c73165aefd8846d7c7834415e19b7))
+* **role-budget:** a reactive hunter oracle and its warnCheck reading (T30) ([832b06c](https://github.com/james-r-parker/simulation/commit/832b06ccccb3f01c924b87c34fb36e829a2540e8))
+* **role-budget:** judge the prey's escape against the reactive hunter (role-budget Phase 6) ([20b2571](https://github.com/james-r-parker/simulation/commit/20b257120e4d9136010e293d7a26b774aeb0228d))
+* **role-budget:** live escort distance detector (T25, E280) and plan reviews ([ccaa226](https://github.com/james-r-parker/simulation/commit/ccaa226c110e528496510f958acee5a864d5d2b6))
+* **role-budget:** pack scene, reactive warning oracle and the heard-call double count fix ([549bf6e](https://github.com/james-r-parker/simulation/commit/549bf6e1574c3d07373357adfe57ba33d0f6c88a))
+* **role-budget:** play the pack scene beside the pack row in --check (status-effects T13a) ([429f86c](https://github.com/james-r-parker/simulation/commit/429f86c8df89de19555ccfb52365cfa5df731c0d))
+* **role-budget:** the prey's run reads the reactive hunter on the broken bound (T26) ([eb9d177](https://github.com/james-r-parker/simulation/commit/eb9d17737fd56cf01148e9a925f0f1f1496a8cb5))
+* **role-budget:** the scout's run reads the reactive hunter on the broken bound (T27) ([e94184b](https://github.com/james-r-parker/simulation/commit/e94184bcaaed87a734b6e40bc47ec2cc60062574))
+* **scripts:** keep generated docs committed, regenerated on conflict (agent-workflow T43) ([dbd9217](https://github.com/james-r-parker/simulation/commit/dbd9217dd8cad1d4d848bf9250669a71fad8bb87))
+* **scripts:** task-start.sh --from &lt;batch&gt; for the session batch rule ([3b3feb6](https://github.com/james-r-parker/simulation/commit/3b3feb61b19c4f78cf5d45f72f4fb8bb1a615fab))
+* **scripts:** warn on tests over half their own timeout in test:report ([1ae3e8d](https://github.com/james-r-parker/simulation/commit/1ae3e8d5ff568c6775d22ab6c6fd06c23613a387))
+* **sim:** a fresh smoke cloud reads as a body on the hunter's prey rays ([#637](https://github.com/james-r-parker/simulation/issues/637)) ([328444b](https://github.com/james-r-parker/simulation/commit/328444b57fee20685fec6dbce45b56cc23bfb169))
+* **sim:** adopt step 5 (step5-e) as the defaults (body-genes T18, status-effects T18) ([75900e4](https://github.com/james-r-parker/simulation/commit/75900e45ad534dc77ded02b0dbe5998349dbbb84))
+* **sim:** smoke drops toward a hunter in front of the releaser ([c8ed855](https://github.com/james-r-parker/simulation/commit/c8ed855ae0d0c15789ee0389ea68d29bfa93a17e))
+
+
+### Bug Fixes
+
+* **bench:** hold the bench world's population at the size it measures ([9df8f86](https://github.com/james-r-parker/simulation/commit/9df8f8606d25758f9ac4d5813bacc9e1d34e5659))
+* **bench:** hold the bench world's population at the size it measures ([32cb777](https://github.com/james-r-parker/simulation/commit/32cb77797937c36a0ec69b3716bcc4103948f706))
+* **ci:** hold a new script to the scripts coverage baseline in ratchet-related (agent-workflow T50) ([254e089](https://github.com/james-r-parker/simulation/commit/254e089227a78bacf5a9969c06a9ce28bb135401))
+* **ci:** hold a new script to the scripts coverage baseline in ratchet-related (agent-workflow T50) ([86b0bba](https://github.com/james-r-parker/simulation/commit/86b0bbab9062e6a61675d369819a01d276d37fe8))
+* **ci:** label the open red-main issue affected-miss when a comment carries a miss (agent-workflow T51) ([6d047d7](https://github.com/james-r-parker/simulation/commit/6d047d7a0331d2b5e1171aad77c5bb36d5c7ccaf))
+* **ci:** run green-main when check passes even if an upstream job skipped ([d6ba787](https://github.com/james-r-parker/simulation/commit/d6ba78799916c4dba76e90941d7eb77f7a467517))
+* **ci:** run green-main when check passes even if an upstream job skipped ([af64fba](https://github.com/james-r-parker/simulation/commit/af64fba85f61f5a1a1d213c506702ad71de11a9f))
+* **evals:** read step5-d against the current defaults in its own grid (body-genes T15) ([7589d66](https://github.com/james-r-parker/simulation/commit/7589d665e988b116f329248f9f5ff2bb6d2f12bd))
+* **evo:** a birth before burn-in ends the mother's ready sample (metric-noise T25 bug 2) ([977493f](https://github.com/james-r-parker/simulation/commit/977493fe3301b5b6d100480f645931f6484a55de))
+* **evo:** defender caller escape - pin the read to the sim, shove on in step 5 ([#636](https://github.com/james-r-parker/simulation/issues/636)) ([1b84e84](https://github.com/james-r-parker/simulation/commit/1b84e84dfe29fc419935d2c483e9fec47d71165c))
+* **evo:** defender detector order, hunter deaths and per-slot lanes (metric-noise T25 bug 1) ([be340c6](https://github.com/james-r-parker/simulation/commit/be340c642ae886781d25b21a2392ab7829d109c7))
+* **evo:** drop the smoke refusal text from the role-budget report ([7991b33](https://github.com/james-r-parker/simulation/commit/7991b33818d28807f3fd1904a8221c0ef6af4d4c))
+* **evo:** give the gap-never pooled cell its reason as a plain string for the typecheck (metric-noise T3) ([e61b6e0](https://github.com/james-r-parker/simulation/commit/e61b6e0027ffcd11a04469960077ba02a997b9df))
+* **evo:** guild checkpoints are 1000 ticks, and the registry says so (metric-noise T25 bug 4) ([051fbbc](https://github.com/james-r-parker/simulation/commit/051fbbc89768b18dba85a952149a4ed1965be28c))
+* **evo:** metric-noise gate 2 detector fixes and scene tags (T25, T26) ([e71cf88](https://github.com/james-r-parker/simulation/commit/e71cf88eff650c0d91bdbd63ba8549c09bc0ecf9))
+* **evo:** play the defence check scene in the guard posture ([#638](https://github.com/james-r-parker/simulation/issues/638)) ([5a827ca](https://github.com/james-r-parker/simulation/commit/5a827ca183808d84a0bd104fb66242cc5af5dc62))
+* **evo:** read the cold stack in the role-budget calculator as the sim keeps it ([5fe35e2](https://github.com/james-r-parker/simulation/commit/5fe35e201cd0eef3b5049734e5829c923e821845))
+* **evo:** size the escort distance histogram to the world's diagonal ([6096188](https://github.com/james-r-parker/simulation/commit/60961886e6f99721fada2dd3e776f3fb0e2d37af))
+* **evo:** tag each scene with its purpose-built detector (metric-noise T26) ([74a0667](https://github.com/james-r-parker/simulation/commit/74a066733c1343444655c78113eb1fed4eb921b4))
+* **evo:** typecheck the T25 detector tests (metric-noise T25) ([9399058](https://github.com/james-r-parker/simulation/commit/9399058b69cf8a452269d8101bdc71d6b011ae83))
+* **evo:** winter_shelter_distance intends lower (metric-noise T25 bug 3) ([b7db1c2](https://github.com/james-r-parker/simulation/commit/b7db1c23395f717556aff0011c474d0cdaa92991))
+* **metrics:** a judged-only note exempts only the metric it follows (metric-noise T29a) ([3b5ce88](https://github.com/james-r-parker/simulation/commit/3b5ce88cb8c26cfdf559a8464a80c17d4c85f405))
+* **metrics:** a studentised pooled interval (metric-noise D7, T32) ([97c4bef](https://github.com/james-r-parker/simulation/commit/97c4befd671bdd9b78b087610be6c29c2e708a50))
+* **metrics:** hold a per-chase slope around 0 to the absolute bar (metric-noise T19) ([bb3bc5d](https://github.com/james-r-parker/simulation/commit/bb3bc5d058939ae73ce3755cf9204e0071ac855a))
+* **metrics:** keep the near-zero absolute bar to signed units, and record each headline's scene (metric-noise T16) ([c440046](https://github.com/james-r-parker/simulation/commit/c440046b49d04620d715b218d306eb41f0a9b72d))
+* **metrics:** print a pooled metric's mean as its ratio of sums ([b6e3c75](https://github.com/james-r-parker/simulation/commit/b6e3c753e80d68aa30efee063d14357dc78b26d3))
+* **metrics:** the studentised interval at every size (metric-noise D8, T33) ([766e6d0](https://github.com/james-r-parker/simulation/commit/766e6d0781379eb15e5840e3950aa01e94afee1b))
+* **role-budget:** a perfect hunter reads at least the reactive reach (T31) ([12bb602](https://github.com/james-r-parker/simulation/commit/12bb60234818ab1ecd7f6bc82ffdb05dc2ed58ac))
+* **scripts:** screens hold the CPU lock shared, not exclusive ([15734b9](https://github.com/james-r-parker/simulation/commit/15734b94dfe3bca3f535440bb0e97c0e896b2db8))
+* **scripts:** screens hold the CPU lock shared, not exclusive ([3262785](https://github.com/james-r-parker/simulation/commit/3262785108bb6dda297943c963eed89985b4429e))
+* **sim:** count a heard call once per hearer, not once per hash cell its body covers ([c9f6a3f](https://github.com/james-r-parker/simulation/commit/c9f6a3fc362067ca30fb700685c9941583a2ba7c))
+* **test:** type the death-tick callback of the T17 cheat test ([245f7a6](https://github.com/james-r-parker/simulation/commit/245f7a69ffe5c4a85e920b1fc552d21c2246f883))
+
+
+### Performance Improvements
+
+* browser comparison needs a GPU Chrome and is the one open item (T7). ([f7f71d0](https://github.com/james-r-parker/simulation/commit/f7f71d01cb6b4123a6bbe0fb7c1605d6ef95737c))
+* **sim:** aim the smoke cloud along the nearest sensed threat ray ([#634](https://github.com/james-r-parker/simulation/issues/634)) ([7a1f476](https://github.com/james-r-parker/simulation/commit/7a1f4761dbe5fe7abf671c76652de4ef816d7667))
+
 ## [11.0.0](https://github.com/james-r-parker/simulation/compare/v10.1.0...v11.0.0) (2026-11-21)
 
 
