@@ -1,6 +1,6 @@
 # Body genes
 
-**Status:** In progress - Phases 1, 2, 5 and 7 built and reviewed. Phase 3 built and reviewed (T19, 2026-11-27; T16 timed 2026-11-28, `bench.step_ms@500` +6.8%, inside the bar): T15 (E275) read `fat-only` `WORSE` on hunter catches, so T18b keeps the spans at 0, and T18 adopted `step5-e.json` as the defaults (breaking, season 12 rulesHash `4110c4d043dd1658`).
+**Status:** In progress - Phases 1, 2, 5 and 7 built and reviewed. Phase 3 built and reviewed (T19, 2026-11-27; T16 timed 2026-11-28, `bench.step_ms@500` +6.5% with the held bench, inside the bar): T15 (E275) read `fat-only` `WORSE` on hunter catches, so T18b keeps the spans at 0, and T18 adopted `step5-e.json` as the defaults (breaking, season 12 rulesHash `4110c4d043dd1658`).
 **Validated:** 549bf6e1 (2026-11-27)
 **Scheduled by:** [fair-chase.md](fair-chase.md) step 1 - Phase 3 chooses and screens the trait spans and paired cost exponents with the calculator before adoption and training
 **Depends on:** [fair-chase.md](fair-chase.md)
@@ -352,26 +352,26 @@ The spans and the cost exponents are chosen with the calculator, then read on th
 | ----- | -------------------------------------------------------------------- | ------- |
 | C     | T46, T51, T17, T14, T14a, T14b, T14c, T14d, T15, T16, T18, T18b, T19 | Sonnet  |
 
-**Measured (T16, 2026-11-28):** the adoption commit 75900e45 against its parent, on a quiet machine (load 0.45 on 32 cores, no
-run in flight) under the CPU lock: `node scripts/bench-compare.mjs --base 75900e45^ --sizes=500 --runs=5` run from a checkout
-of 75900e45, then `npm run bench:parts -- --area physics --compare 75900e45^`.
+**Measured (T16, 2026-11-28):** the adoption commit 75900e45 against its parent, each with the bench's held population
+(32cb7779 cherry-picked onto both: before it the bench world died during the timed ticks, from 500 agents to 35 at the step 5
+defaults, so a bench of either commit alone times a different, near-empty world), on a quiet machine (load under 1 on 32 cores,
+no run in flight) under the CPU lock: `node scripts/bench-compare.mjs --base <parent + 32cb7779> --sizes=500 --runs=5`.
 
-| Reading                           | Base   | Head   | Change       | Bar or margin  | Verdict |
-| --------------------------------- | ------ | ------ | ------------ | -------------- | ------- |
-| `bench.step_ms@500`               | 1.9048 | 2.0338 | +6.8%        | +10%           | inside  |
-| `bench.step_ms@500merit`          | 1.925  | 2.0256 | +5.2%        | +10%           | inside  |
-| `bench.step_ms@500w7680`          | 1.6927 | 1.8551 | +9.6%        | +10%           | inside  |
-| physics phase, 500 agents (ops/s) | 859    | 663    | -22.8%       | +-6.0%         | slower  |
-| `actAll` (ops/s)                  | 1,107  | 963    | -13.0%       | +-5.9%         | slower  |
-| `buildHash` (ops/s)               | 18,689 | 18,401 | -1.5%        | +-1.1%         | slower  |
-| `integrate`, `resolveContacts`    |        |        | -1.9%, -0.1% | +-3.3%, +-1.4% | same    |
+| Reading                        | Base   | Head   | Change | Bar  | Verdict |
+| ------------------------------ | ------ | ------ | ------ | ---- | ------- |
+| `bench.step_ms@500`            | 2.4036 | 2.5601 | +6.5%  | +10% | inside  |
+| `bench.step_ms@500merit`       | 2.4031 | 2.5697 | +6.9%  | +10% | inside  |
+| `bench.step_ms@500w7680`       | 3.3821 | 3.3846 | +0.1%  | +10% | inside  |
+| `bench.phase_ms.lifecycle@500` | 0.2045 | 0.2778 | +35.8% | +10% | over    |
+| `bench.phase_ms.sense@500`     | 0.9132 | 0.9795 | +7.3%  | +10% | inside  |
+| `bench.phase_ms.physics@500`   | 0.2966 | 0.3247 | +9.5%  | +10% | inside  |
+| `bench.phase_ms.signal@500`    | 0.0207 | 0.0270 | +30.4% | +10% | over    |
 
-The step Target is met. The physics phase pays for the lanes and costs in `actAll` (the heat and thrust cost reads per agent),
-outside the micro margin; it is accepted while the step stays inside its bar, and the throughput lead reads it with the rest of
-the step. At 75900e45 the per-phase rows of the whole-step bench sum to 0.56 ms against a 2.03 ms step, so only the step and
-micro readings are used from that commit; on 549bf6e1 they sum to 2.62 against 2.56. Main has slowed since the adoption for
-other reasons (`bench.step_ms@500` 2.56, `@500w7680` 3.44 on 549bf6e1 against 2.03 and 1.86 here), which is not this
-phase's cost.
+The step Target is met: the adoption costs about 0.16 ms of a 2.4 ms step, most of it in lifecycle (the cost and heat lane
+reads and the cold stack, per agent) and sense. The signal phase grew with the calls heard, read before the heard-call double
+count was fixed (status-effects.md T13a). Main has not slowed since: `bench.step_ms@500` reads 2.56 on 549bf6e1, the head
+above. A profile of the held 500-agent world on 549bf6e1 puts about 60% of the step in the WASM sense and brain kernels and
+no JS function above 5% self time, so no cheap change is open in JS.
 
 The cold stack is one of the numbers: the `chilled` effect of [status-effects.md](status-effects.md), chosen here with any rise in birth energy so that sitters do not live longer ([role-budget.md](role-budget.md), "The sitter"). The social effects' numbers are chosen in the same screen (status-effects.md T15 and T16).
 
